@@ -1,4 +1,5 @@
-import { db } from '../supabase.js';
+import { db, getCurrentUser } from '../supabase.js';
+import { showToast } from '../toast.js';
 
 // ── Constants ────────────────────────────────────────────────
 const REVENUE_GOAL = 10000;
@@ -10,6 +11,10 @@ const COUNTUP_DURATION = 1200;
 let animationFrames = [];
 
 export async function init() {
+  // Auth guard — require a logged-in user
+  const user = await getCurrentUser();
+  if (!user) return;
+
   await Promise.all([
     loadRevenueMetrics(),
     loadActionItems(),
@@ -82,6 +87,7 @@ async function loadRevenueMetrics() {
     setMetric('metric-revenue', 0);
     setMetric('metric-expenses', 0);
     setMetric('metric-net', 0);
+    showToast('Failed to load revenue metrics', 'error');
   }
 }
 
@@ -90,8 +96,6 @@ async function loadActiveDealsMetric() {
   try {
     const now = new Date();
     const curMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString();
-    const prevMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59).toISOString();
 
     const [curRes, prevRes] = await Promise.all([
       db.from('brand_deals').select('id').in('status', ['lead', 'negotiating', 'signed', 'in_progress']),
@@ -110,6 +114,7 @@ async function loadActiveDealsMetric() {
     setMonthlyChange('metric-deals-change', curCount, prevDeals.length);
   } catch {
     setMetric('metric-deals', 0);
+    showToast('Failed to load deals metric', 'error');
   }
 }
 
@@ -127,7 +132,7 @@ async function loadActionItems() {
       .limit(5);
 
     if (!projects || projects.length === 0) {
-      container.innerHTML = '<li class="empty-state">No active projects. Start creating!</li>';
+      container.innerHTML = '<li class="empty-cta"><h3>No active projects</h3><p>Your content pipeline is waiting. Create your first project to get moving.</p><button class="btn btn-primary" data-route="/content">Go to Content Engine</button></li>';
       return;
     }
 
@@ -141,7 +146,8 @@ async function loadActionItems() {
       </li>
     `).join('');
   } catch {
-    container.innerHTML = '<li class="empty-state">Connect Supabase to see your projects.</li>';
+    container.innerHTML = '<li class="empty-cta"><h3>Connection needed</h3><p>Connect Supabase to see your active projects and start tracking your pipeline.</p></li>';
+    showToast('Failed to load action items', 'error');
   }
 }
 
@@ -179,6 +185,7 @@ async function loadPipelineSnapshot() {
     `).join('');
   } catch {
     container.innerHTML = '<p class="empty-state">No pipeline data yet.</p>';
+    showToast('Failed to load pipeline snapshot', 'error');
   }
 }
 
@@ -208,6 +215,7 @@ async function loadRecentDeals() {
     `).join('');
   } catch {
     container.innerHTML = '<li class="empty-state">Connect Supabase to see deals.</li>';
+    showToast('Failed to load recent deals', 'error');
   }
 }
 
@@ -260,6 +268,7 @@ async function loadPlatformDistribution() {
     }).join('');
   } catch {
     container.innerHTML = '<p class="empty-state">No platform data yet.</p>';
+    showToast('Failed to load platform distribution', 'error');
   }
 }
 
@@ -305,6 +314,7 @@ async function loadUpcomingDeadlines() {
     }).join('');
   } catch {
     container.innerHTML = '<p class="empty-state">Could not load deadlines.</p>';
+    showToast('Failed to load upcoming deadlines', 'error');
   }
 }
 
@@ -375,6 +385,7 @@ async function loadRecentActivity() {
     `).join('');
   } catch {
     container.innerHTML = '<li class="empty-state">Could not load activity.</li>';
+    showToast('Failed to load recent activity', 'error');
   }
 }
 

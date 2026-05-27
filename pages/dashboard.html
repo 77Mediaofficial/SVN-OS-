@@ -1,6 +1,66 @@
 <style>
 /* ── Dashboard-specific styles ───────────────────────────── */
 
+/* Skeleton loading shimmer */
+@keyframes shimmer {
+  0% { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--color-surface-2) 25%, #252525 50%, var(--color-surface-2) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.5s infinite linear;
+  border-radius: var(--radius-sm);
+}
+.skeleton-line {
+  height: 12px;
+  margin-bottom: 10px;
+  border-radius: var(--radius-sm);
+}
+.skeleton-line.short { width: 40%; }
+.skeleton-line.medium { width: 65%; }
+.skeleton-line.long { width: 90%; }
+.skeleton-block {
+  height: 32px;
+  width: 120px;
+  margin-bottom: 12px;
+}
+.skeleton-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.skeleton-row:last-child { border-bottom: none; }
+.skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Empty state CTA */
+.empty-cta {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-text-muted);
+}
+.empty-cta h3 {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--color-text-dim);
+  margin-bottom: 8px;
+}
+.empty-cta p {
+  font-size: 0.82rem;
+  margin-bottom: 20px;
+  max-width: 320px;
+  margin-left: auto;
+  margin-right: auto;
+  line-height: 1.5;
+}
+
 /* Metrics row: 4 columns at top */
 .dash-metrics {
   display: grid;
@@ -532,7 +592,9 @@
       <button class="btn btn-ghost" data-route="/content">View All</button>
     </div>
     <ul id="action-items">
-      <li class="empty-state">Loading projects...</li>
+      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
+      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div><div class="skeleton skeleton-line short"></div></div></li>
+      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
     </ul>
   </div>
 
@@ -542,7 +604,10 @@
       <span class="card-title">Content Pipeline</span>
     </div>
     <div id="pipeline-bars">
-      <p class="empty-state">Loading pipeline...</p>
+      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line short"></div></div></div>
     </div>
   </div>
 
@@ -552,7 +617,9 @@
       <span class="card-title">Content by Platform</span>
     </div>
     <div id="platform-distribution">
-      <p class="empty-state">Loading platforms...</p>
+      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div></div>
+      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line short"></div></div></div>
     </div>
   </div>
 
@@ -563,7 +630,8 @@
       <button class="btn btn-ghost" data-route="/deals">View Deals</button>
     </div>
     <div id="upcoming-deadlines">
-      <p class="empty-state">Loading deadlines...</p>
+      <div class="skeleton-row"><div class="skeleton" style="width:4px;height:36px;border-radius:2px;"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div><div class="skeleton skeleton-line short"></div></div></div>
+      <div class="skeleton-row"><div class="skeleton" style="width:4px;height:36px;border-radius:2px;"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></div>
     </div>
   </div>
 
@@ -577,7 +645,8 @@
       <button class="btn btn-ghost" data-route="/deals">View All</button>
     </div>
     <ul id="recent-deals">
-      <li class="empty-state">Loading deals...</li>
+      <li class="skeleton-row"><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div><div class="skeleton skeleton-block" style="width:60px;height:20px;"></div><div class="skeleton skeleton-block" style="width:80px;height:20px;"></div></li>
+      <li class="skeleton-row"><div style="flex:1"><div class="skeleton skeleton-line long"></div></div><div class="skeleton skeleton-block" style="width:60px;height:20px;"></div><div class="skeleton skeleton-block" style="width:80px;height:20px;"></div></li>
     </ul>
   </div>
 </div>
@@ -589,7 +658,9 @@
       <span class="card-title">Recent Activity</span>
     </div>
     <ul class="activity-feed" id="activity-feed">
-      <li class="empty-state">Loading activity...</li>
+      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
+      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div><div class="skeleton skeleton-line short"></div></div></li>
+      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
     </ul>
   </div>
 </div>
