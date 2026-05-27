@@ -19,6 +19,87 @@
   color: var(--color-text-dim);
 }
 
+.dl-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Search Bars ─────────────────────────────────────────────── */
+.dl-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.dl-search-input {
+  flex: 1;
+  max-width: 320px;
+  padding: 8px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+
+.dl-search-input:focus {
+  border-color: #555;
+}
+
+.dl-search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.dl-category-filter {
+  padding: 8px 12px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-fast);
+}
+
+.dl-category-filter:focus {
+  border-color: #555;
+}
+
+.dl-category-filter option {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* ── Export Button ────────────────────────────────────────────── */
+.dl-export-btn {
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dl-export-btn:hover {
+  color: var(--color-text-dim);
+  border-color: #444;
+  background: var(--color-surface-2);
+}
+
 /* ── Status Filter Tabs ───────────────────────────────────── */
 .dl-filter-bar {
   display: flex;
@@ -91,6 +172,7 @@
 
 .dl-table tbody tr {
   transition: background var(--transition-fast);
+  cursor: pointer;
 }
 
 .dl-table tbody tr:hover {
@@ -193,6 +275,184 @@
 .dl-summary-value.positive { color: var(--color-success); }
 .dl-summary-value.negative { color: var(--color-danger); }
 
+/* ── Monthly Trend Mini-Chart ─────────────────────────────── */
+.dl-trend-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.dl-trend-title {
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 16px;
+}
+
+.dl-trend-chart {
+  width: 100%;
+  overflow: visible;
+}
+
+.dl-trend-chart text {
+  font-family: var(--font-mono);
+}
+
+/* ── Deal Detail Slide-over Panel ─────────────────────────── */
+.deal-slideover-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+  animation: fadeIn 150ms ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+.deal-slideover-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 90vw;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  z-index: 1001;
+  overflow-y: auto;
+  padding: 32px;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.4);
+  animation: slideInRight 200ms ease;
+}
+
+.deal-slideover-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 28px;
+}
+
+.deal-slideover-brand {
+  font-size: 1.3rem;
+  font-weight: 300;
+  color: var(--color-accent);
+  letter-spacing: -0.01em;
+}
+
+.deal-slideover-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.deal-slideover-close:hover {
+  background: var(--color-surface-2);
+  color: var(--color-text);
+}
+
+.deal-slideover-field {
+  margin-bottom: 18px;
+}
+
+.deal-slideover-field-label {
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
+}
+
+.deal-slideover-field-value {
+  font-size: 0.88rem;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.deal-slideover-divider {
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  margin: 24px 0;
+}
+
+.deal-slideover-section-title {
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-dim);
+  margin-bottom: 14px;
+}
+
+.deal-slideover-revenue {
+  font-size: 1.4rem;
+  font-weight: 300;
+  color: var(--color-success);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 16px;
+}
+
+.deal-slideover-txn {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.deal-slideover-txn:last-child {
+  border-bottom: none;
+}
+
+.deal-slideover-txn-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.deal-slideover-txn-desc {
+  font-size: 0.82rem;
+  color: var(--color-text);
+}
+
+.deal-slideover-txn-amount {
+  font-size: 0.82rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.deal-slideover-txn-date {
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.deal-slideover-empty {
+  font-size: 0.82rem;
+  color: var(--color-text-muted);
+  padding: 8px 0;
+}
+
 /* ── Modal Overrides ──────────────────────────────────────── */
 .dl-modal .modal-card {
   max-width: 520px;
@@ -273,6 +533,11 @@
   .dl-table {
     min-width: 600px;
   }
+
+  .deal-slideover-panel {
+    width: 100%;
+    max-width: 100vw;
+  }
 }
 
 @media (max-width: 768px) {
@@ -290,6 +555,19 @@
     padding: 5px 10px;
     font-size: 0.68rem;
   }
+
+  .dl-search-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dl-search-input {
+    max-width: none;
+  }
+
+  .dl-header-actions {
+    flex-wrap: wrap;
+  }
 }
 </style>
 
@@ -302,7 +580,21 @@
 <div class="dl-section" id="deals-section">
   <div class="dl-section-header">
     <span class="dl-section-title">Brand Deals</span>
-    <button class="btn btn-primary" id="btn-new-deal">New Deal</button>
+    <div class="dl-header-actions">
+      <button class="dl-export-btn" id="btn-export-deals">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 9v3H2V9"/>
+          <polyline points="4 5 7 2 10 5"/>
+          <line x1="7" y1="2" x2="7" y2="10"/>
+        </svg>
+        Export
+      </button>
+      <button class="btn btn-primary" id="btn-new-deal">New Deal</button>
+    </div>
+  </div>
+
+  <div class="dl-search-bar">
+    <input type="text" class="dl-search-input" id="deal-search" placeholder="Search deals by brand name..." autocomplete="off" />
   </div>
 
   <div class="dl-filter-bar" id="deal-filters">
@@ -337,7 +629,17 @@
 <div class="dl-section" id="ledger-section">
   <div class="dl-section-header">
     <span class="dl-section-title">Financial Ledger</span>
-    <button class="btn btn-primary" id="btn-new-txn">New Transaction</button>
+    <div class="dl-header-actions">
+      <button class="dl-export-btn" id="btn-export-txn">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 9v3H2V9"/>
+          <polyline points="4 5 7 2 10 5"/>
+          <line x1="7" y1="2" x2="7" y2="10"/>
+        </svg>
+        Export
+      </button>
+      <button class="btn btn-primary" id="btn-new-txn">New Transaction</button>
+    </div>
   </div>
 
   <div class="dl-summary-bar">
@@ -353,6 +655,28 @@
       <div class="dl-summary-label">Net</div>
       <div class="dl-summary-value" id="ledger-net">$0</div>
     </div>
+  </div>
+
+  <div class="dl-trend-card">
+    <div class="dl-trend-title">Monthly Trend (Last 6 Months)</div>
+    <div id="trend-chart-container"></div>
+  </div>
+
+  <div class="dl-search-bar">
+    <input type="text" class="dl-search-input" id="txn-search" placeholder="Search transactions..." autocomplete="off" />
+    <select class="dl-category-filter" id="txn-category-filter">
+      <option value="all">All Categories</option>
+      <option value="sponsorship">Sponsorship</option>
+      <option value="ad_revenue">Ad Revenue</option>
+      <option value="merch">Merch</option>
+      <option value="freelance">Freelance</option>
+      <option value="subscription">Subscription</option>
+      <option value="equipment">Equipment</option>
+      <option value="software">Software</option>
+      <option value="travel">Travel</option>
+      <option value="contractor">Contractor</option>
+      <option value="other">Other</option>
+    </select>
   </div>
 
   <div class="dl-table-wrap">

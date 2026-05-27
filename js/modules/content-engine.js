@@ -1,14 +1,34 @@
 import { db, getCurrentUser } from '../supabase.js';
+import { showToast } from '../toast.js';
 
 /* ── Constants ────────────────────────────────────────────── */
 const STATUSES = ['idea', 'scripting', 'production', 'ready', 'posted'];
 const PLATFORMS = ['youtube', 'tiktok', 'instagram', 'twitter', 'linkedin', 'podcast', 'blog', 'other'];
 
+/** Pipeline step index (1-based) for progress indicator */
+const STATUS_STEP = { idea: 1, scripting: 2, production: 3, ready: 4, posted: 5 };
+
+/** Human-readable status labels */
+const STATUS_LABEL = {
+  idea: 'Idea',
+  scripting: 'Scripting',
+  production: 'Production',
+  ready: 'Ready',
+  posted: 'Posted',
+  archived: 'Archived',
+};
+
 /* ── State ────────────────────────────────────────────────── */
-let projects = [];
+let projects = [];          // all loaded projects (non-archived)
+let archivedProjects = [];  // archived projects (loaded on demand)
 let currentUser = null;
 let editingId = null;       // null = create, uuid = edit
 let draggedCardId = null;
+let slideoverProjectId = null;   // id of project shown in detail panel
+let searchQuery = '';
+let platformFilter = '';
+let showArchived = false;
+let searchDebounceTimer = null;
 
 /* ── Init (called by router after HTML partial is injected) ─ */
 export async function init() {
@@ -16,6 +36,9 @@ export async function init() {
 
   bindModal();
   bindDragAndDrop();
+  bindFilters();
+  bindSlideover();
+  bindKeyboardShortcuts();
   await loadProjects();
 
   // Return a cleanup function so the router can tear down listeners
@@ -38,22 +61,146 @@ async function loadProjects() {
   }
 
   renderBoard();
+  renderSummary();
+}
+
+async function loadArchivedProjects() {
+  try {
+    const { data, error } = await db
+      .from('content_projects')
+      .select('*')
+      .eq('status', 'archived')
+      .order('updated_at', { ascending: false });
+
+    if (error) throw error;
+    archivedProjects = data || [];
+  } catch {
+    archivedProjects = [];
+  }
+
+  renderArchivedSection();
+}
+
+/* ── Filtering ───────────────────────────────────────────── */
+function getFilteredProjects() {
+  let filtered = projects;
+
+  // Platform filter
+  if (platformFilter) {
+    filtered = filtered.filter(p => p.platform === platformFilter);
+  }
+
+  // Search filter (title + description)
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(p => {
+      const title = (p.title || '').toLowerCase();
+      const desc = (p.description || '').toLowerCase();
+      return title.includes(q) || desc.includes(q);
+    });
+  }
+
+  return filtered;
+}
+
+function getFilteredArchived() {
+  let filtered = archivedProjects;
+
+  if (platformFilter) {
+    filtered = filtered.filter(p => p.platform === platformFilter);
+  }
+
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(p => {
+      const title = (p.title || '').toLowerCase();
+      const desc = (p.description || '').toLowerCase();
+      return title.includes(q) || desc.includes(q);
+    });
+  }
+
+  return filtered;
+}
+
+function bindFilters() {
+  const searchInput = document.getElementById('ce-search');
+  const platformSelect = document.getElementById('ce-platform-filter');
+  const archivedToggle = document.getElementById('ce-show-archived');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        searchQuery = searchInput.value.trim();
+        renderBoard();
+        renderSummary();
+        if (showArchived) renderArchivedSection();
+      }, 300);
+    });
+  }
+
+  if (platformSelect) {
+    platformSelect.addEventListener('change', () => {
+      platformFilter = platformSelect.value;
+      renderBoard();
+      renderSummary();
+      if (showArchived) renderArchivedSection();
+    });
+  }
+
+  if (archivedToggle) {
+    archivedToggle.addEventListener('change', () => {
+      showArchived = archivedToggle.checked;
+      if (showArchived) {
+        loadArchivedProjects();
+      } else {
+        const section = document.getElementById('ce-archived-section');
+        if (section) section.style.display = 'none';
+      }
+    });
+  }
+}
+
+/* ── Summary ─────────────────────────────────────────────── */
+function renderSummary() {
+  const el = document.getElementById('ce-summary');
+  if (!el) return;
+
+  const filtered = getFilteredProjects();
+  const total = filtered.length;
+  const counts = {};
+  STATUSES.forEach(s => { counts[s] = 0; });
+  filtered.forEach(p => {
+    if (counts[p.status] !== undefined) counts[p.status]++;
+  });
+
+  const parts = [`<span>${total}</span> project${total !== 1 ? 's' : ''}`];
+  STATUSES.forEach(s => {
+    if (counts[s] > 0) {
+      const label = s === 'production' ? 'in production' : STATUS_LABEL[s].toLowerCase();
+      parts.push(`<span>${counts[s]}</span> ${label}`);
+    }
+  });
+
+  el.innerHTML = parts.join(' &middot; ');
 }
 
 /* ── Render ───────────────────────────────────────────────── */
 function renderBoard() {
+  const filtered = getFilteredProjects();
+
   STATUSES.forEach(status => {
     const container = document.querySelector(`.kanban-col-cards[data-status="${status}"]`);
     const countEl = document.querySelector(`[data-count="${status}"]`);
     if (!container) return;
 
-    const items = projects.filter(p => p.status === status);
+    const items = filtered.filter(p => p.status === status);
 
     // Update count badge
     if (countEl) countEl.textContent = items.length;
 
     if (items.length === 0) {
-      container.innerHTML = '<div class="kanban-empty">No projects</div>';
+      container.innerHTML = '<div class="kanban-empty">Drop items here</div>';
       return;
     }
 
@@ -64,14 +211,23 @@ function renderBoard() {
       card.setAttribute('draggable', 'true');
       card.addEventListener('dragstart', onDragStart);
       card.addEventListener('dragend', onDragEnd);
+
+      // Click to open detail panel (not on action buttons)
+      card.addEventListener('click', onCardClick);
     });
 
     container.querySelectorAll('[data-action="edit"]').forEach(btn => {
-      btn.addEventListener('click', () => openEditModal(btn.dataset.id));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        openEditModal(btn.dataset.id);
+      });
     });
 
     container.querySelectorAll('[data-action="delete"]').forEach(btn => {
-      btn.addEventListener('click', () => deleteProject(btn.dataset.id));
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteProject(btn.dataset.id);
+      });
     });
   });
 }
@@ -81,9 +237,11 @@ function cardHTML(project) {
   const platformLabel = project.platform
     ? escapeHtml(project.platform)
     : 'none';
+  const step = STATUS_STEP[project.status] || 1;
 
   return `
     <div class="kanban-card" data-id="${project.id}">
+      <div class="kanban-card-progress" data-step="${step}"></div>
       <div class="kanban-card-title">${escapeHtml(project.title)}</div>
       <div class="kanban-card-meta">
         <span class="kanban-card-platform ${platformClass}">${platformLabel}</span>
@@ -95,6 +253,139 @@ function cardHTML(project) {
       </div>
     </div>
   `;
+}
+
+function archivedCardHTML(project) {
+  const platformClass = project.platform ? `platform-${project.platform}` : '';
+  const platformLabel = project.platform
+    ? escapeHtml(project.platform)
+    : 'none';
+
+  return `
+    <div class="kanban-card" data-id="${project.id}" data-archived="true">
+      <div class="kanban-card-title">${escapeHtml(project.title)}</div>
+      <div class="kanban-card-meta">
+        <span class="kanban-card-platform ${platformClass}">${platformLabel}</span>
+        <span class="kanban-card-time">${relativeTime(project.updated_at)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderArchivedSection() {
+  const section = document.getElementById('ce-archived-section');
+  const grid = document.getElementById('ce-archived-grid');
+  if (!section || !grid) return;
+
+  const filtered = getFilteredArchived();
+
+  if (!showArchived || filtered.length === 0) {
+    section.style.display = showArchived ? 'block' : 'none';
+    if (showArchived && filtered.length === 0) {
+      grid.innerHTML = '<div class="kanban-empty" style="grid-column:1/-1;">No archived projects</div>';
+    }
+    return;
+  }
+
+  section.style.display = 'block';
+  grid.innerHTML = filtered.map(p => archivedCardHTML(p)).join('');
+
+  // Bind click to open slideover
+  grid.querySelectorAll('.kanban-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const id = card.dataset.id;
+      const project = archivedProjects.find(p => p.id === id);
+      if (project) openSlideover(project);
+    });
+  });
+}
+
+/* ── Card Click → Slide-over ─────────────────────────────── */
+function onCardClick(e) {
+  // Don't open slideover if user clicked an action button
+  if (e.target.closest('[data-action]')) return;
+
+  // Don't open slideover if this was a drag
+  const card = e.currentTarget;
+  const id = card.dataset.id;
+  const project = projects.find(p => p.id === id);
+  if (project) openSlideover(project);
+}
+
+/* ── Slide-over Panel ────────────────────────────────────── */
+function bindSlideover() {
+  const closeBtn = document.getElementById('ce-slideover-close');
+  const overlay = document.getElementById('ce-slideover-overlay');
+  const editBtn = document.getElementById('ce-detail-edit');
+  const deleteBtn = document.getElementById('ce-detail-delete');
+
+  if (closeBtn) closeBtn.addEventListener('click', closeSlideover);
+  if (overlay) overlay.addEventListener('click', closeSlideover);
+
+  if (editBtn) {
+    editBtn.addEventListener('click', () => {
+      if (!slideoverProjectId) return;
+      closeSlideover();
+      openEditModal(slideoverProjectId);
+    });
+  }
+
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', () => {
+      if (!slideoverProjectId) return;
+      const id = slideoverProjectId;
+      closeSlideover();
+      deleteProject(id);
+    });
+  }
+}
+
+function openSlideover(project) {
+  slideoverProjectId = project.id;
+
+  const panel = document.getElementById('ce-slideover');
+  const overlay = document.getElementById('ce-slideover-overlay');
+  if (!panel || !overlay) return;
+
+  // Populate fields
+  setText('ce-slideover-title', project.title || 'Untitled');
+  setDetailValue('ce-detail-platform', project.platform ? capitalize(project.platform) : null);
+  setDetailValue('ce-detail-status', STATUS_LABEL[project.status] || project.status);
+  setDetailValue('ce-detail-description', project.description);
+  setDetailValue('ce-detail-scheduled', project.scheduled_at ? formatDateTime(project.scheduled_at) : null);
+  setDetailValue('ce-detail-published', project.published_at ? formatDateTime(project.published_at) : null);
+  setDetailValue('ce-detail-notes', project.notes);
+  setDetailValue('ce-detail-created', project.created_at ? formatDateTime(project.created_at) : null);
+  setDetailValue('ce-detail-updated', project.updated_at ? formatDateTime(project.updated_at) : null);
+
+  // Show
+  panel.classList.add('active');
+  overlay.classList.add('active');
+}
+
+function closeSlideover() {
+  const panel = document.getElementById('ce-slideover');
+  const overlay = document.getElementById('ce-slideover-overlay');
+  if (panel) panel.classList.remove('active');
+  if (overlay) overlay.classList.remove('active');
+  slideoverProjectId = null;
+}
+
+function setDetailValue(id, value) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (value) {
+    el.textContent = value;
+    el.classList.remove('empty');
+  } else {
+    el.textContent = '--';
+    el.classList.add('empty');
+  }
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
 }
 
 /* ── Drag and Drop ────────────────────────────────────────── */
@@ -157,13 +448,22 @@ async function onDrop(e) {
   const project = projects.find(p => p.id === id);
   if (!project || project.status === newStatus) return;
 
+  const oldStatus = project.status;
+
   // Optimistic update
   project.status = newStatus;
   if (newStatus === 'posted' && !project.published_at) {
     project.published_at = new Date().toISOString();
   }
   renderBoard();
+  renderSummary();
   bindDragAndDrop();
+
+  // Toast notification
+  showToast(
+    `Moved "${truncate(project.title, 30)}" to ${STATUS_LABEL[newStatus]}`,
+    'success'
+  );
 
   try {
     const update = { status: newStatus };
@@ -178,6 +478,7 @@ async function onDrop(e) {
     if (error) throw error;
   } catch {
     // Revert on failure
+    showToast('Failed to update status. Reverting.', 'error');
     await loadProjects();
   }
 }
@@ -201,13 +502,6 @@ function bindModal() {
       if (e.target === overlay) closeModal();
     });
   }
-
-  // Close on Escape key
-  document.addEventListener('keydown', onEscapeKey);
-}
-
-function onEscapeKey(e) {
-  if (e.key === 'Escape') closeModal();
 }
 
 function openCreateModal() {
@@ -226,7 +520,8 @@ function openCreateModal() {
 }
 
 function openEditModal(id) {
-  const project = projects.find(p => p.id === id);
+  const project = projects.find(p => p.id === id)
+    || archivedProjects.find(p => p.id === id);
   if (!project) return;
 
   editingId = id;
@@ -310,7 +605,8 @@ async function handleSubmit(e) {
       // Update
       const payload = { title, description, platform, status, scheduled_at, notes };
       // Only set published_at when transitioning to posted
-      const existing = projects.find(p => p.id === editingId);
+      const existing = projects.find(p => p.id === editingId)
+        || archivedProjects.find(p => p.id === editingId);
       if (status === 'posted' && existing && existing.status !== 'posted') {
         payload.published_at = published_at;
       }
@@ -321,6 +617,7 @@ async function handleSubmit(e) {
         .eq('id', editingId);
 
       if (error) throw error;
+      showToast('Project updated', 'success');
     } else {
       // Create
       if (!currentUser) {
@@ -343,11 +640,13 @@ async function handleSubmit(e) {
         });
 
       if (error) throw error;
+      showToast('Project created', 'success');
     }
 
     closeModal();
     await loadProjects();
     bindDragAndDrop();
+    if (showArchived) await loadArchivedProjects();
   } catch (err) {
     if (errorEl) errorEl.textContent = err.message || 'Something went wrong.';
   } finally {
@@ -358,7 +657,8 @@ async function handleSubmit(e) {
 /* ── Delete ───────────────────────────────────────────────── */
 async function deleteProject(id) {
   // Simple confirmation — no third-party libs
-  const project = projects.find(p => p.id === id);
+  const project = projects.find(p => p.id === id)
+    || archivedProjects.find(p => p.id === id);
   const name = project ? project.title : 'this project';
   if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
 
@@ -371,8 +671,12 @@ async function deleteProject(id) {
     if (error) throw error;
 
     projects = projects.filter(p => p.id !== id);
+    archivedProjects = archivedProjects.filter(p => p.id !== id);
     renderBoard();
+    renderSummary();
     bindDragAndDrop();
+    if (showArchived) renderArchivedSection();
+    showToast('Project deleted', 'info');
   } catch {
     // Silently reload to stay in sync
     await loadProjects();
@@ -380,9 +684,41 @@ async function deleteProject(id) {
   }
 }
 
+/* ── Keyboard Shortcuts ──────────────────────────────────── */
+function bindKeyboardShortcuts() {
+  document.addEventListener('keydown', onGlobalKeydown);
+}
+
+function onGlobalKeydown(e) {
+  // Escape: close slideover first, then modal
+  if (e.key === 'Escape') {
+    if (slideoverProjectId !== null) {
+      closeSlideover();
+      return;
+    }
+    closeModal();
+    return;
+  }
+
+  // 'n' opens new project modal when no input is focused
+  if (e.key === 'n' && !isInputFocused()) {
+    e.preventDefault();
+    openCreateModal();
+  }
+}
+
+function isInputFocused() {
+  const active = document.activeElement;
+  if (!active) return false;
+  const tag = active.tagName.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select' || active.isContentEditable;
+}
+
 /* ── Cleanup (called by router on route change) ──────────── */
 function cleanup() {
-  document.removeEventListener('keydown', onEscapeKey);
+  document.removeEventListener('keydown', onGlobalKeydown);
+  clearTimeout(searchDebounceTimer);
+  closeSlideover();
 }
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -403,6 +739,32 @@ function relativeTime(dateStr) {
   const days = Math.floor(hrs / 24);
   if (days < 30) return `${days}d ago`;
   return `${Math.floor(days / 30)}mo ago`;
+}
+
+function formatDateTime(dateStr) {
+  if (!dateStr) return '';
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  } catch {
+    return dateStr;
+  }
+}
+
+function capitalize(str) {
+  if (!str) return '';
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function truncate(str, max) {
+  if (!str) return '';
+  return str.length > max ? str.slice(0, max) + '...' : str;
 }
 
 function getVal(id) {
