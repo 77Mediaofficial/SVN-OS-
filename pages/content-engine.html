@@ -12,13 +12,100 @@
 }
 .ce-header .btn-primary { flex-shrink: 0; margin-top: 4px; }
 
+/* Summary bar */
+.ce-summary {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  padding: 0;
+  margin: -4px 0 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.ce-summary span { color: var(--color-text-dim); }
+
+/* Search & filter bar */
+.ce-filters {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.ce-search-input {
+  flex: 1;
+  min-width: 180px;
+  max-width: 360px;
+  padding: 9px 14px 9px 36px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+.ce-search-input::placeholder { color: var(--color-text-muted); }
+.ce-search-input:focus { border-color: #555; }
+.ce-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+  max-width: 360px;
+}
+.ce-search-wrap svg {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+.ce-filter-select {
+  padding: 9px 32px 9px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  font-family: var(--font-sans);
+  outline: none;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 5L6 8L9 5' stroke='%23777' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  transition: border-color var(--transition-fast);
+}
+.ce-filter-select:focus { border-color: #555; }
+.ce-filter-select option {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.ce-toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  user-select: none;
+}
+.ce-toggle-label input[type="checkbox"] {
+  accent-color: var(--color-text-dim);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
 /* Board */
 .kanban-board {
   display: flex;
   gap: 16px;
   overflow-x: auto;
   padding-bottom: 16px;
-  min-height: calc(100vh - 240px);
+  min-height: calc(100vh - 300px);
   -webkit-overflow-scrolling: touch;
 }
 .kanban-board::-webkit-scrollbar { height: 6px; }
@@ -76,6 +163,17 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
+/* Empty column state */
+.kanban-empty {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: 32px 12px;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  opacity: 0.6;
+}
+
 /* Card */
 .kanban-card {
   background: var(--color-surface);
@@ -85,10 +183,27 @@
   cursor: grab;
   transition: border-color var(--transition-fast), opacity var(--transition-fast), transform var(--transition-fast);
   user-select: none;
+  position: relative;
 }
 .kanban-card:hover { border-color: #333; }
 .kanban-card:active { cursor: grabbing; }
 .kanban-card.dragging { opacity: 0.4; transform: scale(0.97); }
+
+/* Progress indicator bar on card */
+.kanban-card-progress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--color-text-muted);
+  transition: width var(--transition-base);
+}
+.kanban-card-progress[data-step="1"] { width: 20%; background: var(--color-text-muted); }
+.kanban-card-progress[data-step="2"] { width: 40%; background: var(--color-info); }
+.kanban-card-progress[data-step="3"] { width: 60%; background: var(--color-warning); }
+.kanban-card-progress[data-step="4"] { width: 80%; background: var(--color-success); }
+.kanban-card-progress[data-step="5"] { width: 100%; background: var(--color-success); }
 
 .kanban-card-title {
   font-size: 0.87rem;
@@ -146,15 +261,159 @@
 }
 .kanban-card-btn.danger:hover { color: var(--color-danger); }
 
-/* Empty column */
-.kanban-empty {
-  font-size: 0.75rem;
+/* Archived section */
+.ce-archived-section {
+  margin-top: 24px;
+  border-top: 1px solid var(--color-border);
+  padding-top: 20px;
+}
+.ce-archived-header {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   color: var(--color-text-muted);
-  text-align: center;
-  padding: 24px 8px;
+  margin-bottom: 12px;
+}
+.ce-archived-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 10px;
+}
+.ce-archived-grid .kanban-card {
+  cursor: pointer;
+  opacity: 0.65;
+}
+.ce-archived-grid .kanban-card:hover { opacity: 0.85; }
+
+/* ── Slide-over Detail Panel ─────────────────────────────── */
+.ce-slideover-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity var(--transition-base);
+  pointer-events: none;
+}
+.ce-slideover-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 
-/* Modal */
+.ce-slideover {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 480px;
+  max-width: 100vw;
+  background: var(--color-surface);
+  border-left: 1px solid var(--color-border);
+  z-index: 1001;
+  transform: translateX(100%);
+  transition: transform var(--transition-base);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.ce-slideover.active {
+  transform: translateX(0);
+}
+
+.ce-slideover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 24px 16px;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.ce-slideover-header h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.3;
+  flex: 1;
+  margin-right: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ce-slideover-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: color var(--transition-fast), background var(--transition-fast);
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+.ce-slideover-close:hover {
+  color: var(--color-text);
+  background: var(--color-surface-2);
+}
+
+.ce-slideover-body {
+  padding: 24px;
+  flex: 1;
+}
+
+.ce-detail-row {
+  margin-bottom: 20px;
+}
+.ce-detail-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+.ce-detail-value {
+  font-size: 0.87rem;
+  color: var(--color-text);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.ce-detail-value.empty {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.ce-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.ce-detail-timestamps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding-top: 16px;
+  margin-top: 16px;
+  border-top: 1px solid var(--color-border);
+}
+.ce-detail-timestamps .ce-detail-value {
+  font-size: 0.78rem;
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+}
+
+.ce-slideover-actions {
+  display: flex;
+  gap: 10px;
+  padding: 20px 24px;
+  border-top: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.ce-slideover-actions .btn { flex: 1; text-align: center; }
+
+/* ── Modal ────────────────────────────────────────────────── */
 .ce-modal .modal-card { max-width: 520px; }
 .ce-modal-header {
   display: flex;
@@ -243,11 +502,17 @@
 /* Responsive */
 @media (max-width: 1024px) {
   .kanban-col { flex: 0 0 260px; min-width: 260px; }
+  .ce-slideover { width: 400px; }
 }
 @media (max-width: 768px) {
   .ce-header { flex-direction: column; }
   .kanban-col { flex: 0 0 240px; min-width: 240px; }
   .ce-form-row { grid-template-columns: 1fr; }
+  .ce-slideover { width: 100vw; }
+  .ce-filters { flex-direction: column; align-items: stretch; }
+  .ce-search-wrap { max-width: none; }
+  .ce-detail-grid { grid-template-columns: 1fr; }
+  .ce-detail-timestamps { grid-template-columns: 1fr; }
 }
 </style>
 
@@ -255,6 +520,7 @@
   <div>
     <h2>Content Engine</h2>
     <p>Track your content from idea to publication</p>
+    <p class="ce-summary" id="ce-summary"></p>
   </div>
   <button class="btn btn-primary" id="ce-new-project">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
@@ -264,6 +530,34 @@
     New Project
   </button>
 </section>
+
+<!-- Search & Filter Bar -->
+<div class="ce-filters" id="ce-filters">
+  <div class="ce-search-wrap">
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+      <circle cx="7" cy="7" r="4.5"/>
+      <line x1="10.5" y1="10.5" x2="14" y2="14"/>
+    </svg>
+    <input type="text" class="ce-search-input" id="ce-search" placeholder="Search projects..." autocomplete="off" />
+  </div>
+
+  <select class="ce-filter-select" id="ce-platform-filter">
+    <option value="">All Platforms</option>
+    <option value="youtube">YouTube</option>
+    <option value="tiktok">TikTok</option>
+    <option value="instagram">Instagram</option>
+    <option value="twitter">Twitter</option>
+    <option value="linkedin">LinkedIn</option>
+    <option value="podcast">Podcast</option>
+    <option value="blog">Blog</option>
+    <option value="other">Other</option>
+  </select>
+
+  <label class="ce-toggle-label">
+    <input type="checkbox" id="ce-show-archived" />
+    Show Archived
+  </label>
+</div>
 
 <div class="kanban-board" id="kanban-board">
   <div class="kanban-col" data-status="idea">
@@ -304,6 +598,74 @@
       <span class="kanban-col-count" data-count="posted">0</span>
     </div>
     <div class="kanban-col-cards" data-status="posted"></div>
+  </div>
+</div>
+
+<!-- Archived Projects Section (hidden by default) -->
+<div class="ce-archived-section" id="ce-archived-section" style="display:none;">
+  <div class="ce-archived-header">Archived Projects</div>
+  <div class="ce-archived-grid" id="ce-archived-grid"></div>
+</div>
+
+<!-- Slide-over Detail Panel -->
+<div class="ce-slideover-overlay" id="ce-slideover-overlay"></div>
+<div class="ce-slideover" id="ce-slideover">
+  <div class="ce-slideover-header">
+    <h3 id="ce-slideover-title"></h3>
+    <button class="ce-slideover-close" id="ce-slideover-close" aria-label="Close detail panel">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <line x1="4" y1="4" x2="12" y2="12"/>
+        <line x1="12" y1="4" x2="4" y2="12"/>
+      </svg>
+    </button>
+  </div>
+  <div class="ce-slideover-body">
+    <div class="ce-detail-grid">
+      <div class="ce-detail-row">
+        <div class="ce-detail-label">Platform</div>
+        <div class="ce-detail-value" id="ce-detail-platform"></div>
+      </div>
+      <div class="ce-detail-row">
+        <div class="ce-detail-label">Status</div>
+        <div class="ce-detail-value" id="ce-detail-status"></div>
+      </div>
+    </div>
+
+    <div class="ce-detail-row">
+      <div class="ce-detail-label">Description</div>
+      <div class="ce-detail-value" id="ce-detail-description"></div>
+    </div>
+
+    <div class="ce-detail-grid">
+      <div class="ce-detail-row">
+        <div class="ce-detail-label">Scheduled</div>
+        <div class="ce-detail-value" id="ce-detail-scheduled"></div>
+      </div>
+      <div class="ce-detail-row">
+        <div class="ce-detail-label">Published</div>
+        <div class="ce-detail-value" id="ce-detail-published"></div>
+      </div>
+    </div>
+
+    <div class="ce-detail-row">
+      <div class="ce-detail-label">Notes</div>
+      <div class="ce-detail-value" id="ce-detail-notes"></div>
+    </div>
+
+    <div class="ce-detail-timestamps">
+      <div class="ce-detail-row">
+        <div class="ce-detail-label">Created</div>
+        <div class="ce-detail-value" id="ce-detail-created"></div>
+      </div>
+      <div class="ce-detail-row">
+        <div class="ce-detail-label">Updated</div>
+        <div class="ce-detail-value" id="ce-detail-updated"></div>
+      </div>
+    </div>
+  </div>
+  <div class="ce-slideover-actions">
+    <button class="btn btn-ghost" id="ce-detail-edit">Edit</button>
+    <button class="btn btn-ghost danger" id="ce-detail-delete" style="color: var(--color-danger);">Delete</button>
   </div>
 </div>
 

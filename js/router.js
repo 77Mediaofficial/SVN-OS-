@@ -3,6 +3,7 @@ const routes = {
   '/content': { page: 'content-engine', module: () => import('./modules/content-engine.js') },
   '/calendar': { page: 'calendar', module: () => import('./modules/calendar.js') },
   '/deals': { page: 'deals-ledger', module: () => import('./modules/deals-ledger.js') },
+  '/settings': { page: 'settings', module: () => import('./modules/settings.js') },
 };
 
 let currentCleanup = null;

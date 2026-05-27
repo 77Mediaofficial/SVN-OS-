@@ -1,0 +1,294 @@
+import { db, getCurrentUser, signOut } from '../supabase.js';
+import { showToast } from '../toast.js';
+
+const FONT_SIZE_KEY = 'svn-os-font-size';
+const COMPACT_KEY = 'svn-os-compact-mode';
+
+const fontSizeMap = {
+  small: '13px',
+  default: '15px',
+  large: '17px',
+};
+
+export async function init() {
+  // Apply saved preferences immediately
+  applySavedPreferences();
+
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  populateEmail(user);
+  await loadProfile(user);
+  bindProfileForm(user);
+  bindPasswordForm();
+  bindSignOut();
+  bindDeleteAccount();
+  bindAppearance();
+
+  return cleanup;
+}
+
+/* ── Helpers ──────────────────────────────────────────────────── */
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str || '';
+  return d.innerHTML;
+}
+
+function getInitials(name) {
+  if (!name) return '?';
+  return name
+    .split(' ')
+    .filter(Boolean)
+    .map(w => w[0].toUpperCase())
+    .slice(0, 2)
+    .join('');
+}
+
+/* ── Profile Loading ──────────────────────────────────────────── */
+
+function populateEmail(user) {
+  const emailInput = document.getElementById('settings-email');
+  const displayEmail = document.getElementById('settings-display-email');
+  if (emailInput) emailInput.value = user.email || '';
+  if (displayEmail) displayEmail.textContent = user.email || '';
+}
+
+async function loadProfile(user) {
+  try {
+    const { data: profile, error } = await db
+      .from('profiles')
+      .select('full_name, avatar_url, bio, website')
+      .eq('id', user.id)
+      .single();
+
+    if (error) throw error;
+    if (!profile) return;
+
+    const fullNameInput = document.getElementById('settings-fullname');
+    const bioInput = document.getElementById('settings-bio');
+    const websiteInput = document.getElementById('settings-website');
+    const avatarEl = document.getElementById('settings-avatar');
+    const displayName = document.getElementById('settings-display-name');
+
+    if (fullNameInput) fullNameInput.value = profile.full_name || '';
+    if (bioInput) bioInput.value = profile.bio || '';
+    if (websiteInput) websiteInput.value = profile.website || '';
+
+    const name = profile.full_name || user.email.split('@')[0];
+    if (displayName) displayName.textContent = escapeHtml(name);
+
+    if (avatarEl) {
+      if (profile.avatar_url) {
+        avatarEl.innerHTML = '';
+        const img = document.createElement('img');
+        img.src = profile.avatar_url;
+        img.alt = 'Avatar';
+        avatarEl.appendChild(img);
+      } else {
+        avatarEl.textContent = getInitials(name);
+      }
+    }
+  } catch (err) {
+    showToast('Failed to load profile', 'error');
+  }
+}
+
+/* ── Profile Save ─────────────────────────────────────────────── */
+
+function bindProfileForm(user) {
+  const form = document.getElementById('settings-profile-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const saveBtn = document.getElementById('settings-save-profile');
+    if (saveBtn) saveBtn.disabled = true;
+
+    const fullName = document.getElementById('settings-fullname')?.value.trim() || '';
+    const bio = document.getElementById('settings-bio')?.value.trim() || '';
+    const website = document.getElementById('settings-website')?.value.trim() || '';
+
+    try {
+      const { error } = await db
+        .from('profiles')
+        .update({
+          full_name: fullName,
+          bio: bio,
+          website: website,
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Also update auth user metadata so the nav sidebar reflects the name
+      await db.auth.updateUser({
+        data: { full_name: fullName }
+      });
+
+      // Update avatar display
+      const avatarEl = document.getElementById('settings-avatar');
+      const displayName = document.getElementById('settings-display-name');
+      if (displayName) displayName.textContent = escapeHtml(fullName || user.email.split('@')[0]);
+      if (avatarEl && !avatarEl.querySelector('img')) {
+        avatarEl.textContent = getInitials(fullName || user.email.split('@')[0]);
+      }
+
+      // Update nav sidebar
+      const navName = document.getElementById('nav-user-name');
+      const navAvatar = document.getElementById('nav-avatar');
+      if (navName) navName.textContent = fullName || user.email.split('@')[0];
+      if (navAvatar && !avatarEl?.querySelector('img')) {
+        navAvatar.textContent = getInitials(fullName || user.email.split('@')[0]);
+      }
+
+      showToast('Profile saved', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to save profile', 'error');
+    } finally {
+      if (saveBtn) saveBtn.disabled = false;
+    }
+  });
+}
+
+/* ── Password Change ──────────────────────────────────────────── */
+
+function bindPasswordForm() {
+  const form = document.getElementById('settings-password-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const changeBtn = document.getElementById('settings-change-pw');
+    if (changeBtn) changeBtn.disabled = true;
+
+    const currentPw = document.getElementById('settings-current-pw')?.value || '';
+    const newPw = document.getElementById('settings-new-pw')?.value || '';
+    const confirmPw = document.getElementById('settings-confirm-pw')?.value || '';
+
+    if (!currentPw || !newPw || !confirmPw) {
+      showToast('Please fill in all password fields', 'warning');
+      if (changeBtn) changeBtn.disabled = false;
+      return;
+    }
+
+    if (newPw.length < 6) {
+      showToast('New password must be at least 6 characters', 'warning');
+      if (changeBtn) changeBtn.disabled = false;
+      return;
+    }
+
+    if (newPw !== confirmPw) {
+      showToast('New passwords do not match', 'warning');
+      if (changeBtn) changeBtn.disabled = false;
+      return;
+    }
+
+    try {
+      const { error } = await db.auth.updateUser({ password: newPw });
+      if (error) throw error;
+
+      // Clear form
+      document.getElementById('settings-current-pw').value = '';
+      document.getElementById('settings-new-pw').value = '';
+      document.getElementById('settings-confirm-pw').value = '';
+
+      showToast('Password updated', 'success');
+    } catch (err) {
+      showToast(err.message || 'Failed to update password', 'error');
+    } finally {
+      if (changeBtn) changeBtn.disabled = false;
+    }
+  });
+}
+
+/* ── Sign Out ─────────────────────────────────────────────────── */
+
+function bindSignOut() {
+  const btn = document.getElementById('settings-signout');
+  if (!btn) return;
+
+  btn.addEventListener('click', async () => {
+    const confirmed = window.confirm('Are you sure you want to sign out?');
+    if (!confirmed) return;
+
+    try {
+      await signOut();
+      window.location.reload();
+    } catch (err) {
+      showToast(err.message || 'Failed to sign out', 'error');
+    }
+  });
+}
+
+/* ── Delete Account ───────────────────────────────────────────── */
+
+function bindDeleteAccount() {
+  const btn = document.getElementById('settings-delete-account');
+  if (!btn) return;
+
+  btn.addEventListener('click', () => {
+    showToast('Account deletion is not yet available. Contact support to delete your account.', 'warning');
+  });
+}
+
+/* ── Appearance ───────────────────────────────────────────────── */
+
+function bindAppearance() {
+  const fontSelect = document.getElementById('settings-fontsize');
+  const compactToggle = document.getElementById('settings-compact');
+
+  // Restore saved values into the controls
+  const savedFontSize = localStorage.getItem(FONT_SIZE_KEY) || 'default';
+  const savedCompact = localStorage.getItem(COMPACT_KEY) === 'true';
+
+  if (fontSelect) {
+    fontSelect.value = savedFontSize;
+    fontSelect.addEventListener('change', () => {
+      const size = fontSelect.value;
+      localStorage.setItem(FONT_SIZE_KEY, size);
+      applyFontSize(size);
+      showToast('Font size updated', 'info');
+    });
+  }
+
+  if (compactToggle) {
+    compactToggle.checked = savedCompact;
+    compactToggle.addEventListener('change', () => {
+      const compact = compactToggle.checked;
+      localStorage.setItem(COMPACT_KEY, String(compact));
+      applyCompactMode(compact);
+      showToast(compact ? 'Compact mode enabled' : 'Compact mode disabled', 'info');
+    });
+  }
+}
+
+function applyFontSize(size) {
+  const px = fontSizeMap[size] || fontSizeMap.default;
+  document.documentElement.style.fontSize = px;
+}
+
+function applyCompactMode(enabled) {
+  document.body.classList.toggle('compact-mode', enabled);
+}
+
+function applySavedPreferences() {
+  const savedFontSize = localStorage.getItem(FONT_SIZE_KEY);
+  if (savedFontSize && fontSizeMap[savedFontSize]) {
+    applyFontSize(savedFontSize);
+  }
+
+  const savedCompact = localStorage.getItem(COMPACT_KEY) === 'true';
+  if (savedCompact) {
+    applyCompactMode(true);
+  }
+}
+
+/* ── Cleanup ──────────────────────────────────────────────────── */
+
+function cleanup() {
+  // No persistent listeners outside the page partial to clean up
+}
