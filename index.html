@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SVN OS — Creator Dashboard</title>
+  <link rel="stylesheet" href="/css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+
+    <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle navigation">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <line x1="3" y1="5" x2="17" y2="5"/>
+        <line x1="3" y1="10" x2="17" y2="10"/>
+        <line x1="3" y1="15" x2="17" y2="15"/>
+      </svg>
+    </button>
+
+    <nav class="app-nav" id="app-nav">
+      <div class="nav-brand">
+        <h1>SVN OS</h1>
+        <span>Creator Dashboard</span>
+      </div>
+
+      <div class="nav-section">
+        <div class="nav-section-label">Workspace</div>
+
+        <a class="nav-link active" data-route="/">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+            <path d="M9 21V12h6v9"/>
+          </svg>
+          Dashboard
+        </a>
+
+        <a class="nav-link" data-route="/content">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="9" rx="1"/>
+            <rect x="14" y="3" width="7" height="5" rx="1"/>
+            <rect x="14" y="12" width="7" height="9" rx="1"/>
+            <rect x="3" y="16" width="7" height="5" rx="1"/>
+          </svg>
+          Content Engine
+        </a>
+
+        <a class="nav-link" data-route="/calendar">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+          Calendar
+        </a>
+
+        <a class="nav-link" data-route="/deals">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/>
+            <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>
+          </svg>
+          Deals & Ledger
+        </a>
+      </div>
+
+      <div class="nav-footer">
+        <div class="nav-user" id="nav-user">
+          <div class="nav-avatar" id="nav-avatar">?</div>
+          <div class="nav-user-info">
+            <div class="nav-user-name" id="nav-user-name">Not signed in</div>
+            <div class="nav-user-email" id="nav-user-email"></div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="app-main" id="app-outlet">
+      <div class="empty-state">Loading...</div>
+    </main>
+
+  </div>
+
+  <script type="module">
+    import { initRouter } from '/js/router.js';
+    import { onAuthStateChange } from '/js/auth.js';
+
+    document.getElementById('mobile-toggle').addEventListener('click', () => {
+      document.getElementById('app-nav').classList.toggle('open');
+    });
+
+    document.getElementById('app-outlet').addEventListener('click', () => {
+      document.getElementById('app-nav').classList.remove('open');
+    });
+
+    onAuthStateChange((event, session) => {
+      const nameEl = document.getElementById('nav-user-name');
+      const emailEl = document.getElementById('nav-user-email');
+      const avatarEl = document.getElementById('nav-avatar');
+
+      if (session?.user) {
+        const meta = session.user.user_metadata || {};
+        const name = meta.full_name || session.user.email.split('@')[0];
+        nameEl.textContent = name;
+        emailEl.textContent = session.user.email;
+        avatarEl.textContent = name.charAt(0).toUpperCase();
+      } else {
+        nameEl.textContent = 'Not signed in';
+        emailEl.textContent = '';
+        avatarEl.textContent = '?';
+      }
+    });
+
+    initRouter();
+  </script>
+</body>
+</html>

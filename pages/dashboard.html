@@ -1,0 +1,50 @@
+<section class="page-header">
+  <h2>Dashboard</h2>
+  <p>Your creator business at a glance</p>
+</section>
+
+<div class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-label">Monthly Revenue</div>
+    <div class="metric-value positive" id="metric-revenue">$0</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Monthly Expenses</div>
+    <div class="metric-value" id="metric-expenses">$0</div>
+  </div>
+  <div class="metric-card">
+    <div class="metric-label">Net Income</div>
+    <div class="metric-value" id="metric-net">$0</div>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Action Items</span>
+      <button class="btn btn-ghost" data-route="/content">View All</button>
+    </div>
+    <ul id="action-items">
+      <li class="empty-state">Loading projects...</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Content Pipeline</span>
+    </div>
+    <div id="pipeline-bars">
+      <p class="empty-state">Loading pipeline...</p>
+    </div>
+  </div>
+
+  <div class="card" style="grid-column: 1 / -1;">
+    <div class="card-header">
+      <span class="card-title">Recent Deals</span>
+      <button class="btn btn-ghost" data-route="/deals">View All</button>
+    </div>
+    <ul id="recent-deals">
+      <li class="empty-state">Loading deals...</li>
+    </ul>
+  </div>
+</div>
