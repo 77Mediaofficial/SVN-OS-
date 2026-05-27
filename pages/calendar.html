@@ -1,7 +1,362 @@
+<style>
+  /* ── Calendar Layout ──────────────────────────────────────── */
+  .calendar-controls {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .calendar-nav-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-dim);
+    background: var(--color-surface);
+    transition: all var(--transition-fast);
+    flex-shrink: 0;
+  }
+
+  .calendar-nav-btn:hover {
+    color: var(--color-text);
+    border-color: #444;
+    background: var(--color-surface-2);
+  }
+
+  .calendar-month-label {
+    font-size: 1.15rem;
+    font-weight: 300;
+    letter-spacing: -0.01em;
+    color: var(--color-accent);
+    min-width: 200px;
+    text-align: center;
+  }
+
+  .calendar-today-btn {
+    margin-left: auto;
+  }
+
+  /* ── Calendar Grid ────────────────────────────────────────── */
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--color-surface);
+  }
+
+  .calendar-dow {
+    padding: 12px 8px;
+    text-align: center;
+    font-size: 0.68rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .calendar-cell {
+    min-height: 110px;
+    padding: 8px;
+    border-bottom: 1px solid var(--color-border-subtle);
+    border-right: 1px solid var(--color-border-subtle);
+    background: var(--color-surface);
+    transition: background var(--transition-fast);
+    cursor: pointer;
+    position: relative;
+  }
+
+  .calendar-cell:nth-child(7n) {
+    border-right: none;
+  }
+
+  .calendar-cell:hover {
+    background: var(--color-surface-2);
+  }
+
+  .calendar-cell.outside {
+    background: var(--color-bg);
+    cursor: default;
+  }
+
+  .calendar-cell.outside:hover {
+    background: var(--color-bg);
+  }
+
+  .calendar-cell.outside .calendar-day-num {
+    color: var(--color-text-muted);
+    opacity: 0.4;
+  }
+
+  .calendar-cell.today {
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  }
+
+  .calendar-cell.today .calendar-day-num {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .calendar-day-num {
+    font-size: 0.78rem;
+    font-weight: 400;
+    color: var(--color-text-dim);
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Content Pills ────────────────────────────────────────── */
+  .calendar-items {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .calendar-pill {
+    display: block;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 0.62rem;
+    font-weight: 500;
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #fff;
+    transition: opacity var(--transition-fast);
+  }
+
+  .calendar-pill:hover {
+    opacity: 0.8;
+  }
+
+  .calendar-pill[data-platform="youtube"]   { background: rgba(255, 0, 0, 0.25);   color: #ff4444; }
+  .calendar-pill[data-platform="tiktok"]    { background: rgba(0, 242, 234, 0.15);  color: #00f2ea; }
+  .calendar-pill[data-platform="instagram"] { background: rgba(225, 48, 108, 0.2);  color: #e1306c; }
+  .calendar-pill[data-platform="twitter"]   { background: rgba(29, 161, 242, 0.2);  color: #1da1f2; }
+  .calendar-pill[data-platform="linkedin"]  { background: rgba(0, 119, 181, 0.2);   color: #0077b5; }
+  .calendar-pill[data-platform="podcast"]   { background: rgba(155, 89, 182, 0.2);  color: #9b59b6; }
+  .calendar-pill[data-platform="blog"]      { background: rgba(46, 204, 113, 0.2);  color: #2ecc71; }
+  .calendar-pill[data-platform="other"]     { background: rgba(119, 119, 119, 0.2); color: #999; }
+
+  .calendar-overflow {
+    font-size: 0.6rem;
+    color: var(--color-text-muted);
+    padding: 2px 6px;
+    cursor: pointer;
+  }
+
+  .calendar-overflow:hover {
+    color: var(--color-text-dim);
+  }
+
+  /* ── Day Detail Panel ─────────────────────────────────────── */
+  .day-detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 150ms ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .day-detail-panel {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-elevated);
+  }
+
+  .day-detail-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+  }
+
+  .day-detail-title {
+    font-size: 1.1rem;
+    font-weight: 300;
+    color: var(--color-accent);
+  }
+
+  .day-detail-close {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-dim);
+    transition: all var(--transition-fast);
+  }
+
+  .day-detail-close:hover {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+
+  .day-detail-item {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .day-detail-item:last-child {
+    border-bottom: none;
+  }
+
+  .day-detail-item-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .day-detail-platform {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .day-detail-platform[data-platform="youtube"]   { background: rgba(255, 0, 0, 0.25);   color: #ff4444; }
+  .day-detail-platform[data-platform="tiktok"]    { background: rgba(0, 242, 234, 0.15);  color: #00f2ea; }
+  .day-detail-platform[data-platform="instagram"] { background: rgba(225, 48, 108, 0.2);  color: #e1306c; }
+  .day-detail-platform[data-platform="twitter"]   { background: rgba(29, 161, 242, 0.2);  color: #1da1f2; }
+  .day-detail-platform[data-platform="linkedin"]  { background: rgba(0, 119, 181, 0.2);   color: #0077b5; }
+  .day-detail-platform[data-platform="podcast"]   { background: rgba(155, 89, 182, 0.2);  color: #9b59b6; }
+  .day-detail-platform[data-platform="blog"]      { background: rgba(46, 204, 113, 0.2);  color: #2ecc71; }
+  .day-detail-platform[data-platform="other"]     { background: rgba(119, 119, 119, 0.2); color: #999; }
+
+  .day-detail-status {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+  }
+
+  .day-detail-item-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text);
+  }
+
+  .day-detail-item-desc {
+    font-size: 0.78rem;
+    color: var(--color-text-dim);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .day-detail-item-time {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    margin-top: 6px;
+  }
+
+  .day-detail-empty {
+    color: var(--color-text-muted);
+    font-size: 0.85rem;
+    padding: 16px 0;
+    text-align: center;
+  }
+
+  /* ── Responsive ───────────────────────────────────────────── */
+  @media (max-width: 1024px) {
+    .calendar-cell {
+      min-height: 90px;
+      padding: 6px;
+    }
+
+    .calendar-pill {
+      font-size: 0.58rem;
+      padding: 2px 5px;
+    }
+
+    .calendar-day-num {
+      font-size: 0.72rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .calendar-cell {
+      min-height: 60px;
+      padding: 4px;
+    }
+
+    .calendar-dow {
+      padding: 8px 4px;
+      font-size: 0.6rem;
+    }
+
+    .calendar-pill {
+      font-size: 0.52rem;
+      padding: 2px 4px;
+    }
+
+    .calendar-month-label {
+      font-size: 0.95rem;
+      min-width: 160px;
+    }
+
+    .day-detail-panel {
+      margin: 16px;
+      padding: 24px;
+    }
+  }
+</style>
+
 <section class="page-header">
   <h2>Posting Calendar</h2>
   <p>Scheduled content across all platforms</p>
 </section>
-<div class="empty-state">
-  <p>Calendar view coming soon.</p>
+
+<div class="calendar-controls">
+  <button class="calendar-nav-btn" id="cal-prev" aria-label="Previous month">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="10 12 6 8 10 4"/>
+    </svg>
+  </button>
+  <div class="calendar-month-label" id="cal-month-label"></div>
+  <button class="calendar-nav-btn" id="cal-next" aria-label="Next month">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="6 4 10 8 6 12"/>
+    </svg>
+  </button>
+  <button class="btn btn-ghost calendar-today-btn" id="cal-today">Today</button>
+</div>
+
+<div class="calendar-grid" id="cal-grid">
+  <div class="calendar-dow">Sun</div>
+  <div class="calendar-dow">Mon</div>
+  <div class="calendar-dow">Tue</div>
+  <div class="calendar-dow">Wed</div>
+  <div class="calendar-dow">Thu</div>
+  <div class="calendar-dow">Fri</div>
+  <div class="calendar-dow">Sat</div>
 </div>

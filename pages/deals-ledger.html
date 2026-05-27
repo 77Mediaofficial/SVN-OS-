@@ -1,7 +1,494 @@
+<style>
+/* ── Deals & Ledger Page Styles ─────────────────────────────── */
+.dl-section {
+  margin-bottom: 40px;
+}
+
+.dl-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.dl-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-dim);
+}
+
+/* ── Status Filter Tabs ───────────────────────────────────── */
+.dl-filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.dl-filter-btn {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.dl-filter-btn:hover {
+  color: var(--color-text-dim);
+  border-color: #444;
+}
+
+.dl-filter-btn.active {
+  color: var(--color-bg);
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+/* ── Deals Table ──────────────────────────────────────────── */
+.dl-table-wrap {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.dl-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dl-table thead th {
+  padding: 12px 16px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  text-align: left;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.dl-table tbody td {
+  padding: 14px 16px;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--color-border-subtle);
+  vertical-align: middle;
+}
+
+.dl-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.dl-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.dl-table tbody tr:hover {
+  background: var(--color-surface-2);
+}
+
+.dl-table .col-actions {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.dl-table .col-value,
+.dl-table .col-amount {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.dl-table .col-date {
+  color: var(--color-text-dim);
+  white-space: nowrap;
+}
+
+/* ── Row Action Buttons ───────────────────────────────────── */
+.dl-row-btn {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.dl-row-btn:hover {
+  color: var(--color-text-dim);
+  border-color: var(--color-border);
+}
+
+.dl-row-btn.danger:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+/* ── Type Badge (Income / Expense) ────────────────────────── */
+.badge-income {
+  background: #0d2818;
+  color: var(--color-success);
+}
+
+.badge-expense {
+  background: #1f1215;
+  color: var(--color-danger);
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+}
+
+/* ── Ledger Summary Bar ───────────────────────────────────── */
+.dl-summary-bar {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dl-summary-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 20px 24px;
+}
+
+.dl-summary-label {
+  font-size: 0.68rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+
+.dl-summary-value {
+  font-size: 1.6rem;
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-accent);
+}
+
+.dl-summary-value.positive { color: var(--color-success); }
+.dl-summary-value.negative { color: var(--color-danger); }
+
+/* ── Modal Overrides ──────────────────────────────────────── */
+.dl-modal .modal-card {
+  max-width: 520px;
+}
+
+.dl-modal .modal-card h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.dl-modal .modal-subtitle {
+  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  margin-bottom: 24px;
+}
+
+.dl-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.dl-modal .form-group select,
+.dl-modal .form-group textarea {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: 0.87rem;
+  transition: border-color var(--transition-fast);
+  outline: none;
+  font-family: var(--font-sans);
+}
+
+.dl-modal .form-group select:focus,
+.dl-modal .form-group textarea:focus {
+  border-color: #555;
+}
+
+.dl-modal .form-group textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.dl-modal .form-group select option {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.dl-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 24px;
+}
+
+.dl-modal-actions .btn {
+  min-width: 100px;
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .dl-summary-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .dl-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .dl-table-wrap {
+    overflow-x: auto;
+  }
+
+  .dl-table {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dl-section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dl-filter-bar {
+    gap: 4px;
+  }
+
+  .dl-filter-btn {
+    padding: 5px 10px;
+    font-size: 0.68rem;
+  }
+}
+</style>
+
 <section class="page-header">
   <h2>Deals & Ledger</h2>
   <p>Brand partnerships and financial tracking</p>
 </section>
-<div class="empty-state">
-  <p>Deals management coming soon.</p>
+
+<!-- ── DEALS SECTION ────────────────────────────────────────── -->
+<div class="dl-section" id="deals-section">
+  <div class="dl-section-header">
+    <span class="dl-section-title">Brand Deals</span>
+    <button class="btn btn-primary" id="btn-new-deal">New Deal</button>
+  </div>
+
+  <div class="dl-filter-bar" id="deal-filters">
+    <button class="dl-filter-btn active" data-status="all">All</button>
+    <button class="dl-filter-btn" data-status="lead">Lead</button>
+    <button class="dl-filter-btn" data-status="negotiating">Negotiating</button>
+    <button class="dl-filter-btn" data-status="signed">Signed</button>
+    <button class="dl-filter-btn" data-status="in_progress">In Progress</button>
+    <button class="dl-filter-btn" data-status="completed">Completed</button>
+    <button class="dl-filter-btn" data-status="lost">Lost</button>
+  </div>
+
+  <div class="dl-table-wrap">
+    <table class="dl-table" id="deals-table">
+      <thead>
+        <tr>
+          <th>Brand</th>
+          <th>Status</th>
+          <th>Value</th>
+          <th>Deadline</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody id="deals-tbody">
+        <tr><td colspan="5" class="empty-state">Loading deals...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── LEDGER SECTION ───────────────────────────────────────── -->
+<div class="dl-section" id="ledger-section">
+  <div class="dl-section-header">
+    <span class="dl-section-title">Financial Ledger</span>
+    <button class="btn btn-primary" id="btn-new-txn">New Transaction</button>
+  </div>
+
+  <div class="dl-summary-bar">
+    <div class="dl-summary-card">
+      <div class="dl-summary-label">Total Income</div>
+      <div class="dl-summary-value positive" id="ledger-income">$0</div>
+    </div>
+    <div class="dl-summary-card">
+      <div class="dl-summary-label">Total Expenses</div>
+      <div class="dl-summary-value" id="ledger-expenses">$0</div>
+    </div>
+    <div class="dl-summary-card">
+      <div class="dl-summary-label">Net</div>
+      <div class="dl-summary-value" id="ledger-net">$0</div>
+    </div>
+  </div>
+
+  <div class="dl-table-wrap">
+    <table class="dl-table" id="txn-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Description</th>
+          <th>Category</th>
+          <th>Type</th>
+          <th>Amount</th>
+          <th class="col-actions"></th>
+        </tr>
+      </thead>
+      <tbody id="txn-tbody">
+        <tr><td colspan="6" class="empty-state">Loading transactions...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── DEAL MODAL ───────────────────────────────────────────── -->
+<div class="modal-overlay dl-modal" id="deal-modal" style="display:none;">
+  <div class="modal-card">
+    <h2 id="deal-modal-title">New Deal</h2>
+    <p class="modal-subtitle" id="deal-modal-subtitle">Add a brand partnership</p>
+    <form id="deal-form">
+      <input type="hidden" id="deal-id" />
+      <div class="form-group">
+        <label for="deal-brand-name">Brand Name</label>
+        <input type="text" id="deal-brand-name" required placeholder="Acme Corp" />
+      </div>
+      <div class="dl-form-row">
+        <div class="form-group">
+          <label for="deal-contact-name">Contact Name</label>
+          <input type="text" id="deal-contact-name" placeholder="Jane Smith" />
+        </div>
+        <div class="form-group">
+          <label for="deal-contact-email">Contact Email</label>
+          <input type="email" id="deal-contact-email" placeholder="jane@acme.com" />
+        </div>
+      </div>
+      <div class="dl-form-row">
+        <div class="form-group">
+          <label for="deal-status">Status</label>
+          <select id="deal-status">
+            <option value="lead">Lead</option>
+            <option value="negotiating">Negotiating</option>
+            <option value="signed">Signed</option>
+            <option value="in_progress">In Progress</option>
+            <option value="completed">Completed</option>
+            <option value="lost">Lost</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="deal-value">Value (USD)</label>
+          <input type="number" id="deal-value" min="0" step="0.01" placeholder="5000" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="deal-deadline">Deadline</label>
+        <input type="date" id="deal-deadline" />
+      </div>
+      <div class="form-group">
+        <label for="deal-deliverables">Deliverables</label>
+        <textarea id="deal-deliverables" placeholder="2 YouTube videos, 3 Instagram stories"></textarea>
+      </div>
+      <div class="form-group">
+        <label for="deal-notes">Notes</label>
+        <textarea id="deal-notes" placeholder="Additional details..."></textarea>
+      </div>
+      <p class="auth-error" id="deal-error"></p>
+      <div class="dl-modal-actions">
+        <button type="button" class="btn btn-ghost" id="deal-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="deal-submit">Save Deal</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ── TRANSACTION MODAL ────────────────────────────────────── -->
+<div class="modal-overlay dl-modal" id="txn-modal" style="display:none;">
+  <div class="modal-card">
+    <h2 id="txn-modal-title">New Transaction</h2>
+    <p class="modal-subtitle" id="txn-modal-subtitle">Record income or expense</p>
+    <form id="txn-form">
+      <input type="hidden" id="txn-id" />
+      <div class="dl-form-row">
+        <div class="form-group">
+          <label for="txn-type">Type</label>
+          <select id="txn-type" required>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="txn-category">Category</label>
+          <select id="txn-category" required>
+            <option value="sponsorship">Sponsorship</option>
+            <option value="ad_revenue">Ad Revenue</option>
+            <option value="merch">Merch</option>
+            <option value="freelance">Freelance</option>
+            <option value="subscription">Subscription</option>
+            <option value="equipment">Equipment</option>
+            <option value="software">Software</option>
+            <option value="travel">Travel</option>
+            <option value="contractor">Contractor</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="dl-form-row">
+        <div class="form-group">
+          <label for="txn-amount">Amount (USD)</label>
+          <input type="number" id="txn-amount" required min="0.01" step="0.01" placeholder="1000" />
+        </div>
+        <div class="form-group">
+          <label for="txn-date">Date</label>
+          <input type="date" id="txn-date" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="txn-description">Description</label>
+        <input type="text" id="txn-description" placeholder="YouTube sponsorship payment" />
+      </div>
+      <div class="form-group">
+        <label for="txn-deal">Linked Deal (optional)</label>
+        <select id="txn-deal">
+          <option value="">None</option>
+        </select>
+      </div>
+      <p class="auth-error" id="txn-error"></p>
+      <div class="dl-modal-actions">
+        <button type="button" class="btn btn-ghost" id="txn-cancel">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="txn-submit">Save Transaction</button>
+      </div>
+    </form>
+  </div>
 </div>
