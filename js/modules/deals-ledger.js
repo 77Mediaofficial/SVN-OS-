@@ -118,7 +118,9 @@ function renderDeals() {
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No deals found. Click "New Deal" to get started.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-cta"><h3>No brand deals yet</h3><p>Start building your partnership pipeline. Track every brand deal from first contact to final payment.</p><button class="btn btn-primary" id="empty-new-deal">Add Your First Deal</button></div></td></tr>`;
+    const emptyDealBtn = document.getElementById('empty-new-deal');
+    if (emptyDealBtn) emptyDealBtn.addEventListener('click', () => { resetDealForm(); openModal('deal-modal'); });
     return;
   }
 
@@ -217,7 +219,9 @@ function renderTransactions() {
   }
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No transactions yet. Click "New Transaction" to add one.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6"><div class="empty-cta"><h3>No transactions recorded</h3><p>Start tracking your creator income and expenses. Every dollar counts when you are building a business.</p><button class="btn btn-primary" id="empty-new-txn">Log Your First Transaction</button></div></td></tr>`;
+    const emptyTxnBtn = document.getElementById('empty-new-txn');
+    if (emptyTxnBtn) emptyTxnBtn.addEventListener('click', () => { resetTxnForm(); openModal('txn-modal'); });
     return;
   }
 
