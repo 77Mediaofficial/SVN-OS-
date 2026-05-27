@@ -577,15 +577,24 @@
   <button class="calendar-chip" data-platform="other">Other</button>
 </div>
 
-<div class="calendar-grid has-week-nums" id="cal-grid">
-  <div class="calendar-week-header">Wk</div>
-  <div class="calendar-dow">Sun</div>
-  <div class="calendar-dow">Mon</div>
-  <div class="calendar-dow">Tue</div>
-  <div class="calendar-dow">Wed</div>
-  <div class="calendar-dow">Thu</div>
-  <div class="calendar-dow">Fri</div>
-  <div class="calendar-dow">Sat</div>
+<div class="calendar-grid-wrapper">
+  <div class="calendar-empty-overlay" id="cal-empty-overlay" style="display:none;">
+    <div class="empty-cta">
+      <h3>Nothing scheduled this month</h3>
+      <p>Your calendar is wide open. Head to the Content Engine to schedule some content.</p>
+      <button class="btn btn-primary" data-route="/content">Go to Content Engine</button>
+    </div>
+  </div>
+  <div class="calendar-grid has-week-nums" id="cal-grid">
+    <div class="calendar-week-header">Wk</div>
+    <div class="calendar-dow">Sun</div>
+    <div class="calendar-dow">Mon</div>
+    <div class="calendar-dow">Tue</div>
+    <div class="calendar-dow">Wed</div>
+    <div class="calendar-dow">Thu</div>
+    <div class="calendar-dow">Fri</div>
+    <div class="calendar-dow">Sat</div>
+  </div>
 </div>
 
 <div class="calendar-legend" id="cal-legend">
