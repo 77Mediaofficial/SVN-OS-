@@ -4,7 +4,7 @@
     display: flex;
     align-items: center;
     gap: 16px;
-    margin-bottom: 28px;
+    margin-bottom: 16px;
   }
 
   .calendar-nav-btn {
@@ -34,11 +34,78 @@
     color: var(--color-accent);
     min-width: 200px;
     text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .calendar-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--color-text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .calendar-count-badge:empty {
+    display: none;
   }
 
   .calendar-today-btn {
     margin-left: auto;
   }
+
+  /* ── Platform Filter Chips ────────────────────────────────── */
+  .calendar-platform-filters {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .calendar-chip {
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 0.68rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-text-muted);
+    border: 1px solid var(--color-border);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+  }
+
+  .calendar-chip:hover {
+    color: var(--color-text-dim);
+    border-color: #444;
+  }
+
+  .calendar-chip.active {
+    color: var(--color-bg);
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+  }
+
+  .calendar-chip[data-platform="youtube"].active   { background: #ff4444; border-color: #ff4444; color: #fff; }
+  .calendar-chip[data-platform="tiktok"].active    { background: #00f2ea; border-color: #00f2ea; color: #000; }
+  .calendar-chip[data-platform="instagram"].active { background: #e1306c; border-color: #e1306c; color: #fff; }
+  .calendar-chip[data-platform="twitter"].active   { background: #1da1f2; border-color: #1da1f2; color: #fff; }
+  .calendar-chip[data-platform="linkedin"].active  { background: #0077b5; border-color: #0077b5; color: #fff; }
+  .calendar-chip[data-platform="podcast"].active   { background: #9b59b6; border-color: #9b59b6; color: #fff; }
+  .calendar-chip[data-platform="blog"].active      { background: #2ecc71; border-color: #2ecc71; color: #000; }
+  .calendar-chip[data-platform="other"].active     { background: #777; border-color: #777; color: #fff; }
 
   /* ── Calendar Grid ────────────────────────────────────────── */
   .calendar-grid {
@@ -48,6 +115,10 @@
     border-radius: var(--radius-md);
     overflow: hidden;
     background: var(--color-surface);
+  }
+
+  .calendar-grid.has-week-nums {
+    grid-template-columns: 36px repeat(7, 1fr);
   }
 
   .calendar-dow {
@@ -62,6 +133,34 @@
     border-bottom: 1px solid var(--color-border);
   }
 
+  .calendar-week-header {
+    padding: 12px 4px;
+    text-align: center;
+    font-size: 0.58rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    opacity: 0.5;
+  }
+
+  .calendar-week-num {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 8px 4px;
+    font-size: 0.6rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    opacity: 0.4;
+    border-bottom: 1px solid var(--color-border-subtle);
+    border-right: 1px solid var(--color-border-subtle);
+    font-variant-numeric: tabular-nums;
+    background: var(--color-bg);
+  }
+
   .calendar-cell {
     min-height: 110px;
     padding: 8px;
@@ -73,8 +172,8 @@
     position: relative;
   }
 
-  .calendar-cell:nth-child(7n) {
-    border-right: none;
+  .calendar-grid.has-week-nums .calendar-cell:nth-child(8n+1) {
+    /* week num column handled separately */
   }
 
   .calendar-cell:hover {
@@ -130,6 +229,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     color: #fff;
+    cursor: pointer;
     transition: opacity var(--transition-fast);
   }
 
@@ -155,6 +255,30 @@
 
   .calendar-overflow:hover {
     color: var(--color-text-dim);
+  }
+
+  /* ── Platform Legend ───────────────────────────────────────── */
+  .calendar-legend {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+
+  .calendar-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+  }
+
+  .calendar-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
   }
 
   /* ── Day Detail Panel ─────────────────────────────────────── */
@@ -209,6 +333,9 @@
     border-radius: var(--radius-sm);
     color: var(--color-text-dim);
     transition: all var(--transition-fast);
+    background: transparent;
+    border: none;
+    cursor: pointer;
   }
 
   .day-detail-close:hover {
@@ -219,6 +346,12 @@
   .day-detail-item {
     padding: 14px 0;
     border-bottom: 1px solid var(--color-border-subtle);
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+  }
+
+  .day-detail-item:hover {
+    opacity: 0.8;
   }
 
   .day-detail-item:last-child {
@@ -286,6 +419,14 @@
     text-align: center;
   }
 
+  .day-detail-edit-hint {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    margin-top: 12px;
+    opacity: 0.6;
+  }
+
   /* ── Responsive ───────────────────────────────────────────── */
   @media (max-width: 1024px) {
     .calendar-cell {
@@ -300,6 +441,14 @@
 
     .calendar-day-num {
       font-size: 0.72rem;
+    }
+
+    .calendar-grid.has-week-nums {
+      grid-template-columns: 28px repeat(7, 1fr);
+    }
+
+    .calendar-week-num {
+      font-size: 0.52rem;
     }
   }
 
@@ -328,6 +477,23 @@
       margin: 16px;
       padding: 24px;
     }
+
+    .calendar-grid.has-week-nums {
+      grid-template-columns: 24px repeat(7, 1fr);
+    }
+
+    .calendar-week-num {
+      font-size: 0.48rem;
+      padding: 4px 2px;
+    }
+
+    .calendar-legend {
+      gap: 10px;
+    }
+
+    .calendar-legend-item {
+      font-size: 0.6rem;
+    }
   }
 </style>
 
@@ -342,7 +508,10 @@
       <polyline points="10 12 6 8 10 4"/>
     </svg>
   </button>
-  <div class="calendar-month-label" id="cal-month-label"></div>
+  <div class="calendar-month-label" id="cal-month-label">
+    <span id="cal-month-text"></span>
+    <span class="calendar-count-badge" id="cal-count-badge"></span>
+  </div>
   <button class="calendar-nav-btn" id="cal-next" aria-label="Next month">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="6 4 10 8 6 12"/>
@@ -351,7 +520,20 @@
   <button class="btn btn-ghost calendar-today-btn" id="cal-today">Today</button>
 </div>
 
-<div class="calendar-grid" id="cal-grid">
+<div class="calendar-platform-filters" id="cal-platform-filters">
+  <button class="calendar-chip active" data-platform="all">All</button>
+  <button class="calendar-chip" data-platform="youtube">YouTube</button>
+  <button class="calendar-chip" data-platform="tiktok">TikTok</button>
+  <button class="calendar-chip" data-platform="instagram">Instagram</button>
+  <button class="calendar-chip" data-platform="twitter">Twitter</button>
+  <button class="calendar-chip" data-platform="linkedin">LinkedIn</button>
+  <button class="calendar-chip" data-platform="podcast">Podcast</button>
+  <button class="calendar-chip" data-platform="blog">Blog</button>
+  <button class="calendar-chip" data-platform="other">Other</button>
+</div>
+
+<div class="calendar-grid has-week-nums" id="cal-grid">
+  <div class="calendar-week-header">Wk</div>
   <div class="calendar-dow">Sun</div>
   <div class="calendar-dow">Mon</div>
   <div class="calendar-dow">Tue</div>
@@ -359,4 +541,39 @@
   <div class="calendar-dow">Thu</div>
   <div class="calendar-dow">Fri</div>
   <div class="calendar-dow">Sat</div>
+</div>
+
+<div class="calendar-legend" id="cal-legend">
+  <div class="calendar-legend-item">
+    <span class="calendar-legend-dot" style="background:#ff4444;"></span>
+    YouTube
+  </div>
+  <div class="calendar-legend-item">
+    <span class="calendar-legend-dot" style="background:#00f2ea;"></span>
+    TikTok
+  </div>
+  <div class="calendar-legend-item">
+    <span class="calendar-legend-dot" style="background:#e1306c;"></span>
+    Instagram
+  </div>
+  <div class="calendar-legend-item">
+    <span class="calendar-legend-dot" style="background:#1da1f2;"></span>
+    Twitter
+  </div>
+  <div class="calendar-legend-item">
+    <span class="calendar-legend-dot" style="background:#0077b5;"></span>
+    LinkedIn
+  </div>
+  <div class="calendar-legend-item">
+    <span class="calendar-legend-dot" style="background:#9b59b6;"></span>
+    Podcast
+  </div>
+  <div class="calendar-legend-item">
+    <span class="calendar-legend-dot" style="background:#2ecc71;"></span>
+    Blog
+  </div>
+  <div class="calendar-legend-item">
+    <span class="calendar-legend-dot" style="background:#777;"></span>
+    Other
+  </div>
 </div>
