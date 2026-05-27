@@ -4,6 +4,7 @@
    ============================================================ */
 
 import { navigate } from '/js/router.js';
+import { signOut } from '/js/auth.js';
 
 let overlay = null;
 let styleInjected = false;
@@ -19,16 +20,6 @@ const commands = [
   { section: 'Actions',  label: 'New Transaction',  action: () => { navigate('/deals'); },   hint: 'N then T' },
   { section: 'Quick',    label: 'Sign Out',         action: () => signOut(),             hint: '' },
 ];
-
-async function signOut() {
-  try {
-    const { db } = await import('/js/supabase.js');
-    await db.auth.signOut();
-    window.location.reload();
-  } catch (_) {
-    window.location.reload();
-  }
-}
 
 function fuzzyMatch(query, text) {
   const q = query.toLowerCase();

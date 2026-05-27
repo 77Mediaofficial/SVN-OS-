@@ -1,15 +1,30 @@
-const routes = {
-  '/': { page: 'dashboard', module: () => import('./modules/dashboard.js') },
-  '/content': { page: 'content-engine', module: () => import('./modules/content-engine.js') },
-  '/calendar': { page: 'calendar', module: () => import('./modules/calendar.js') },
-  '/deals': { page: 'deals-ledger', module: () => import('./modules/deals-ledger.js') },
-  '/settings': { page: 'settings', module: () => import('./modules/settings.js') },
+import { requireAuth } from './auth.js';
+
+export const routes = {
+  '/':        { page: 'dashboard',      module: () => import('./modules/dashboard.js'),      requiresAuth: true },
+  '/content': { page: 'content-engine',  module: () => import('./modules/content-engine.js'), requiresAuth: true },
+  '/calendar':{ page: 'calendar',        module: () => import('./modules/calendar.js'),       requiresAuth: true },
+  '/deals':   { page: 'deals-ledger',    module: () => import('./modules/deals-ledger.js'),   requiresAuth: true },
+  '/settings':{ page: 'settings',        module: () => import('./modules/settings.js'),       requiresAuth: true },
 };
 
 let currentCleanup = null;
 
 async function loadRoute(path) {
-  const route = routes[path] || routes['/'];
+  // Validate the route — redirect unknown paths to /
+  if (!routes[path]) {
+    window.history.replaceState({}, '', '/');
+    path = '/';
+  }
+
+  const route = routes[path];
+
+  // Enforce auth for protected routes
+  if (route.requiresAuth) {
+    const user = await requireAuth();
+    if (!user) return; // Auth modal is displayed; don't load the route
+  }
+
   const outlet = document.getElementById('app-outlet');
 
   if (currentCleanup) {
@@ -19,6 +34,7 @@ async function loadRoute(path) {
 
   try {
     const res = await fetch(`/pages/${route.page}.html`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     outlet.innerHTML = await res.text();
     const mod = await route.module();
     if (mod.init) {
