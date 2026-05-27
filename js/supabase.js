@@ -30,3 +30,21 @@ export async function signOut() {
   const { error } = await db.auth.signOut();
   if (error) throw error;
 }
+
+/**
+ * Synchronously check if there is an active session in localStorage.
+ * Useful for quick route guards without an async round-trip to Supabase.
+ * Returns true if a session token exists, false otherwise.
+ */
+export function isAuthenticated() {
+  try {
+    const storageKey = `sb-${new URL(SUPABASE_URL).hostname.split('.')[0]}-auth-token`;
+    const raw = localStorage.getItem(storageKey);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    // Supabase stores session data with an access_token when authenticated
+    return !!(parsed?.access_token || parsed?.currentSession?.access_token);
+  } catch {
+    return false;
+  }
+}
