@@ -172,6 +172,33 @@ ul, ol { list-style: none; }
   padding: 0 16px;
 }
 
+.nav-shortcut-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+}
+
+.nav-shortcut-hint kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  font-family: var(--font-sans);
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--color-text-dim);
+}
+
 .nav-user {
   display: flex;
   align-items: center;

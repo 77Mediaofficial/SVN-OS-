@@ -65,6 +65,9 @@
       </div>
 
       <div class="nav-footer">
+        <div class="nav-shortcut-hint">
+          <kbd>&#8984;</kbd><kbd>K</kbd> to search
+        </div>
         <div class="nav-user" id="nav-user">
           <div class="nav-avatar" id="nav-avatar">?</div>
           <div class="nav-user-info">
@@ -84,6 +87,9 @@
   <script type="module">
     import { initRouter } from '/js/router.js';
     import { onAuthStateChange } from '/js/auth.js';
+    import { initCommandPalette } from '/js/command-palette.js';
+
+    initCommandPalette();
 
     document.getElementById('mobile-toggle').addEventListener('click', () => {
       document.getElementById('app-nav').classList.toggle('open');
