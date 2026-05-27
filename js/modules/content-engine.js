@@ -200,7 +200,8 @@ function renderBoard() {
     if (countEl) countEl.textContent = items.length;
 
     if (items.length === 0) {
-      container.innerHTML = '<div class="kanban-empty">Drop items here</div>';
+      const statusLabel = STATUS_LABEL[status] || status;
+      container.innerHTML = `<div class="kanban-empty">No ${statusLabel.toLowerCase()} projects yet</div>`;
       return;
     }
 
@@ -230,6 +231,18 @@ function renderBoard() {
       });
     });
   });
+
+  // Show/hide board-level empty state
+  const boardEmpty = document.getElementById('kanban-board-empty');
+  if (boardEmpty) {
+    const totalProjects = projects.length;
+    boardEmpty.style.display = totalProjects === 0 ? 'flex' : 'none';
+    // Bind the CTA button to open modal
+    const ctaBtn = boardEmpty.querySelector('#btn-new-project');
+    if (ctaBtn) {
+      ctaBtn.onclick = () => openCreateModal();
+    }
+  }
 }
 
 function cardHTML(project) {
