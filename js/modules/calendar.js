@@ -1,7 +1,9 @@
 import { db } from '../supabase.js';
+import { showToast } from '../toast.js';
+import { navigate } from '../router.js';
 
 const PLATFORM_COLORS = {
-  youtube:   '#ff0000',
+  youtube:   '#ff4444',
   tiktok:    '#00f2ea',
   instagram: '#e1306c',
   twitter:   '#1da1f2',
@@ -16,12 +18,14 @@ const MAX_PILLS = 3;
 let currentYear;
 let currentMonth; // 0-indexed
 let contentByDay = {}; // { "YYYY-MM-DD": [ ...items ] }
+let activePlatformFilter = 'all'; // 'all' or a specific platform key
 let cleanupFns = [];
 
 export async function init() {
   const now = new Date();
   currentYear = now.getFullYear();
   currentMonth = now.getMonth();
+  activePlatformFilter = 'all';
 
   const prevBtn = document.getElementById('cal-prev');
   const nextBtn = document.getElementById('cal-next');
@@ -46,6 +50,46 @@ export async function init() {
     nextBtn.removeEventListener('click', onNext);
     todayBtn.removeEventListener('click', onToday);
   });
+
+  // Platform filter chip clicks
+  const filterBar = document.getElementById('cal-platform-filters');
+  if (filterBar) {
+    function onFilterClick(e) {
+      const chip = e.target.closest('.calendar-chip');
+      if (!chip) return;
+
+      const platform = chip.getAttribute('data-platform');
+      activePlatformFilter = platform;
+
+      filterBar.querySelectorAll('.calendar-chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+
+      // Re-render pills without re-fetching
+      renderPills();
+      updateCountBadge();
+    }
+    filterBar.addEventListener('click', onFilterClick);
+    cleanupFns.push(() => filterBar.removeEventListener('click', onFilterClick));
+  }
+
+  // Keyboard navigation: left/right arrow keys to change months
+  function onKeydown(e) {
+    // Only when no input/textarea/select is focused
+    const tag = document.activeElement?.tagName?.toLowerCase();
+    if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      navigateMonth(-1);
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      navigateMonth(1);
+    } else if (e.key === 'Escape') {
+      closeDayDetail();
+    }
+  }
+  document.addEventListener('keydown', onKeydown);
+  cleanupFns.push(() => document.removeEventListener('keydown', onKeydown));
 
   renderMonth();
   await loadContent();
@@ -99,21 +143,60 @@ async function loadContent() {
   }
 
   renderPills();
+  updateCountBadge();
+}
+
+/** Get all items for the month, filtered by the active platform filter */
+function getFilteredItems() {
+  const result = {};
+  Object.keys(contentByDay).forEach(dateKey => {
+    const items = contentByDay[dateKey];
+    const filtered = activePlatformFilter === 'all'
+      ? items
+      : items.filter(i => (i.platform || 'other') === activePlatformFilter);
+    if (filtered.length > 0) {
+      result[dateKey] = filtered;
+    }
+  });
+  return result;
+}
+
+function updateCountBadge() {
+  const badge = document.getElementById('cal-count-badge');
+  if (!badge) return;
+
+  const filtered = getFilteredItems();
+  let total = 0;
+  Object.values(filtered).forEach(items => { total += items.length; });
+
+  badge.textContent = total > 0 ? total : '';
+}
+
+/** Get ISO week number for a date */
+function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
 }
 
 function renderMonth() {
-  const label = document.getElementById('cal-month-label');
+  const monthText = document.getElementById('cal-month-text');
   const grid = document.getElementById('cal-grid');
-  if (!label || !grid) return;
+  if (!grid) return;
 
   const monthNames = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
   ];
-  label.textContent = `${monthNames[currentMonth]} ${currentYear}`;
 
-  // Remove old day cells (keep the 7 DOW headers)
-  const existing = grid.querySelectorAll('.calendar-cell');
+  if (monthText) {
+    monthText.textContent = `${monthNames[currentMonth]} ${currentYear}`;
+  }
+
+  // Remove old day cells and week numbers (keep the header row: Wk + 7 DOWs)
+  const existing = grid.querySelectorAll('.calendar-cell, .calendar-week-num');
   existing.forEach(el => el.remove());
 
   const firstDay = new Date(currentYear, currentMonth, 1);
@@ -121,32 +204,60 @@ function renderMonth() {
   const startDow = firstDay.getDay(); // 0=Sun
   const daysInMonth = lastDay.getDate();
 
+  const today = new Date();
+  const todayKey = toDateKey(today);
+
+  // Build rows with week numbers
+  // Collect all days (prev-month trailing, current month, next-month leading)
+  const cells = [];
+
   // Previous month trailing days
   const prevMonthLast = new Date(currentYear, currentMonth, 0).getDate();
   for (let i = startDow - 1; i >= 0; i--) {
     const day = prevMonthLast - i;
-    const cell = createCell(day, true);
-    grid.appendChild(cell);
+    cells.push({ day, outside: true, dateKey: null, isToday: false });
   }
 
   // Current month days
-  const today = new Date();
-  const todayKey = toDateKey(today);
-
   for (let d = 1; d <= daysInMonth; d++) {
     const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
     const isToday = dateKey === todayKey;
-    const cell = createCell(d, false, dateKey, isToday);
-    grid.appendChild(cell);
+    cells.push({ day: d, outside: false, dateKey, isToday });
   }
 
   // Next month leading days to fill the final row
-  const totalCells = startDow + daysInMonth;
+  const totalCells = cells.length;
   const remainder = totalCells % 7;
   if (remainder > 0) {
     const fill = 7 - remainder;
     for (let d = 1; d <= fill; d++) {
-      const cell = createCell(d, true);
+      cells.push({ day: d, outside: true, dateKey: null, isToday: false });
+    }
+  }
+
+  // Render rows of 7, each preceded by a week number cell
+  for (let i = 0; i < cells.length; i += 7) {
+    // Determine the week number from the first non-outside day in this row,
+    // or fall back to the date that represents the row
+    let weekDate;
+    const rowCells = cells.slice(i, i + 7);
+    const nonOutside = rowCells.find(c => !c.outside);
+    if (nonOutside) {
+      weekDate = new Date(currentYear, currentMonth, nonOutside.day);
+    } else {
+      // All outside (unlikely but safe)
+      weekDate = new Date(currentYear, currentMonth, 1);
+    }
+    const wn = getWeekNumber(weekDate);
+
+    const weekNumEl = document.createElement('div');
+    weekNumEl.className = 'calendar-week-num';
+    weekNumEl.textContent = wn;
+    grid.appendChild(weekNumEl);
+
+    for (let j = 0; j < 7; j++) {
+      const c = rowCells[j];
+      const cell = createCell(c.day, c.outside, c.dateKey, c.isToday);
       grid.appendChild(cell);
     }
   }
@@ -185,19 +296,30 @@ function renderPills() {
     container.innerHTML = '';
   });
 
-  Object.keys(contentByDay).forEach(dateKey => {
+  const filteredByDay = getFilteredItems();
+
+  Object.keys(filteredByDay).forEach(dateKey => {
     const container = document.querySelector(`[data-items-for="${dateKey}"]`);
     if (!container) return;
 
-    const items = contentByDay[dateKey];
+    const items = filteredByDay[dateKey];
     const showCount = Math.min(items.length, MAX_PILLS);
 
     for (let i = 0; i < showCount; i++) {
       const pill = document.createElement('span');
       pill.className = 'calendar-pill';
       pill.setAttribute('data-platform', items[i].platform || 'other');
+      pill.setAttribute('data-content-id', items[i].id);
       pill.textContent = escapeHtml(items[i].title);
       pill.title = escapeHtml(items[i].title);
+
+      // Click pill to navigate to Content Engine
+      pill.addEventListener('click', (e) => {
+        e.stopPropagation(); // prevent day detail from opening
+        showToast('Opening in Content Engine...', 'info');
+        navigate('/content');
+      });
+
       container.appendChild(pill);
     }
 
@@ -213,7 +335,12 @@ function renderPills() {
 function showDayDetail(dateKey) {
   closeDayDetail();
 
-  const items = contentByDay[dateKey] || [];
+  // Show filtered items in the day detail
+  const allItems = contentByDay[dateKey] || [];
+  const items = activePlatformFilter === 'all'
+    ? allItems
+    : allItems.filter(i => (i.platform || 'other') === activePlatformFilter);
+
   const date = new Date(dateKey + 'T00:00:00');
   const formatted = date.toLocaleDateString('en-US', {
     weekday: 'long',
@@ -242,7 +369,7 @@ function showDayDetail(dateKey) {
         : '';
 
       return `
-        <div class="day-detail-item">
+        <div class="day-detail-item" data-content-id="${item.id}">
           <div class="day-detail-item-header">
             <span class="day-detail-platform" data-platform="${item.platform || 'other'}">${escapeHtml(item.platform || 'other')}</span>
             <span class="day-detail-status">${escapeHtml(item.status || '')}</span>
@@ -254,6 +381,8 @@ function showDayDetail(dateKey) {
         </div>
       `;
     }).join('');
+
+    itemsHtml += '<p class="day-detail-edit-hint">Click an item to edit in Content Engine</p>';
   }
 
   overlay.innerHTML = `
@@ -279,6 +408,15 @@ function showDayDetail(dateKey) {
 
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeDayDetail();
+  });
+
+  // Click on day-detail-item navigates to Content Engine
+  overlay.querySelectorAll('.day-detail-item').forEach(itemEl => {
+    itemEl.addEventListener('click', () => {
+      closeDayDetail();
+      showToast('Opening in Content Engine...', 'info');
+      navigate('/content');
+    });
   });
 
   function onEsc(e) {

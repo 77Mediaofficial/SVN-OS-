@@ -648,3 +648,43 @@ ul, ol { list-style: none; }
   white-space: nowrap;
   border: 0;
 }
+
+/* ── Compact Mode ─────────────────────────────────────────────── */
+body.compact-mode .app-main {
+  padding: 28px 32px;
+}
+
+body.compact-mode .card,
+body.compact-mode .metric-card {
+  padding: 16px;
+}
+
+body.compact-mode .card-header {
+  margin-bottom: 12px;
+}
+
+body.compact-mode .page-header {
+  margin-bottom: 24px;
+}
+
+body.compact-mode .metrics-grid {
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+body.compact-mode .dashboard-grid {
+  gap: 10px;
+}
+
+body.compact-mode .action-item,
+body.compact-mode .deal-item {
+  padding: 8px 0;
+}
+
+body.compact-mode .nav-section {
+  margin-bottom: 20px;
+}
+
+body.compact-mode .nav-link {
+  padding: 7px 12px;
+}
