@@ -170,6 +170,12 @@ function updateCountBadge() {
   Object.values(filtered).forEach(items => { total += items.length; });
 
   badge.textContent = total > 0 ? total : '';
+
+  // Show/hide the empty month overlay
+  const emptyOverlay = document.getElementById('cal-empty-overlay');
+  if (emptyOverlay) {
+    emptyOverlay.style.display = total === 0 ? 'flex' : 'none';
+  }
 }
 
 /** Get ISO week number for a date */
