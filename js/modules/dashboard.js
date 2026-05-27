@@ -184,7 +184,7 @@ async function loadPipelineSnapshot() {
       </div>
     `).join('');
   } catch {
-    container.innerHTML = '<p class="empty-state">No pipeline data yet.</p>';
+    container.innerHTML = '<div class="empty-cta"><h3>No pipeline data yet</h3><p>Add content projects to see your pipeline stages visualized here.</p><button class="btn btn-primary" data-route="/content">Go to Content Engine</button></div>';
     showToast('Failed to load pipeline snapshot', 'error');
   }
 }
@@ -202,7 +202,7 @@ async function loadRecentDeals() {
       .limit(4);
 
     if (!deals || deals.length === 0) {
-      container.innerHTML = '<li class="empty-state">No brand deals yet.</li>';
+      container.innerHTML = '<li class="empty-cta"><h3>No brand deals yet</h3><p>Land your first partnership and track it here. Every creator starts somewhere.</p><button class="btn btn-primary" data-route="/deals">Add Your First Deal</button></li>';
       return;
     }
 
@@ -214,7 +214,7 @@ async function loadRecentDeals() {
       </li>
     `).join('');
   } catch {
-    container.innerHTML = '<li class="empty-state">Connect Supabase to see deals.</li>';
+    container.innerHTML = '<li class="empty-cta"><h3>Connection needed</h3><p>Connect Supabase to see your brand deals and partnership pipeline.</p></li>';
     showToast('Failed to load recent deals', 'error');
   }
 }
@@ -239,7 +239,7 @@ async function loadPlatformDistribution() {
       .select('platform');
 
     if (!projects || projects.length === 0) {
-      container.innerHTML = '<p class="empty-state">No content yet.</p>';
+      container.innerHTML = '<div class="empty-cta"><h3>No content yet</h3><p>Start creating projects to see your platform distribution take shape.</p><button class="btn btn-primary" data-route="/content">Create a Project</button></div>';
       return;
     }
 
@@ -267,7 +267,7 @@ async function loadPlatformDistribution() {
       `;
     }).join('');
   } catch {
-    container.innerHTML = '<p class="empty-state">No platform data yet.</p>';
+    container.innerHTML = '<div class="empty-cta"><h3>No platform data</h3><p>Add content projects to see how your work is distributed across platforms.</p></div>';
     showToast('Failed to load platform distribution', 'error');
   }
 }
@@ -292,7 +292,7 @@ async function loadUpcomingDeadlines() {
       .limit(5);
 
     if (!deals || deals.length === 0) {
-      container.innerHTML = '<p class="empty-state">No upcoming deadlines.</p>';
+      container.innerHTML = '<div class="empty-cta"><h3>No upcoming deadlines</h3><p>All clear for now. Deadlines from active deals will appear here automatically.</p></div>';
       return;
     }
 
@@ -313,7 +313,7 @@ async function loadUpcomingDeadlines() {
       `;
     }).join('');
   } catch {
-    container.innerHTML = '<p class="empty-state">Could not load deadlines.</p>';
+    container.innerHTML = '<div class="empty-cta"><h3>Could not load deadlines</h3><p>Check your connection and try refreshing the page.</p></div>';
     showToast('Failed to load upcoming deadlines', 'error');
   }
 }
@@ -368,7 +368,7 @@ async function loadRecentActivity() {
     const top = items.slice(0, ACTIVITY_LIMIT);
 
     if (top.length === 0) {
-      container.innerHTML = '<li class="empty-state">No recent activity.</li>';
+      container.innerHTML = '<li class="empty-cta"><h3>No recent activity</h3><p>Your activity feed will populate as you create projects, close deals, and log transactions.</p><button class="btn btn-primary" data-route="/content">Get Started</button></li>';
       return;
     }
 
@@ -384,7 +384,7 @@ async function loadRecentActivity() {
       </li>
     `).join('');
   } catch {
-    container.innerHTML = '<li class="empty-state">Could not load activity.</li>';
+    container.innerHTML = '<li class="empty-cta"><h3>Could not load activity</h3><p>Check your connection and try refreshing the page.</p></li>';
     showToast('Failed to load recent activity', 'error');
   }
 }

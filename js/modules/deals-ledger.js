@@ -1,10 +1,23 @@
 import { db, getCurrentUser } from '../supabase.js';
+import { showToast } from '../toast.js';
 
 /* ── State ────────────────────────────────────────────────── */
 let deals = [];
 let transactions = [];
 let currentDealFilter = 'all';
+let currentDealSearch = '';
+let currentTxnSearch = '';
+let currentTxnCategory = 'all';
 let abortController = null;
+
+/* ── Debounce Utility ────────────────────────────────────── */
+function debounce(fn, ms) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
 
 /* ── Init ─────────────────────────────────────────────────── */
 export async function init() {
@@ -14,6 +27,7 @@ export async function init() {
   bindDealEvents(signal);
   bindTxnEvents(signal);
   bindFilterEvents(signal);
+  bindSearchEvents(signal);
 
   await Promise.all([loadDeals(), loadTransactions()]);
 
@@ -62,6 +76,10 @@ function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function roundCents(value) {
+  return Math.round(value * 100) / 100;
+}
+
 /* ── DEALS: Load & Render ─────────────────────────────────── */
 async function loadDeals() {
   const tbody = document.getElementById('deals-tbody');
@@ -75,8 +93,9 @@ async function loadDeals() {
 
     if (error) throw error;
     deals = data || [];
-  } catch {
+  } catch (err) {
     deals = [];
+    showToast(err.message || 'Failed to load deals', 'error');
   }
 
   renderDeals();
@@ -86,9 +105,17 @@ function renderDeals() {
   const tbody = document.getElementById('deals-tbody');
   if (!tbody) return;
 
-  const filtered = currentDealFilter === 'all'
+  let filtered = currentDealFilter === 'all'
     ? deals
     : deals.filter(d => d.status === currentDealFilter);
+
+  // Apply search filter
+  if (currentDealSearch) {
+    const query = currentDealSearch.toLowerCase();
+    filtered = filtered.filter(d =>
+      (d.brand_name || '').toLowerCase().includes(query)
+    );
+  }
 
   if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="5" class="empty-state">No deals found. Click "New Deal" to get started.</td></tr>`;
@@ -120,7 +147,7 @@ async function saveDeal(formData) {
     contact_name: formData.contact_name || null,
     contact_email: formData.contact_email || null,
     status: formData.status,
-    value: formData.value ? parseFloat(formData.value) : null,
+    value: formData.value ? roundCents(parseFloat(formData.value)) : null,
     deliverables: formData.deliverables || null,
     deadline: formData.deadline || null,
     notes: formData.notes || null,
@@ -136,12 +163,15 @@ async function saveDeal(formData) {
 
   if (error) throw error;
   await loadDeals();
+
+  showToast(id ? 'Deal updated' : 'Deal created successfully', 'success');
 }
 
 async function deleteDeal(id) {
   const { error } = await db.from('brand_deals').delete().eq('id', id);
   if (error) throw error;
   await Promise.all([loadDeals(), loadTransactions()]);
+  showToast('Deal deleted', 'info');
 }
 
 /* ── TRANSACTIONS: Load & Render ──────────────────────────── */
@@ -157,8 +187,9 @@ async function loadTransactions() {
 
     if (error) throw error;
     transactions = data || [];
-  } catch {
+  } catch (err) {
     transactions = [];
+    showToast(err.message || 'Failed to load transactions', 'error');
   }
 
   renderTransactions();
@@ -169,12 +200,28 @@ function renderTransactions() {
   const tbody = document.getElementById('txn-tbody');
   if (!tbody) return;
 
-  if (transactions.length === 0) {
+  let filtered = transactions;
+
+  // Apply category filter
+  if (currentTxnCategory !== 'all') {
+    filtered = filtered.filter(t => t.category === currentTxnCategory);
+  }
+
+  // Apply search filter
+  if (currentTxnSearch) {
+    const query = currentTxnSearch.toLowerCase();
+    filtered = filtered.filter(t =>
+      (t.description || '').toLowerCase().includes(query) ||
+      (t.category || '').toLowerCase().includes(query)
+    );
+  }
+
+  if (filtered.length === 0) {
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state">No transactions yet. Click "New Transaction" to add one.</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = transactions.map(t => {
+  tbody.innerHTML = filtered.map(t => {
     const typeClass = t.type === 'income' ? 'badge-income' : 'badge-expense';
     const amountColor = t.type === 'income' ? 'var(--color-success)' : 'var(--color-danger)';
     const sign = t.type === 'income' ? '+' : '-';
@@ -201,15 +248,19 @@ function renderSummary() {
   const netEl = document.getElementById('ledger-net');
   if (!incomeEl || !expenseEl || !netEl) return;
 
-  const income = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const income = roundCents(
+    transactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+  );
 
-  const expenses = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + Number(t.amount), 0);
+  const expenses = roundCents(
+    transactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + (Number(t.amount) || 0), 0)
+  );
 
-  const net = income - expenses;
+  const net = roundCents(income - expenses);
 
   incomeEl.textContent = formatCurrency(income);
   expenseEl.textContent = formatCurrency(expenses);
@@ -229,7 +280,7 @@ async function saveTransaction(formData) {
   const payload = {
     type: formData.type,
     category: formData.category,
-    amount: parseFloat(formData.amount),
+    amount: roundCents(parseFloat(formData.amount)),
     description: formData.description || null,
     date: formData.date,
     deal_id: formData.deal_id || null,
@@ -245,12 +296,15 @@ async function saveTransaction(formData) {
 
   if (error) throw error;
   await loadTransactions();
+
+  showToast(id ? 'Transaction updated' : 'Transaction logged', 'success');
 }
 
 async function deleteTransaction(id) {
   const { error } = await db.from('transactions').delete().eq('id', id);
   if (error) throw error;
   await loadTransactions();
+  showToast('Transaction deleted', 'info');
 }
 
 /* ── Modal Helpers ────────────────────────────────────────── */
@@ -326,6 +380,44 @@ function populateDealSelect(selectedDealId) {
   select.innerHTML = options.join('');
 }
 
+/* ── Search Binding ──────────────────────────────────────── */
+function bindSearchEvents(signal) {
+  // Deal search — debounced
+  const dealSearchInput = document.getElementById('deal-search');
+  if (dealSearchInput) {
+    const debouncedDealSearch = debounce((value) => {
+      currentDealSearch = value;
+      renderDeals();
+    }, 300);
+
+    dealSearchInput.addEventListener('input', (e) => {
+      debouncedDealSearch(e.target.value.trim());
+    }, { signal });
+  }
+
+  // Transaction search — debounced
+  const txnSearchInput = document.getElementById('txn-search');
+  if (txnSearchInput) {
+    const debouncedTxnSearch = debounce((value) => {
+      currentTxnSearch = value;
+      renderTransactions();
+    }, 300);
+
+    txnSearchInput.addEventListener('input', (e) => {
+      debouncedTxnSearch(e.target.value.trim());
+    }, { signal });
+  }
+
+  // Transaction category filter
+  const txnCategoryFilter = document.getElementById('txn-category-filter');
+  if (txnCategoryFilter) {
+    txnCategoryFilter.addEventListener('change', (e) => {
+      currentTxnCategory = e.target.value;
+      renderTransactions();
+    }, { signal });
+  }
+}
+
 /* ── Event Binding ────────────────────────────────────────── */
 function bindFilterEvents(signal) {
   const filterBar = document.getElementById('deal-filters');
@@ -394,6 +486,7 @@ function bindDealEvents(signal) {
       } catch (err) {
         errorEl.style.color = 'var(--color-danger)';
         errorEl.textContent = err.message || 'Failed to save deal.';
+        showToast(err.message || 'Failed to save deal', 'error');
       } finally {
         submitBtn.disabled = false;
       }
@@ -423,7 +516,7 @@ function bindDealEvents(signal) {
           try {
             await deleteDeal(id);
           } catch (err) {
-            alert(err.message || 'Failed to delete deal.');
+            showToast(err.message || 'Failed to delete deal', 'error');
           }
         }
       }
@@ -481,6 +574,7 @@ function bindTxnEvents(signal) {
       } catch (err) {
         errorEl.style.color = 'var(--color-danger)';
         errorEl.textContent = err.message || 'Failed to save transaction.';
+        showToast(err.message || 'Failed to save transaction', 'error');
       } finally {
         submitBtn.disabled = false;
       }
@@ -509,7 +603,7 @@ function bindTxnEvents(signal) {
           try {
             await deleteTransaction(id);
           } catch (err) {
-            alert(err.message || 'Failed to delete transaction.');
+            showToast(err.message || 'Failed to delete transaction', 'error');
           }
         }
       }
