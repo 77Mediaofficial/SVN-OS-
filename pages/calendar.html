@@ -427,6 +427,51 @@
     opacity: 0.6;
   }
 
+  /* ── Empty State CTA ────────────────────────────────────────── */
+  .empty-cta {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--color-text-muted);
+  }
+  .empty-cta h3 {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    margin-bottom: 8px;
+  }
+  .empty-cta p {
+    font-size: 0.82rem;
+    margin-bottom: 20px;
+    max-width: 320px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.5;
+  }
+
+  .calendar-grid-wrapper {
+    position: relative;
+  }
+
+  .calendar-empty-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+    background: rgba(10, 10, 10, 0.6);
+    border-radius: var(--radius-md);
+  }
+  .calendar-empty-overlay .empty-cta {
+    pointer-events: auto;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 48px 40px;
+    max-width: 380px;
+  }
+
   /* ── Responsive ───────────────────────────────────────────── */
   @media (max-width: 1024px) {
     .calendar-cell {
