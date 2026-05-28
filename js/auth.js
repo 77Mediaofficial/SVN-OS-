@@ -1,8 +1,6 @@
 import { db, getCurrentUser, signOut as supabaseSignOut } from './supabase.js';
 import { showToast } from './toast.js';
 
-let authModalStyleInjected = false;
-
 /**
  * Guard a route: returns the current user, or null if not authenticated.
  * When null, the auth modal is shown automatically.
@@ -39,64 +37,6 @@ export async function signOut() {
   }
 }
 
-function injectAuthModalStyles() {
-  if (authModalStyleInjected) return;
-  authModalStyleInjected = true;
-
-  const style = document.createElement('style');
-  style.textContent = `
-    .auth-modal-overlay {
-      opacity: 0;
-      transition: opacity 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .auth-modal-overlay.auth-modal--visible {
-      opacity: 1;
-    }
-
-    .auth-modal-overlay .modal-card {
-      transform: translateY(12px) scale(0.97);
-      opacity: 0;
-      transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
-                  opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .auth-modal-overlay.auth-modal--visible .modal-card {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
-
-    .auth-modal-close {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      background: none;
-      border: 1px solid var(--color-border, #2a2a2a);
-      border-radius: 6px;
-      color: var(--color-text-muted, #777);
-      width: 28px;
-      height: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 0.85rem;
-      line-height: 1;
-      transition: color 150ms ease, border-color 150ms ease;
-    }
-
-    .auth-modal-close:hover {
-      color: var(--color-text, #fff);
-      border-color: var(--color-text-dim, #555);
-    }
-
-    .modal-card {
-      position: relative;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 /**
  * @param {Object} [options]
  * @param {boolean} [options.allowClose=false] - Show the X button to dismiss
@@ -113,33 +53,33 @@ function showAuthModal(options = {}) {
   const existing = document.getElementById('auth-modal');
   if (existing) return;
 
-  injectAuthModalStyles();
-
   const modal = document.createElement('div');
   modal.id = 'auth-modal';
-  modal.className = 'modal-overlay auth-modal-overlay';
+  modal.className = 'auth-overlay';
 
   const closeBtn = allowClose
-    ? `<button class="auth-modal-close" id="auth-modal-close" aria-label="Close" type="button">&times;</button>`
+    ? `<button class="auth-close" id="auth-modal-close" aria-label="Close" type="button">&times;</button>`
     : '';
 
   modal.innerHTML = `
-    <div class="modal-card">
+    <div class="auth-modal">
       ${closeBtn}
-      <h2>Welcome to SVN OS</h2>
-      <p class="modal-subtitle">Sign in to your creator dashboard</p>
+      <div class="auth-header">
+        <h2>Welcome to SVN OS</h2>
+        <p>Sign in to your creator dashboard</p>
+      </div>
       <form id="auth-form">
-        <div class="form-group">
+        <div class="auth-form-group">
           <label for="auth-email">Email</label>
-          <input type="email" id="auth-email" required placeholder="you@example.com" />
+          <input class="auth-input" type="email" id="auth-email" required placeholder="you@example.com" autocomplete="email" />
         </div>
-        <div class="form-group">
+        <div class="auth-form-group">
           <label for="auth-password">Password</label>
-          <input type="password" id="auth-password" required placeholder="••••••••" />
+          <input class="auth-input" type="password" id="auth-password" required placeholder="••••••••" autocomplete="current-password" />
         </div>
-        <button type="submit" class="btn btn-primary" id="auth-submit">Sign In</button>
+        <button type="submit" class="auth-button" id="auth-submit">Sign In</button>
         <p class="auth-toggle">
-          Don't have an account? <a href="#" id="auth-switch">Sign up</a>
+          Don't have an account? <a id="auth-switch">Sign up</a>
         </p>
         <p class="auth-error" id="auth-error"></p>
       </form>
@@ -149,7 +89,7 @@ function showAuthModal(options = {}) {
 
   // Fade-in on next frame
   requestAnimationFrame(() => {
-    modal.classList.add('auth-modal--visible');
+    modal.classList.add('active');
   });
 
   let isSignUp = false;
@@ -210,7 +150,7 @@ function showAuthModal(options = {}) {
  * Dismiss the auth modal with a fade-out animation.
  */
 function dismissAuthModal(modal) {
-  modal.classList.remove('auth-modal--visible');
+  modal.classList.remove('active');
   modal.addEventListener('transitionend', () => modal.remove(), { once: true });
   // Fallback removal
   setTimeout(() => { if (modal.parentNode) modal.remove(); }, 350);
