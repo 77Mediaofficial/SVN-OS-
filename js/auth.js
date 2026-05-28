@@ -104,6 +104,12 @@ function injectAuthModalStyles() {
 function showAuthModal(options = {}) {
   const { allowClose = false } = options;
 
+  const root = document.getElementById('auth-modal-root');
+  if (!root) {
+    console.error('[SVN OS] Auth modal anchor #auth-modal-root not found in the DOM. Cannot display the auth modal.');
+    return;
+  }
+
   const existing = document.getElementById('auth-modal');
   if (existing) return;
 
@@ -139,7 +145,7 @@ function showAuthModal(options = {}) {
       </form>
     </div>
   `;
-  document.body.appendChild(modal);
+  root.appendChild(modal);
 
   // Fade-in on next frame
   requestAnimationFrame(() => {

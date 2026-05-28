@@ -98,12 +98,14 @@ function injectStyles() {
 }
 
 function getContainer() {
-  let container = document.querySelector('.svn-toast-container');
+  const container = document.getElementById('toast-container');
   if (!container) {
-    container = document.createElement('div');
-    container.className = 'svn-toast-container';
-    document.body.appendChild(container);
+    console.error('[SVN OS] Toast anchor #toast-container not found in the DOM. Toasts cannot be displayed.');
+    return null;
   }
+  // The anchor is a bare <div> in index.html; ensure it carries the
+  // positioning class the injected styles depend on.
+  container.classList.add('svn-toast-container');
   return container;
 }
 
@@ -134,9 +136,10 @@ function enforceLimit(container) {
  * @param {'success'|'error'|'info'|'warning'} type - The toast type.
  */
 export function showToast(message, type = 'info') {
-  injectStyles();
-
   const container = getContainer();
+  if (!container) return; // Fail gracefully — error already logged
+
+  injectStyles();
   enforceLimit(container);
 
   const color = typeColors[type] || typeColors.info;

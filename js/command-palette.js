@@ -298,6 +298,12 @@ function scrollActiveIntoView() {
 function open() {
   if (overlay) return;
 
+  const root = document.getElementById('command-palette-root');
+  if (!root) {
+    console.error('[SVN OS] Command palette anchor #command-palette-root not found in the DOM. Cannot open the command palette.');
+    return;
+  }
+
   injectStyles();
 
   activeIndex = 0;
@@ -322,7 +328,7 @@ function open() {
     </div>
   `;
 
-  document.body.appendChild(overlay);
+  root.appendChild(overlay);
 
   // Animate in
   requestAnimationFrame(() => {
