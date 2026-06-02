@@ -1,15 +1,13 @@
 -- ============================================================
--- SVN OS — Creator OS Database Schema
--- Run this in your Supabase SQL Editor
+-- SVN OS — Creator Dashboard Schema
+-- Helpers and triggers are namespaced with svnos_ so they
+-- coexist with other tables in shared Supabase projects.
+-- Run this in your Supabase SQL Editor for a new project.
 -- ============================================================
 
--- Enable UUID generation
 create extension if not exists "uuid-ossp";
 
--- ────────────────────────────────────────────────────────────
--- PROFILES
--- Extends Supabase auth.users with creator-specific fields
--- ────────────────────────────────────────────────────────────
+-- ── PROFILES ─────────────────────────────────────────────────
 create table public.profiles (
   id            uuid primary key references auth.users(id) on delete cascade,
   full_name     text,
@@ -22,20 +20,12 @@ create table public.profiles (
 
 alter table public.profiles enable row level security;
 
-create policy "Users can view own profile"
-  on public.profiles for select
-  using (auth.uid() = id);
+create policy "Users can view own profile"   on public.profiles for select using (auth.uid() = id);
+create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id);
+create policy "Users can insert own profile" on public.profiles for insert with check (auth.uid() = id);
 
-create policy "Users can update own profile"
-  on public.profiles for update
-  using (auth.uid() = id);
-
-create policy "Users can insert own profile"
-  on public.profiles for insert
-  with check (auth.uid() = id);
-
--- Auto-create a profile row when a new user signs up
-create or replace function public.handle_new_user()
+-- Auto-create a profile row when a new user signs up.
+create or replace function public.svnos_handle_new_user()
 returns trigger
 language plpgsql
 security definer set search_path = ''
@@ -46,38 +36,24 @@ begin
     new.id,
     new.raw_user_meta_data ->> 'full_name',
     new.raw_user_meta_data ->> 'avatar_url'
-  );
+  )
+  on conflict (id) do nothing;
   return new;
 end;
 $$;
 
-create trigger on_auth_user_created
+create trigger svnos_on_auth_user_created
   after insert on auth.users
-  for each row execute function public.handle_new_user();
+  for each row execute function public.svnos_handle_new_user();
 
 
--- ────────────────────────────────────────────────────────────
--- CONTENT PROJECTS
--- Tracks content from idea through to publication
--- ────────────────────────────────────────────────────────────
+-- ── CONTENT PROJECTS ─────────────────────────────────────────
 create type public.content_status as enum (
-  'idea',
-  'scripting',
-  'production',
-  'ready',
-  'posted',
-  'archived'
+  'idea','scripting','production','ready','posted','archived'
 );
 
 create type public.content_platform as enum (
-  'youtube',
-  'tiktok',
-  'instagram',
-  'twitter',
-  'linkedin',
-  'podcast',
-  'blog',
-  'other'
+  'youtube','tiktok','instagram','twitter','linkedin','podcast','blog','other'
 );
 
 create table public.content_projects (
@@ -94,40 +70,21 @@ create table public.content_projects (
   updated_at    timestamptz not null default now()
 );
 
-create index idx_content_projects_user on public.content_projects(user_id);
-create index idx_content_projects_status on public.content_projects(status);
+create index idx_content_projects_user      on public.content_projects(user_id);
+create index idx_content_projects_status    on public.content_projects(status);
 create index idx_content_projects_scheduled on public.content_projects(scheduled_at);
 
 alter table public.content_projects enable row level security;
 
-create policy "Users can view own projects"
-  on public.content_projects for select
-  using (auth.uid() = user_id);
-
-create policy "Users can insert own projects"
-  on public.content_projects for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can update own projects"
-  on public.content_projects for update
-  using (auth.uid() = user_id);
-
-create policy "Users can delete own projects"
-  on public.content_projects for delete
-  using (auth.uid() = user_id);
+create policy "Users can view own projects"   on public.content_projects for select using (auth.uid() = user_id);
+create policy "Users can insert own projects" on public.content_projects for insert with check (auth.uid() = user_id);
+create policy "Users can update own projects" on public.content_projects for update using (auth.uid() = user_id);
+create policy "Users can delete own projects" on public.content_projects for delete using (auth.uid() = user_id);
 
 
--- ────────────────────────────────────────────────────────────
--- BRAND DEALS
--- CRM pipeline for sponsorships and partnerships
--- ────────────────────────────────────────────────────────────
+-- ── BRAND DEALS ──────────────────────────────────────────────
 create type public.deal_status as enum (
-  'lead',
-  'negotiating',
-  'signed',
-  'in_progress',
-  'completed',
-  'lost'
+  'lead','negotiating','signed','in_progress','completed','lost'
 );
 
 create table public.brand_deals (
@@ -146,45 +103,23 @@ create table public.brand_deals (
   updated_at      timestamptz not null default now()
 );
 
-create index idx_brand_deals_user on public.brand_deals(user_id);
+create index idx_brand_deals_user   on public.brand_deals(user_id);
 create index idx_brand_deals_status on public.brand_deals(status);
 
 alter table public.brand_deals enable row level security;
 
-create policy "Users can view own deals"
-  on public.brand_deals for select
-  using (auth.uid() = user_id);
-
-create policy "Users can insert own deals"
-  on public.brand_deals for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can update own deals"
-  on public.brand_deals for update
-  using (auth.uid() = user_id);
-
-create policy "Users can delete own deals"
-  on public.brand_deals for delete
-  using (auth.uid() = user_id);
+create policy "Users can view own deals"   on public.brand_deals for select using (auth.uid() = user_id);
+create policy "Users can insert own deals" on public.brand_deals for insert with check (auth.uid() = user_id);
+create policy "Users can update own deals" on public.brand_deals for update using (auth.uid() = user_id);
+create policy "Users can delete own deals" on public.brand_deals for delete using (auth.uid() = user_id);
 
 
--- ────────────────────────────────────────────────────────────
--- TRANSACTIONS
--- Financial ledger for income and expenses
--- ────────────────────────────────────────────────────────────
-create type public.transaction_type as enum ('income', 'expense');
+-- ── TRANSACTIONS ─────────────────────────────────────────────
+create type public.transaction_type as enum ('income','expense');
 
 create type public.transaction_category as enum (
-  'sponsorship',
-  'ad_revenue',
-  'merch',
-  'freelance',
-  'subscription',
-  'equipment',
-  'software',
-  'travel',
-  'contractor',
-  'other'
+  'sponsorship','ad_revenue','merch','freelance','subscription',
+  'equipment','software','travel','contractor','other'
 );
 
 create table public.transactions (
@@ -207,48 +142,33 @@ create index idx_transactions_type on public.transactions(type);
 
 alter table public.transactions enable row level security;
 
-create policy "Users can view own transactions"
-  on public.transactions for select
-  using (auth.uid() = user_id);
-
-create policy "Users can insert own transactions"
-  on public.transactions for insert
-  with check (auth.uid() = user_id);
-
-create policy "Users can update own transactions"
-  on public.transactions for update
-  using (auth.uid() = user_id);
-
-create policy "Users can delete own transactions"
-  on public.transactions for delete
-  using (auth.uid() = user_id);
+create policy "Users can view own transactions"   on public.transactions for select using (auth.uid() = user_id);
+create policy "Users can insert own transactions" on public.transactions for insert with check (auth.uid() = user_id);
+create policy "Users can update own transactions" on public.transactions for update using (auth.uid() = user_id);
+create policy "Users can delete own transactions" on public.transactions for delete using (auth.uid() = user_id);
 
 
--- ────────────────────────────────────────────────────────────
--- AUTO-UPDATE updated_at TIMESTAMP
--- ────────────────────────────────────────────────────────────
-create or replace function public.update_updated_at()
-returns trigger
-language plpgsql
-as $$
+-- ── AUTO-UPDATE updated_at ───────────────────────────────────
+create or replace function public.svnos_update_updated_at()
+returns trigger language plpgsql as $$
 begin
   new.updated_at = now();
   return new;
 end;
 $$;
 
-create trigger set_profiles_updated_at
+create trigger svnos_set_profiles_updated_at
   before update on public.profiles
-  for each row execute function public.update_updated_at();
+  for each row execute function public.svnos_update_updated_at();
 
-create trigger set_content_projects_updated_at
+create trigger svnos_set_content_projects_updated_at
   before update on public.content_projects
-  for each row execute function public.update_updated_at();
+  for each row execute function public.svnos_update_updated_at();
 
-create trigger set_brand_deals_updated_at
+create trigger svnos_set_brand_deals_updated_at
   before update on public.brand_deals
-  for each row execute function public.update_updated_at();
+  for each row execute function public.svnos_update_updated_at();
 
-create trigger set_transactions_updated_at
+create trigger svnos_set_transactions_updated_at
   before update on public.transactions
-  for each row execute function public.update_updated_at();
+  for each row execute function public.svnos_update_updated_at();

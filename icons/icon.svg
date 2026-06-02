@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0a0a0a"/>
+  <text x="256" y="256" text-anchor="middle" dominant-baseline="central"
+        font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="120" font-weight="700" letter-spacing="8"
+        fill="#ffffff">SVN</text>
+  <line x1="128" y1="332" x2="384" y2="332" stroke="#ffffff" stroke-width="2" opacity="0.4"/>
+  <text x="256" y="372" text-anchor="middle" dominant-baseline="central"
+        font-family="Inter, -apple-system, BlinkMacSystemFont, sans-serif"
+        font-size="32" font-weight="400" letter-spacing="6"
+        fill="#777777">OS</text>
+</svg>
