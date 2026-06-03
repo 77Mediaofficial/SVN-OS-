@@ -68,6 +68,16 @@
           </svg>
           Deals & Ledger
         </a>
+
+        <a class="nav-link" data-route="/analytics">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="4" y1="20" x2="4" y2="10"/>
+            <line x1="10" y1="20" x2="10" y2="4"/>
+            <line x1="16" y1="20" x2="16" y2="14"/>
+            <line x1="3" y1="20" x2="21" y2="20"/>
+          </svg>
+          Analytics
+        </a>
       </div>
 
       <div class="nav-section">
@@ -140,6 +150,19 @@
     });
 
     initRouter();
+
+    // Register the service worker for offline app shell support.
+    // Browsers allow SWs on https:// and on localhost (any port).
+    if ('serviceWorker' in navigator
+        && (location.protocol === 'https:'
+            || location.hostname === 'localhost'
+            || location.hostname === '127.0.0.1')) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js').catch(() => {
+          // Silent failure — the app still works without the SW.
+        });
+      });
+    }
   </script>
 </body>
 </html>

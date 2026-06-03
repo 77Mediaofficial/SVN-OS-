@@ -1,5 +1,8 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
+import { hasAnyUserData, seedDemoData } from './demo-data.js';
+
+const ONBOARDING_DISMISSED_KEY = 'svn-os-onboarding-dismissed';
 
 // ── Constants ────────────────────────────────────────────────
 const REVENUE_GOAL = 10000;
@@ -23,7 +26,8 @@ export async function init() {
     loadRecentActivity(),
     loadPlatformDistribution(),
     loadUpcomingDeadlines(),
-    loadActiveDealsMetric()
+    loadActiveDealsMetric(),
+    maybeShowOnboarding(),
   ]);
 
   startCountUpAnimations();
@@ -33,6 +37,60 @@ export async function init() {
     animationFrames.forEach(id => cancelAnimationFrame(id));
     animationFrames = [];
   };
+}
+
+// ── Onboarding Banner ────────────────────────────────────────
+async function maybeShowOnboarding() {
+  const banner = document.getElementById('dash-onboarding');
+  if (!banner) return;
+
+  if (localStorage.getItem(ONBOARDING_DISMISSED_KEY) === '1') return;
+
+  try {
+    const hasData = await hasAnyUserData();
+    if (hasData) return;
+  } catch {
+    return;
+  }
+
+  banner.style.display = 'flex';
+
+  const seedBtn = document.getElementById('dash-seed-btn');
+  const dismissBtn = document.getElementById('dash-dismiss-btn');
+
+  if (seedBtn) {
+    seedBtn.addEventListener('click', async () => {
+      seedBtn.disabled = true;
+      try {
+        const counts = await seedDemoData();
+        showToast(`Added ${counts.content} projects, ${counts.deals} deals, ${counts.transactions} transactions`, 'success');
+        banner.style.display = 'none';
+        // Reload the dashboard sections so the new data is reflected
+        await Promise.all([
+          loadRevenueMetrics(),
+          loadActionItems(),
+          loadPipelineSnapshot(),
+          loadRecentDeals(),
+          loadRecentActivity(),
+          loadPlatformDistribution(),
+          loadUpcomingDeadlines(),
+          loadActiveDealsMetric(),
+        ]);
+        startCountUpAnimations();
+      } catch (err) {
+        showToast(err.message || 'Failed to load sample data', 'error');
+      } finally {
+        seedBtn.disabled = false;
+      }
+    });
+  }
+
+  if (dismissBtn) {
+    dismissBtn.addEventListener('click', () => {
+      localStorage.setItem(ONBOARDING_DISMISSED_KEY, '1');
+      banner.style.display = 'none';
+    });
+  }
 }
 
 // ── Revenue Metrics with Monthly Comparison & Sparkline ──────

@@ -1,0 +1,261 @@
+<style>
+  /* ── Analytics Page ─────────────────────────────────────── */
+  .an-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .an-range-bar {
+    display: inline-flex;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .an-range-btn {
+    padding: 8px 14px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: color var(--transition-fast), background var(--transition-fast);
+    border-right: 1px solid var(--color-border);
+  }
+  .an-range-btn:last-child { border-right: none; }
+  .an-range-btn:hover { color: var(--color-text); }
+  .an-range-btn.active {
+    background: var(--color-surface-2);
+    color: var(--color-text);
+  }
+
+  .an-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 20px 0 24px;
+  }
+  .an-kpi {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+  }
+  .an-kpi-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: 8px;
+  }
+  .an-kpi-value {
+    font-size: 1.6rem;
+    font-weight: 300;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+  .an-kpi-value.positive { color: var(--color-success); }
+  .an-kpi-value.negative { color: var(--color-danger); }
+  .an-kpi-sub {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+  }
+
+  .an-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+
+  .an-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 22px 24px;
+  }
+  .an-card-title {
+    font-size: 0.74rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-dim);
+    margin-bottom: 4px;
+  }
+  .an-card-sub {
+    font-size: 0.76rem;
+    color: var(--color-text-muted);
+    margin-bottom: 16px;
+  }
+
+  /* Revenue chart */
+  .an-chart-wrap {
+    position: relative;
+    width: 100%;
+    height: 220px;
+  }
+  .an-chart-wrap svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .an-chart-legend {
+    display: flex;
+    gap: 20px;
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    margin-top: 12px;
+  }
+  .an-chart-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .an-chart-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+  }
+  .an-chart-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 220px;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+  }
+
+  /* Bar list (category breakdown, top brands) */
+  .an-bar-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .an-bar-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 12px;
+  }
+  .an-bar-label {
+    font-size: 0.82rem;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .an-bar-value {
+    font-size: 0.78rem;
+    color: var(--color-text-dim);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .an-bar-track {
+    grid-column: 1 / -1;
+    height: 6px;
+    background: var(--color-surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .an-bar-fill {
+    height: 100%;
+    background: var(--color-text-dim);
+    border-radius: 999px;
+    transition: width var(--transition-base);
+  }
+  .an-bar-fill.income { background: var(--color-success); }
+  .an-bar-fill.expense { background: var(--color-danger); }
+  .an-bar-fill.brand { background: #60a5fa; }
+  .an-bar-fill.content { background: #a78bfa; }
+
+  .an-empty {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    padding: 28px 0;
+    text-align: center;
+  }
+
+  @media (max-width: 1024px) {
+    .an-kpis { grid-template-columns: repeat(2, 1fr); }
+    .an-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 600px) {
+    .an-kpis { grid-template-columns: 1fr; }
+    .an-header { flex-direction: column; align-items: stretch; }
+  }
+</style>
+
+<section class="page-header an-header">
+  <div>
+    <h2>Analytics</h2>
+    <p>Trends across your revenue, deals, and content</p>
+  </div>
+  <div class="an-range-bar" id="an-range" role="tablist" aria-label="Time range">
+    <button class="an-range-btn" data-range="3">3M</button>
+    <button class="an-range-btn active" data-range="6">6M</button>
+    <button class="an-range-btn" data-range="12">12M</button>
+  </div>
+</section>
+
+<div class="an-kpis">
+  <div class="an-kpi">
+    <div class="an-kpi-label">Total income</div>
+    <div class="an-kpi-value positive" id="an-kpi-income">$0</div>
+    <div class="an-kpi-sub" id="an-kpi-income-sub">--</div>
+  </div>
+  <div class="an-kpi">
+    <div class="an-kpi-label">Total expenses</div>
+    <div class="an-kpi-value" id="an-kpi-expenses">$0</div>
+    <div class="an-kpi-sub" id="an-kpi-expenses-sub">--</div>
+  </div>
+  <div class="an-kpi">
+    <div class="an-kpi-label">Net</div>
+    <div class="an-kpi-value" id="an-kpi-net">$0</div>
+    <div class="an-kpi-sub" id="an-kpi-net-sub">--</div>
+  </div>
+  <div class="an-kpi">
+    <div class="an-kpi-label">Posted content</div>
+    <div class="an-kpi-value" id="an-kpi-posted">0</div>
+    <div class="an-kpi-sub" id="an-kpi-posted-sub">--</div>
+  </div>
+</div>
+
+<div class="an-grid">
+  <div class="an-card">
+    <div class="an-card-title">Revenue trend</div>
+    <div class="an-card-sub" id="an-revenue-sub">Monthly income, expenses, and net</div>
+    <div class="an-chart-wrap" id="an-revenue-chart"></div>
+    <div class="an-chart-legend">
+      <div class="an-chart-legend-item"><span class="an-chart-legend-dot" style="background:var(--color-success);"></span> Income</div>
+      <div class="an-chart-legend-item"><span class="an-chart-legend-dot" style="background:var(--color-danger);"></span> Expenses</div>
+      <div class="an-chart-legend-item"><span class="an-chart-legend-dot" style="background:var(--color-text-dim);"></span> Net</div>
+    </div>
+  </div>
+
+  <div class="an-card">
+    <div class="an-card-title">Expense breakdown</div>
+    <div class="an-card-sub">By category</div>
+    <div class="an-bar-list" id="an-expense-breakdown"></div>
+  </div>
+</div>
+
+<div class="an-grid" style="margin-top:16px;">
+  <div class="an-card">
+    <div class="an-card-title">Top brands by revenue</div>
+    <div class="an-card-sub">Sum of transactions linked to each deal</div>
+    <div class="an-bar-list" id="an-top-brands"></div>
+  </div>
+
+  <div class="an-card">
+    <div class="an-card-title">Content velocity</div>
+    <div class="an-card-sub">Projects posted per month</div>
+    <div class="an-bar-list" id="an-content-velocity"></div>
+  </div>
+</div>

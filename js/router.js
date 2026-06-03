@@ -5,6 +5,7 @@ export const routes = {
   '/content': { page: 'content-engine',  module: () => import('./modules/content-engine.js'), requiresAuth: true },
   '/calendar':{ page: 'calendar',        module: () => import('./modules/calendar.js'),       requiresAuth: true },
   '/deals':   { page: 'deals-ledger',    module: () => import('./modules/deals-ledger.js'),   requiresAuth: true },
+  '/analytics':{page: 'analytics',       module: () => import('./modules/analytics.js'),      requiresAuth: true },
   '/settings':{ page: 'settings',        module: () => import('./modules/settings.js'),       requiresAuth: true },
 };
 
