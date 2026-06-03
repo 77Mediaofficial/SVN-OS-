@@ -313,6 +313,37 @@
     margin-bottom: 20px;
   }
 
+  /* ── Data Card ──────────────────────────────────────────────── */
+  .settings-data-section {
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .settings-data-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .settings-data-heading {
+    font-size: 0.87rem;
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: 6px;
+  }
+
+  .settings-data-desc {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+
+  .settings-export-row {
+    flex-wrap: wrap;
+  }
+
   /* ── Responsive ─────────────────────────────────────────────── */
   @media (max-width: 600px) {
     .settings-password-grid {
@@ -429,6 +460,30 @@
       <div class="danger-zone-label">Danger Zone</div>
       <p class="danger-zone-desc">Permanently delete your account and all associated data. This action cannot be undone.</p>
       <button type="button" class="btn-danger" id="settings-delete-account">Delete Account</button>
+    </div>
+  </div>
+
+  <!-- ── Data ───────────────────────────────────────────────── -->
+  <div class="settings-card">
+    <div class="settings-card-title">Data</div>
+
+    <div class="settings-data-section">
+      <div class="settings-data-heading">Sample data</div>
+      <p class="settings-data-desc">Load a set of example projects, deals, and transactions to see how SVN OS works. You can clear them at any time.</p>
+      <div class="settings-actions">
+        <button type="button" class="btn btn-primary" id="settings-seed-demo">Load sample data</button>
+        <button type="button" class="btn btn-ghost" id="settings-clear-demo">Clear sample data</button>
+      </div>
+    </div>
+
+    <div class="settings-data-section">
+      <div class="settings-data-heading">Export CSV</div>
+      <p class="settings-data-desc">Download your data as comma-separated values — useful for accounting, taxes, or moving to another tool.</p>
+      <div class="settings-actions settings-export-row">
+        <button type="button" class="btn btn-ghost" id="settings-export-transactions">Transactions</button>
+        <button type="button" class="btn btn-ghost" id="settings-export-deals">Deals</button>
+        <button type="button" class="btn btn-ghost" id="settings-export-content">Content</button>
+      </div>
     </div>
   </div>
 

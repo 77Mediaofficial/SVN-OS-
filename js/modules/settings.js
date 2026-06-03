@@ -1,5 +1,7 @@
 import { db, getCurrentUser, signOut } from '../supabase.js';
 import { showToast } from '../toast.js';
+import { seedDemoData, clearDemoData } from './demo-data.js';
+import { exportTransactionsCsv, exportDealsCsv, exportContentCsv } from './export.js';
 
 const FONT_SIZE_KEY = 'svn-os-font-size';
 const COMPACT_KEY = 'svn-os-compact-mode';
@@ -24,6 +26,7 @@ export async function init() {
   bindSignOut();
   bindDeleteAccount();
   bindAppearance();
+  bindDataActions();
 
   return cleanup;
 }
@@ -285,6 +288,69 @@ function applySavedPreferences() {
   if (savedCompact) {
     applyCompactMode(true);
   }
+}
+
+/* ── Data Actions ─────────────────────────────────────────────── */
+
+function bindDataActions() {
+  const seedBtn = document.getElementById('settings-seed-demo');
+  const clearBtn = document.getElementById('settings-clear-demo');
+  const txBtn = document.getElementById('settings-export-transactions');
+  const dealBtn = document.getElementById('settings-export-deals');
+  const contentBtn = document.getElementById('settings-export-content');
+
+  if (seedBtn) {
+    seedBtn.addEventListener('click', async () => {
+      seedBtn.disabled = true;
+      try {
+        const counts = await seedDemoData();
+        showToast(`Added ${counts.content} projects, ${counts.deals} deals, ${counts.transactions} transactions`, 'success');
+      } catch (err) {
+        showToast(err.message || 'Failed to load sample data', 'error');
+      } finally {
+        seedBtn.disabled = false;
+      }
+    });
+  }
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', async () => {
+      const confirmed = window.confirm('Remove all sample data? Only items added via "Load sample data" will be deleted.');
+      if (!confirmed) return;
+      clearBtn.disabled = true;
+      try {
+        await clearDemoData();
+        showToast('Sample data cleared', 'success');
+      } catch (err) {
+        showToast(err.message || 'Failed to clear sample data', 'error');
+      } finally {
+        clearBtn.disabled = false;
+      }
+    });
+  }
+
+  const wireExport = (btn, fn, label) => {
+    if (!btn) return;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      try {
+        const count = await fn();
+        if (count === 0) {
+          showToast(`No ${label} to export`, 'info');
+        } else {
+          showToast(`Exported ${count} ${label}`, 'success');
+        }
+      } catch (err) {
+        showToast(err.message || `Failed to export ${label}`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  };
+
+  wireExport(txBtn, exportTransactionsCsv, 'transactions');
+  wireExport(dealBtn, exportDealsCsv, 'deals');
+  wireExport(contentBtn, exportContentCsv, 'content projects');
 }
 
 /* ── Cleanup ──────────────────────────────────────────────────── */

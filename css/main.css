@@ -855,3 +855,24 @@ body.compact-mode .nav-link {
   min-height: 1.2em;
   color: var(--color-danger, #f87171);
 }
+
+/* ── Tag chips (shared across modules) ───────────────────── */
+.tag-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.tag-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 0.62rem;
+  font-weight: 500;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-dim);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tag-chip::before { content: '#'; opacity: 0.5; margin-right: 1px; }
+.tag-chip.compact { padding: 1px 5px; font-size: 0.58rem; }

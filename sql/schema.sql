@@ -66,6 +66,7 @@ create table public.content_projects (
   scheduled_at  timestamptz,
   published_at  timestamptz,
   notes         text,
+  tags          text[] not null default '{}',
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now()
 );
@@ -73,6 +74,7 @@ create table public.content_projects (
 create index idx_content_projects_user      on public.content_projects(user_id);
 create index idx_content_projects_status    on public.content_projects(status);
 create index idx_content_projects_scheduled on public.content_projects(scheduled_at);
+create index idx_content_projects_tags      on public.content_projects using gin (tags);
 
 alter table public.content_projects enable row level security;
 
@@ -99,12 +101,14 @@ create table public.brand_deals (
   deliverables    text,
   deadline        date,
   notes           text,
+  tags            text[] not null default '{}',
   created_at      timestamptz not null default now(),
   updated_at      timestamptz not null default now()
 );
 
 create index idx_brand_deals_user   on public.brand_deals(user_id);
 create index idx_brand_deals_status on public.brand_deals(status);
+create index idx_brand_deals_tags   on public.brand_deals using gin (tags);
 
 alter table public.brand_deals enable row level security;
 

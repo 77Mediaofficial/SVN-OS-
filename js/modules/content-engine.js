@@ -96,7 +96,8 @@ function getFilteredProjects() {
     filtered = filtered.filter(p => {
       const title = (p.title || '').toLowerCase();
       const desc = (p.description || '').toLowerCase();
-      return title.includes(q) || desc.includes(q);
+      const tagMatch = Array.isArray(p.tags) && p.tags.some(t => t.toLowerCase().includes(q));
+      return title.includes(q) || desc.includes(q) || tagMatch;
     });
   }
 
@@ -115,7 +116,8 @@ function getFilteredArchived() {
     filtered = filtered.filter(p => {
       const title = (p.title || '').toLowerCase();
       const desc = (p.description || '').toLowerCase();
-      return title.includes(q) || desc.includes(q);
+      const tagMatch = Array.isArray(p.tags) && p.tags.some(t => t.toLowerCase().includes(q));
+      return title.includes(q) || desc.includes(q) || tagMatch;
     });
   }
 
@@ -260,12 +262,28 @@ function cardHTML(project) {
         <span class="kanban-card-platform ${platformClass}">${platformLabel}</span>
         <span class="kanban-card-time">${relativeTime(project.updated_at)}</span>
       </div>
+      ${tagChipsHTML(project.tags)}
       <div class="kanban-card-actions">
         <button class="kanban-card-btn" data-action="edit" data-id="${project.id}">Edit</button>
         <button class="kanban-card-btn danger" data-action="delete" data-id="${project.id}">Delete</button>
       </div>
     </div>
   `;
+}
+
+function tagChipsHTML(tags) {
+  if (!Array.isArray(tags) || tags.length === 0) return '';
+  return `<div class="tag-chip-row">${tags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>`;
+}
+
+function parseTagsInput(value) {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map(t => t.trim().toLowerCase().replace(/^#/, ''))
+    .filter(Boolean)
+    .filter((t, i, arr) => arr.indexOf(t) === i)
+    .slice(0, 12);
 }
 
 function archivedCardHTML(project) {
@@ -367,6 +385,7 @@ function openSlideover(project) {
   setDetailValue('ce-detail-description', project.description);
   setDetailValue('ce-detail-scheduled', project.scheduled_at ? formatDateTime(project.scheduled_at) : null);
   setDetailValue('ce-detail-published', project.published_at ? formatDateTime(project.published_at) : null);
+  setTagsDetail('ce-detail-tags', project.tags);
   setDetailValue('ce-detail-notes', project.notes);
   setDetailValue('ce-detail-created', project.created_at ? formatDateTime(project.created_at) : null);
   setDetailValue('ce-detail-updated', project.updated_at ? formatDateTime(project.updated_at) : null);
@@ -389,6 +408,18 @@ function setDetailValue(id, value) {
   if (!el) return;
   if (value) {
     el.textContent = value;
+    el.classList.remove('empty');
+  } else {
+    el.textContent = '--';
+    el.classList.add('empty');
+  }
+}
+
+function setTagsDetail(id, tags) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (Array.isArray(tags) && tags.length) {
+    el.innerHTML = tagChipsHTML(tags);
     el.classList.remove('empty');
   } else {
     el.textContent = '--';
@@ -554,6 +585,7 @@ function openEditModal(id) {
   setVal('ce-platform', project.platform || '');
   setVal('ce-status', project.status || 'idea');
   setVal('ce-notes', project.notes || '');
+  setVal('ce-tags', Array.isArray(project.tags) ? project.tags.join(', ') : '');
 
   // Format scheduled_at for datetime-local input
   if (project.scheduled_at) {
@@ -603,6 +635,7 @@ async function handleSubmit(e) {
   const status = getVal('ce-status') || 'idea';
   const scheduledRaw = getVal('ce-scheduled');
   const notes = getVal('ce-notes').trim();
+  const tags = parseTagsInput(getVal('ce-tags'));
 
   if (!title) {
     if (errorEl) errorEl.textContent = 'Title is required.';
@@ -616,7 +649,7 @@ async function handleSubmit(e) {
   try {
     if (editingId) {
       // Update
-      const payload = { title, description, platform, status, scheduled_at, notes };
+      const payload = { title, description, platform, status, scheduled_at, notes, tags };
       // Only set published_at when transitioning to posted
       const existing = projects.find(p => p.id === editingId)
         || archivedProjects.find(p => p.id === editingId);
@@ -650,6 +683,7 @@ async function handleSubmit(e) {
           scheduled_at,
           published_at,
           notes: notes || null,
+          tags,
         });
 
       if (error) throw error;

@@ -279,6 +279,27 @@
   white-space: nowrap;
 }
 
+/* Tag chips */
+.tag-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 8px 0 0;
+}
+.tag-chip {
+  display: inline-block;
+  padding: 2px 7px;
+  font-size: 0.62rem;
+  font-weight: 500;
+  border-radius: 999px;
+  background: var(--color-surface-2);
+  color: var(--color-text-dim);
+  border: 1px solid var(--color-border);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.tag-chip::before { content: '#'; opacity: 0.5; margin-right: 1px; }
+
 /* Card hover actions */
 .kanban-card-actions {
   display: flex;
@@ -700,6 +721,11 @@
     </div>
 
     <div class="ce-detail-row">
+      <div class="ce-detail-label">Tags</div>
+      <div class="ce-detail-value" id="ce-detail-tags"></div>
+    </div>
+
+    <div class="ce-detail-row">
       <div class="ce-detail-label">Notes</div>
       <div class="ce-detail-value" id="ce-detail-notes"></div>
     </div>
@@ -778,6 +804,11 @@
       <div class="form-group">
         <label for="ce-scheduled">Scheduled Date</label>
         <input type="datetime-local" id="ce-scheduled" />
+      </div>
+
+      <div class="form-group">
+        <label for="ce-tags">Tags</label>
+        <input type="text" id="ce-tags" placeholder="thumbnail, evergreen, series-2026" autocomplete="off" />
       </div>
 
       <div class="form-group">

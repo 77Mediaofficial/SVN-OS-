@@ -80,6 +80,21 @@ function roundCents(value) {
   return Math.round(value * 100) / 100;
 }
 
+function parseTagsInput(value) {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map(t => t.trim().toLowerCase().replace(/^#/, ''))
+    .filter(Boolean)
+    .filter((t, i, arr) => arr.indexOf(t) === i)
+    .slice(0, 12);
+}
+
+function tagChipsHTML(tags) {
+  if (!Array.isArray(tags) || tags.length === 0) return '';
+  return `<span class="tag-chip-row" style="margin-left:8px;">${tags.map(t => `<span class="tag-chip compact">${escapeHtml(t)}</span>`).join('')}</span>`;
+}
+
 /* ── DEALS: Load & Render ─────────────────────────────────── */
 async function loadDeals() {
   const tbody = document.getElementById('deals-tbody');
@@ -112,9 +127,11 @@ function renderDeals() {
   // Apply search filter
   if (currentDealSearch) {
     const query = currentDealSearch.toLowerCase();
-    filtered = filtered.filter(d =>
-      (d.brand_name || '').toLowerCase().includes(query)
-    );
+    filtered = filtered.filter(d => {
+      const brandMatch = (d.brand_name || '').toLowerCase().includes(query);
+      const tagMatch = Array.isArray(d.tags) && d.tags.some(t => t.toLowerCase().includes(query));
+      return brandMatch || tagMatch;
+    });
   }
 
   if (filtered.length === 0) {
@@ -126,7 +143,7 @@ function renderDeals() {
 
   tbody.innerHTML = filtered.map(d => `
     <tr data-deal-id="${d.id}">
-      <td>${escapeHtml(d.brand_name)}</td>
+      <td>${escapeHtml(d.brand_name)}${tagChipsHTML(d.tags)}</td>
       <td><span class="deal-badge badge-${d.status}">${formatStatus(d.status)}</span></td>
       <td class="col-value">${d.value ? formatCurrency(d.value) : '--'}</td>
       <td class="col-date">${formatDate(d.deadline)}</td>
@@ -153,6 +170,7 @@ async function saveDeal(formData) {
     deliverables: formData.deliverables || null,
     deadline: formData.deadline || null,
     notes: formData.notes || null,
+    tags: formData.tags || [],
   };
 
   let error;
@@ -340,6 +358,7 @@ function populateDealForm(deal) {
   document.getElementById('deal-value').value = deal.value || '';
   document.getElementById('deal-deadline').value = deal.deadline || '';
   document.getElementById('deal-deliverables').value = deal.deliverables || '';
+  document.getElementById('deal-tags').value = Array.isArray(deal.tags) ? deal.tags.join(', ') : '';
   document.getElementById('deal-notes').value = deal.notes || '';
   document.getElementById('deal-error').textContent = '';
   document.getElementById('deal-modal-title').textContent = 'Edit Deal';
@@ -485,6 +504,7 @@ function bindDealEvents(signal) {
           deliverables: document.getElementById('deal-deliverables').value.trim(),
           deadline: document.getElementById('deal-deadline').value,
           notes: document.getElementById('deal-notes').value.trim(),
+          tags: parseTagsInput(document.getElementById('deal-tags').value),
         });
         closeModal('deal-modal');
       } catch (err) {
