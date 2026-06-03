@@ -248,6 +248,41 @@
 .kanban-card-progress[data-step="4"] { width: 80%; background: var(--color-success); }
 .kanban-card-progress[data-step="5"] { width: 100%; background: var(--color-success); }
 
+/* Selection checkbox (top-right corner of card) */
+.kanban-card-select {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: transparent;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--transition-fast), color var(--transition-fast),
+              border-color var(--transition-fast), background var(--transition-fast);
+  z-index: 2;
+}
+.kanban-card:hover .kanban-card-select,
+.kanban-card.selected .kanban-card-select,
+.kanban-card-select.checked {
+  opacity: 1;
+}
+.kanban-card-select.checked {
+  background: var(--color-accent, #fff);
+  border-color: var(--color-accent, #fff);
+  color: var(--color-bg);
+}
+.kanban-card.selected {
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.15) inset;
+}
+
 .kanban-card-title {
   font-size: 0.87rem;
   font-weight: 500;
@@ -553,6 +588,69 @@
   margin-top: 10px;
 }
 
+/* ── Bulk action bar (slides in from bottom on selection) ── */
+.ce-bulk-bar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translate(-50%, calc(100% + 40px));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+  z-index: 900;
+  transition: transform 240ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease;
+  opacity: 0;
+  pointer-events: none;
+}
+.ce-bulk-bar.visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+  pointer-events: auto;
+}
+.ce-bulk-count {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--color-text);
+  padding: 0 10px 0 4px;
+  border-right: 1px solid var(--color-border);
+  white-space: nowrap;
+}
+.ce-bulk-select {
+  font-size: 0.78rem;
+  padding: 6px 28px 6px 12px;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  color: var(--color-text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M3 5L6 8L9 5' stroke='%23777' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  outline: none;
+}
+.ce-bulk-btn {
+  font-size: 0.78rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+.ce-bulk-btn:hover { border-color: #444; }
+.ce-bulk-btn.danger { color: var(--color-danger); border-color: rgba(248, 113, 113, 0.25); }
+.ce-bulk-btn.danger:hover { background: rgba(248, 113, 113, 0.08); border-color: rgba(248, 113, 113, 0.5); }
+.ce-bulk-btn.ghost { color: var(--color-text-muted); background: transparent; border-color: transparent; }
+.ce-bulk-btn.ghost:hover { color: var(--color-text); }
+
 /* Platform badge colours */
 .platform-youtube   { color: #f87171; border-color: #3b1818; }
 .platform-tiktok    { color: #a78bfa; border-color: #2a1f4e; }
@@ -835,6 +933,22 @@
       </div>
     </form>
   </div>
+</div>
+
+<!-- ── Bulk Action Bar ─────────────────────────────────────────── -->
+<div class="ce-bulk-bar" id="ce-bulk-bar" role="region" aria-label="Bulk actions">
+  <span class="ce-bulk-count" id="ce-bulk-count">0 selected</span>
+  <select class="ce-bulk-select" id="ce-bulk-move" aria-label="Move to status">
+    <option value="">Move to…</option>
+    <option value="idea">Idea</option>
+    <option value="scripting">Scripting</option>
+    <option value="production">Production</option>
+    <option value="ready">Ready</option>
+    <option value="posted">Posted</option>
+  </select>
+  <button class="ce-bulk-btn" id="ce-bulk-archive">Archive</button>
+  <button class="ce-bulk-btn danger" id="ce-bulk-delete">Delete</button>
+  <button class="ce-bulk-btn ghost" id="ce-bulk-clear" aria-label="Clear selection">Clear</button>
 </div>
 
 <!-- ── AI Idea Generator Modal ──────────────────────────────────── -->

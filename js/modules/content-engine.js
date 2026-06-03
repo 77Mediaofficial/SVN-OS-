@@ -30,6 +30,7 @@ let platformFilter = '';
 let tagFilter = '';
 let showArchived = false;
 let searchDebounceTimer = null;
+let selectedIds = new Set();
 
 /* ── Init (called by router after HTML partial is injected) ─ */
 export async function init() {
@@ -38,12 +39,14 @@ export async function init() {
   platformFilter = '';
   tagFilter = '';
   showArchived = false;
+  selectedIds = new Set();
 
   bindModal();
   bindDragAndDrop();
   bindFilters();
   bindSlideover();
   bindIdeasModal();
+  bindBulkBar();
   bindKeyboardShortcuts();
   renderActiveTagFilter();
   await loadProjects();
@@ -236,7 +239,16 @@ function renderBoard() {
         setTagFilter(btn.dataset.tag);
       });
     });
+
+    container.querySelectorAll('[data-action="toggle-select"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleSelection(btn.dataset.id);
+      });
+    });
   });
+
+  syncBulkBar();
 
   // Show/hide board-level empty state
   const boardEmpty = document.getElementById('kanban-board-empty');
@@ -257,10 +269,16 @@ function cardHTML(project) {
     ? escapeHtml(project.platform)
     : 'none';
   const step = STATUS_STEP[project.status] || 1;
+  const isSelected = selectedIds.has(project.id);
 
   return `
-    <div class="kanban-card" data-id="${project.id}">
+    <div class="kanban-card${isSelected ? ' selected' : ''}" data-id="${project.id}">
       <div class="kanban-card-progress" data-step="${step}"></div>
+      <button class="kanban-card-select${isSelected ? ' checked' : ''}" data-action="toggle-select" data-id="${project.id}" aria-label="Select project" title="Select">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M1.5 5L4 7.5L8.5 2.5"/>
+        </svg>
+      </button>
       <div class="kanban-card-title">${escapeHtml(project.title)}</div>
       <div class="kanban-card-meta">
         <span class="kanban-card-platform ${platformClass}">${platformLabel}</span>
@@ -772,6 +790,103 @@ async function deleteProject(id) {
   }
 }
 
+/* ── Bulk Selection ──────────────────────────────────────── */
+function toggleSelection(id) {
+  if (selectedIds.has(id)) selectedIds.delete(id);
+  else selectedIds.add(id);
+
+  // Update only this card's visual state to avoid a full re-render.
+  const cards = document.querySelectorAll(`.kanban-card[data-id="${id}"]`);
+  cards.forEach(card => {
+    card.classList.toggle('selected', selectedIds.has(id));
+    const btn = card.querySelector('[data-action="toggle-select"]');
+    if (btn) btn.classList.toggle('checked', selectedIds.has(id));
+  });
+  syncBulkBar();
+}
+
+function clearSelection() {
+  if (selectedIds.size === 0) return;
+  selectedIds.clear();
+  document.querySelectorAll('.kanban-card.selected').forEach(card => {
+    card.classList.remove('selected');
+    const btn = card.querySelector('[data-action="toggle-select"]');
+    if (btn) btn.classList.remove('checked');
+  });
+  syncBulkBar();
+}
+
+function bindBulkBar() {
+  const moveSelect = document.getElementById('ce-bulk-move');
+  const archiveBtn = document.getElementById('ce-bulk-archive');
+  const deleteBtn = document.getElementById('ce-bulk-delete');
+  const clearBtn = document.getElementById('ce-bulk-clear');
+
+  if (moveSelect) {
+    moveSelect.addEventListener('change', async () => {
+      const newStatus = moveSelect.value;
+      if (!newStatus) return;
+      await bulkMove(newStatus);
+      moveSelect.value = '';
+    });
+  }
+  if (archiveBtn) archiveBtn.addEventListener('click', () => bulkMove('archived'));
+  if (deleteBtn) deleteBtn.addEventListener('click', bulkDelete);
+  if (clearBtn) clearBtn.addEventListener('click', clearSelection);
+}
+
+function syncBulkBar() {
+  const bar = document.getElementById('ce-bulk-bar');
+  const countEl = document.getElementById('ce-bulk-count');
+  if (!bar) return;
+  if (selectedIds.size === 0) {
+    bar.classList.remove('visible');
+    return;
+  }
+  bar.classList.add('visible');
+  if (countEl) countEl.textContent = `${selectedIds.size} selected`;
+}
+
+async function bulkMove(newStatus) {
+  if (selectedIds.size === 0) return;
+  const ids = Array.from(selectedIds);
+  const payload = { status: newStatus };
+  if (newStatus === 'posted') payload.published_at = new Date().toISOString();
+
+  try {
+    const { error } = await db
+      .from('content_projects')
+      .update(payload)
+      .in('id', ids);
+    if (error) throw error;
+    showToast(`Moved ${ids.length} project${ids.length !== 1 ? 's' : ''} to ${STATUS_LABEL[newStatus] || newStatus}`, 'success');
+    clearSelection();
+    await loadProjects();
+    bindDragAndDrop();
+    if (showArchived) await loadArchivedProjects();
+  } catch (err) {
+    showToast(err.message || 'Failed to move projects', 'error');
+  }
+}
+
+async function bulkDelete() {
+  if (selectedIds.size === 0) return;
+  const ids = Array.from(selectedIds);
+  if (!confirm(`Delete ${ids.length} project${ids.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+
+  try {
+    const { error } = await db.from('content_projects').delete().in('id', ids);
+    if (error) throw error;
+    showToast(`Deleted ${ids.length} project${ids.length !== 1 ? 's' : ''}`, 'info');
+    clearSelection();
+    await loadProjects();
+    bindDragAndDrop();
+    if (showArchived) await loadArchivedProjects();
+  } catch (err) {
+    showToast(err.message || 'Failed to delete projects', 'error');
+  }
+}
+
 /* ── AI Idea Generator ───────────────────────────────────── */
 function bindIdeasModal() {
   const triggerBtn = document.getElementById('ce-generate-ideas');
@@ -921,7 +1036,7 @@ function bindKeyboardShortcuts() {
 }
 
 function onGlobalKeydown(e) {
-  // Escape: close slideover first, then ideas modal, then create modal
+  // Escape: close slideover, ideas modal, create modal, or clear selection
   if (e.key === 'Escape') {
     if (slideoverProjectId !== null) {
       closeSlideover();
@@ -930,6 +1045,10 @@ function onGlobalKeydown(e) {
     const ideasModal = document.getElementById('ce-ideas-modal');
     if (ideasModal && ideasModal.style.display === 'flex') {
       closeIdeasModal();
+      return;
+    }
+    if (selectedIds.size > 0) {
+      clearSelection();
       return;
     }
     closeModal();

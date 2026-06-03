@@ -5,10 +5,15 @@
 
 import { navigate } from '/js/router.js';
 import { signOut } from '/js/auth.js';
+import { db, isAuthenticated } from '/js/supabase.js';
 
 let overlay = null;
 let styleInjected = false;
 let activeIndex = 0;
+let searchDebounceTimer = null;
+let searchToken = 0;
+let dataResults = [];
+let lastQuery = '';
 
 const commands = [
   { section: 'Navigate', label: 'Dashboard',       action: () => navigate('/'),        hint: 'G then D' },
@@ -226,8 +231,90 @@ function injectStyles() {
 }
 
 function getFiltered(query) {
-  if (!query) return commands;
-  return commands.filter(cmd => fuzzyMatch(query, cmd.label));
+  const matchedCommands = !query
+    ? commands
+    : commands.filter(cmd => fuzzyMatch(query, cmd.label));
+
+  // Only surface data results when the query matches the last fetch.
+  const data = query && query === lastQuery ? dataResults : [];
+  return [...matchedCommands, ...data];
+}
+
+async function fetchDataResults(query) {
+  if (!query || query.length < 2) {
+    dataResults = [];
+    lastQuery = '';
+    return;
+  }
+
+  if (!isAuthenticated()) {
+    dataResults = [];
+    lastQuery = query;
+    return;
+  }
+
+  const myToken = ++searchToken;
+  const ilike = `%${query.replace(/[%_]/g, '\\$&')}%`;
+
+  try {
+    const [contentRes, dealRes, txRes] = await Promise.all([
+      db.from('content_projects')
+        .select('id, title, status, platform')
+        .or(`title.ilike.${ilike},description.ilike.${ilike}`)
+        .order('updated_at', { ascending: false })
+        .limit(5),
+      db.from('brand_deals')
+        .select('id, brand_name, status, value')
+        .ilike('brand_name', ilike)
+        .order('updated_at', { ascending: false })
+        .limit(5),
+      db.from('transactions')
+        .select('id, description, amount, type, date')
+        .ilike('description', ilike)
+        .order('date', { ascending: false })
+        .limit(5),
+    ]);
+
+    // A newer query has started — discard these results.
+    if (myToken !== searchToken) return;
+
+    const results = [];
+    (contentRes.data || []).forEach(p => {
+      results.push({
+        section: 'Content',
+        label: p.title || '(untitled)',
+        hint: p.status,
+        action: () => navigate('/content'),
+      });
+    });
+    (dealRes.data || []).forEach(d => {
+      const hint = d.value ? `$${Number(d.value).toLocaleString('en-US')}` : d.status;
+      results.push({
+        section: 'Deals',
+        label: d.brand_name,
+        hint,
+        action: () => navigate('/deals'),
+      });
+    });
+    (txRes.data || []).forEach(t => {
+      const sign = t.type === 'income' ? '+' : '-';
+      const amount = `${sign}$${Math.abs(Number(t.amount) || 0).toLocaleString('en-US')}`;
+      results.push({
+        section: 'Transactions',
+        label: t.description || `${t.type} on ${t.date}`,
+        hint: amount,
+        action: () => navigate('/deals'),
+      });
+    });
+
+    dataResults = results;
+    lastQuery = query;
+  } catch {
+    if (myToken === searchToken) {
+      dataResults = [];
+      lastQuery = query;
+    }
+  }
 }
 
 function renderResults(filtered) {
@@ -308,6 +395,8 @@ function open() {
   injectStyles();
 
   activeIndex = 0;
+  dataResults = [];
+  lastQuery = '';
 
   overlay = document.createElement('div');
   overlay.className = 'cmd-palette-overlay';
@@ -318,7 +407,7 @@ function open() {
           <circle cx="11" cy="11" r="8"/>
           <line x1="21" y1="21" x2="16.65" y2="16.65"/>
         </svg>
-        <input class="cmd-palette-input" type="text" placeholder="Search commands..." autocomplete="off" spellcheck="false" />
+        <input class="cmd-palette-input" type="text" placeholder="Search commands, projects, deals, transactions..." autocomplete="off" spellcheck="false" />
       </div>
       <div class="cmd-palette-results"></div>
       <div class="cmd-palette-footer">
@@ -348,7 +437,17 @@ function open() {
 
   input.addEventListener('input', () => {
     activeIndex = 0;
-    renderResults(getFiltered(input.value.trim()));
+    const value = input.value.trim();
+    renderResults(getFiltered(value));
+
+    // Debounced data fetch — re-render when results arrive.
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(async () => {
+      await fetchDataResults(value);
+      if (overlay && input.value.trim() === value) {
+        renderResults(getFiltered(value));
+      }
+    }, 220);
   });
 
   input.addEventListener('keydown', (e) => {
