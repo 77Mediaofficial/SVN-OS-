@@ -39,6 +39,25 @@ function escapeHtml(str) {
   return d.innerHTML;
 }
 
+function updateUsernameHint(username) {
+  const hint = document.getElementById('settings-username-hint');
+  if (!hint) return;
+  if (username) {
+    const url = `${window.location.origin}/u/${username}`;
+    hint.innerHTML = '';
+    hint.append('Your public profile lives at ');
+    const a = document.createElement('a');
+    a.href = `/u/${username}`;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.className = 'mono';
+    a.textContent = url;
+    hint.appendChild(a);
+  } else {
+    hint.textContent = 'Add a handle to enable your shareable public profile at /u/yourname';
+  }
+}
+
 function getInitials(name) {
   if (!name) return '?';
   return name
@@ -62,7 +81,7 @@ async function loadProfile(user) {
   try {
     const { data: profile, error } = await db
       .from('profiles')
-      .select('full_name, avatar_url, bio, website')
+      .select('username, full_name, avatar_url, bio, website')
       .eq('id', user.id)
       .single();
 
@@ -70,12 +89,15 @@ async function loadProfile(user) {
     if (!profile) return;
 
     const fullNameInput = document.getElementById('settings-fullname');
+    const usernameInput = document.getElementById('settings-username');
     const bioInput = document.getElementById('settings-bio');
     const websiteInput = document.getElementById('settings-website');
     const avatarEl = document.getElementById('settings-avatar');
     const displayName = document.getElementById('settings-display-name');
 
     if (fullNameInput) fullNameInput.value = profile.full_name || '';
+    if (usernameInput) usernameInput.value = profile.username || '';
+    updateUsernameHint(profile.username || '');
     if (bioInput) bioInput.value = profile.bio || '';
     if (websiteInput) websiteInput.value = profile.website || '';
 
@@ -111,20 +133,37 @@ function bindProfileForm(user) {
     if (saveBtn) saveBtn.disabled = true;
 
     const fullName = document.getElementById('settings-fullname')?.value.trim() || '';
+    const usernameRaw = document.getElementById('settings-username')?.value.trim() || '';
+    const username = usernameRaw ? usernameRaw.toLowerCase() : null;
     const bio = document.getElementById('settings-bio')?.value.trim() || '';
     const website = document.getElementById('settings-website')?.value.trim() || '';
+
+    if (username && !/^[a-z0-9_-]{3,32}$/.test(username)) {
+      showToast('Username must be 3-32 chars: a-z, 0-9, _ or -', 'warning');
+      if (saveBtn) saveBtn.disabled = false;
+      return;
+    }
 
     try {
       const { error } = await db
         .from('profiles')
         .update({
           full_name: fullName,
+          username: username,
           bio: bio,
           website: website,
         })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          showToast('That handle is already taken', 'warning');
+          if (saveBtn) saveBtn.disabled = false;
+          return;
+        }
+        throw error;
+      }
+      updateUsernameHint(username || '');
 
       // Also update auth user metadata so the nav sidebar reflects the name
       await db.auth.updateUser({

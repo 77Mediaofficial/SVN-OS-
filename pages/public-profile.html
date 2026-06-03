@@ -1,0 +1,140 @@
+<style>
+  .pp-container {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+
+  .pp-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 40px;
+    text-align: center;
+  }
+
+  .pp-avatar {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.6rem;
+    font-weight: 300;
+    color: var(--color-text-dim);
+    overflow: hidden;
+  }
+
+  .pp-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .pp-name {
+    font-size: 1.6rem;
+    font-weight: 300;
+    color: var(--color-text);
+    margin: 0 0 4px;
+  }
+
+  .pp-handle {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    margin-bottom: 20px;
+  }
+
+  .pp-bio {
+    font-size: 0.95rem;
+    color: var(--color-text-dim);
+    line-height: 1.6;
+    max-width: 480px;
+    margin: 0 auto 24px;
+    white-space: pre-wrap;
+  }
+
+  .pp-website {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--color-text);
+    padding: 8px 16px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+    transition: border-color var(--transition-fast), color var(--transition-fast);
+  }
+  .pp-website:hover { border-color: #444; color: var(--color-text); }
+
+  .pp-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 32px 0 0;
+    padding-top: 28px;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .pp-stat {
+    text-align: center;
+  }
+
+  .pp-stat-value {
+    font-size: 1.6rem;
+    font-weight: 300;
+    color: var(--color-text);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .pp-stat-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+    margin-top: 4px;
+  }
+
+  .pp-footer {
+    text-align: center;
+    margin-top: 32px;
+    font-size: 0.78rem;
+    color: var(--color-text-muted);
+  }
+  .pp-footer a { color: var(--color-text-dim); text-decoration: none; }
+  .pp-footer a:hover { color: var(--color-text); }
+
+  .pp-not-found {
+    text-align: center;
+    padding: 80px 24px;
+  }
+  .pp-not-found h2 {
+    font-size: 1.4rem;
+    font-weight: 300;
+    color: var(--color-text);
+    margin-bottom: 12px;
+  }
+  .pp-not-found p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 600px) {
+    .pp-card { padding: 28px 20px; }
+    .pp-stats { grid-template-columns: 1fr; }
+  }
+</style>
+
+<div class="pp-container">
+  <div id="pp-content">
+    <div class="pp-card" style="text-align:center; padding:60px 20px;">
+      <div style="color: var(--color-text-muted); font-size: 0.9rem;">Loading profile…</div>
+    </div>
+  </div>
+</div>

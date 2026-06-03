@@ -120,6 +120,22 @@
     cursor: not-allowed;
   }
 
+  .settings-hint {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+  .settings-hint .mono {
+    font-family: var(--font-mono);
+    color: var(--color-text-dim);
+  }
+  .settings-hint a {
+    color: var(--color-text-dim);
+    text-decoration: none;
+  }
+  .settings-hint a:hover { color: var(--color-text); }
+
   .settings-form-group textarea {
     resize: vertical;
     min-height: 80px;
@@ -375,6 +391,12 @@
       <div class="settings-form-group">
         <label for="settings-fullname">Full Name</label>
         <input type="text" id="settings-fullname" placeholder="Your full name" />
+      </div>
+
+      <div class="settings-form-group">
+        <label for="settings-username">Public Handle</label>
+        <input type="text" id="settings-username" placeholder="3-32 chars, a-z 0-9 _ -" autocomplete="off" pattern="[a-z0-9_\-]{3,32}" />
+        <p class="settings-hint" id="settings-username-hint">Lets you share a public profile at <span class="mono">/u/yourname</span></p>
       </div>
 
       <div class="settings-form-group">

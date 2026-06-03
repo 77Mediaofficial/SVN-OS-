@@ -9,16 +9,38 @@ export const routes = {
   '/settings':{ page: 'settings',        module: () => import('./modules/settings.js'),       requiresAuth: true },
 };
 
+// Dynamic-segment routes, matched in order if no static route matches.
+const dynamicRoutes = [
+  {
+    pattern: /^\/u\/([a-z0-9_-]{3,32})$/i,
+    page: 'public-profile',
+    module: () => import('./modules/public-profile.js'),
+    requiresAuth: false,
+    paramName: 'username',
+  },
+];
+
 let currentCleanup = null;
 
-async function loadRoute(path) {
-  // Validate the route — redirect unknown paths to /
-  if (!routes[path]) {
-    window.history.replaceState({}, '', '/');
-    path = '/';
+function matchRoute(path) {
+  if (routes[path]) return { ...routes[path], path, params: {} };
+  for (const r of dynamicRoutes) {
+    const m = path.match(r.pattern);
+    if (m) {
+      return { ...r, path, params: { [r.paramName]: m[1] } };
+    }
   }
+  return null;
+}
 
-  const route = routes[path];
+async function loadRoute(path) {
+  let route = matchRoute(path);
+
+  // Validate the route — redirect unknown paths to /
+  if (!route) {
+    window.history.replaceState({}, '', '/');
+    route = matchRoute('/');
+  }
 
   // Enforce auth for protected routes
   if (route.requiresAuth) {
@@ -39,13 +61,13 @@ async function loadRoute(path) {
     outlet.innerHTML = await res.text();
     const mod = await route.module();
     if (mod.init) {
-      currentCleanup = await mod.init() || null;
+      currentCleanup = await mod.init(route.params) || null;
     }
   } catch (e) {
     outlet.innerHTML = `<div class="error-state"><h2>Failed to load page</h2></div>`;
   }
 
-  updateActiveNav(path);
+  updateActiveNav(route.path);
 }
 
 function updateActiveNav(path) {

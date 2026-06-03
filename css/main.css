@@ -876,3 +876,70 @@ body.compact-mode .nav-link {
 }
 .tag-chip::before { content: '#'; opacity: 0.5; margin-right: 1px; }
 .tag-chip.compact { padding: 1px 5px; font-size: 0.58rem; }
+
+.tag-chip-clickable {
+  cursor: pointer;
+  font-family: inherit;
+  transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+.tag-chip-clickable:hover {
+  color: var(--color-text);
+  border-color: #444;
+  background: var(--color-surface);
+}
+
+/* Active tag filter pill (Content Engine, Deals) */
+.ce-tag-filter-active,
+.dl-tag-filter-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.72rem;
+  color: var(--color-text-muted);
+  padding: 6px 10px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+}
+.tag-clear-btn {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 2px;
+  margin-left: 2px;
+  transition: color var(--transition-fast);
+}
+.tag-clear-btn:hover { color: var(--color-danger); }
+
+/* Recurring transaction badge */
+.recur-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-left: 6px;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-surface-2);
+  vertical-align: middle;
+}
+.recur-badge.recur-parent {
+  color: #a78bfa;
+  border-color: rgba(167, 139, 250, 0.3);
+  background: rgba(167, 139, 250, 0.08);
+}
+.recur-badge.recur-child {
+  color: var(--color-text-muted);
+  opacity: 0.8;
+}
+
+/* Public-view mode hides the workspace nav (used by /u/{username}) */
+body.public-view .app-nav,
+body.public-view .mobile-toggle { display: none; }
+body.public-view .app-main { margin-left: 0; padding-top: 48px; }

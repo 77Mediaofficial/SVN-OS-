@@ -651,6 +651,7 @@
     <button class="dl-filter-btn" data-status="in_progress">In Progress</button>
     <button class="dl-filter-btn" data-status="completed">Completed</button>
     <button class="dl-filter-btn" data-status="lost">Lost</button>
+    <span class="dl-tag-filter-active" id="dl-tag-filter-active" style="display:none; margin-left:8px;"></span>
   </div>
 
   <div class="dl-table-wrap">
@@ -861,6 +862,19 @@
         <select id="txn-deal">
           <option value="">None</option>
         </select>
+      </div>
+      <div class="form-group">
+        <label for="txn-recurrence">Recurrence</label>
+        <select id="txn-recurrence">
+          <option value="none">One-time only</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
+      </div>
+      <div class="form-group" id="txn-recurrence-end-wrap" style="display:none;">
+        <label for="txn-recurrence-end">Repeat until (optional)</label>
+        <input type="date" id="txn-recurrence-end" />
       </div>
       <p class="auth-error" id="txn-error"></p>
       <div class="dl-modal-actions">

@@ -1,11 +1,13 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
+import { rolloverRecurringTransactions } from './recurrence.js';
 
 /* ── State ────────────────────────────────────────────────── */
 let deals = [];
 let transactions = [];
 let currentDealFilter = 'all';
 let currentDealSearch = '';
+let currentDealTagFilter = '';
 let currentTxnSearch = '';
 let currentTxnCategory = 'all';
 let abortController = null;
@@ -24,10 +26,17 @@ export async function init() {
   abortController = new AbortController();
   const signal = abortController.signal;
 
+  currentDealFilter = 'all';
+  currentDealSearch = '';
+  currentDealTagFilter = '';
+  currentTxnSearch = '';
+  currentTxnCategory = 'all';
+
   bindDealEvents(signal);
   bindTxnEvents(signal);
   bindFilterEvents(signal);
   bindSearchEvents(signal);
+  renderActiveDealTagFilter();
 
   await Promise.all([loadDeals(), loadTransactions()]);
 
@@ -90,9 +99,43 @@ function parseTagsInput(value) {
     .slice(0, 12);
 }
 
+function recurrenceBadgeHTML(t) {
+  if (t.parent_transaction_id) {
+    return ' <span class="recur-badge recur-child" title="Auto-generated from a recurring transaction">auto</span>';
+  }
+  if (t.recurrence && t.recurrence !== 'none') {
+    return ` <span class="recur-badge recur-parent" title="Repeats ${escapeHtml(t.recurrence)}">${escapeHtml(t.recurrence)}</span>`;
+  }
+  return '';
+}
+
 function tagChipsHTML(tags) {
   if (!Array.isArray(tags) || tags.length === 0) return '';
-  return `<span class="tag-chip-row" style="margin-left:8px;">${tags.map(t => `<span class="tag-chip compact">${escapeHtml(t)}</span>`).join('')}</span>`;
+  return `<span class="tag-chip-row" style="margin-left:8px;">${tags.map(t =>
+    `<button type="button" class="tag-chip compact tag-chip-clickable" data-action="filter-tag" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`
+  ).join('')}</span>`;
+}
+
+function renderActiveDealTagFilter() {
+  const el = document.getElementById('dl-tag-filter-active');
+  if (!el) return;
+  if (!currentDealTagFilter) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  el.style.display = 'inline-flex';
+  el.innerHTML = `
+    Filtering by
+    <span class="tag-chip">${escapeHtml(currentDealTagFilter)}</span>
+    <button type="button" class="tag-clear-btn" id="dl-tag-clear" aria-label="Clear tag filter">&times;</button>
+  `;
+  const clearBtn = document.getElementById('dl-tag-clear');
+  if (clearBtn) clearBtn.addEventListener('click', () => {
+    currentDealTagFilter = '';
+    renderActiveDealTagFilter();
+    renderDeals();
+  });
 }
 
 /* ── DEALS: Load & Render ─────────────────────────────────── */
@@ -123,6 +166,10 @@ function renderDeals() {
   let filtered = currentDealFilter === 'all'
     ? deals
     : deals.filter(d => d.status === currentDealFilter);
+
+  if (currentDealTagFilter) {
+    filtered = filtered.filter(d => Array.isArray(d.tags) && d.tags.includes(currentDealTagFilter));
+  }
 
   // Apply search filter
   if (currentDealSearch) {
@@ -212,6 +259,20 @@ async function loadTransactions() {
     showToast(err.message || 'Failed to load transactions', 'error');
   }
 
+  // Auto-generate any missed recurring occurrences up to today.
+  try {
+    const added = await rolloverRecurringTransactions(transactions);
+    if (added) {
+      const { data, error } = await db
+        .from('transactions')
+        .select('*, brand_deals(brand_name)')
+        .order('date', { ascending: false });
+      if (!error && data) transactions = data;
+    }
+  } catch {
+    // Silent — rollover is best-effort; the user can still see what's there.
+  }
+
   renderTransactions();
   renderSummary();
 }
@@ -248,10 +309,11 @@ function renderTransactions() {
     const amountColor = t.type === 'income' ? 'var(--color-success)' : 'var(--color-danger)';
     const sign = t.type === 'income' ? '+' : '-';
 
+    const recurBadge = recurrenceBadgeHTML(t);
     return `
       <tr data-txn-id="${t.id}">
         <td class="col-date">${formatDate(t.date)}</td>
-        <td>${escapeHtml(t.description) || '<span style="color:var(--color-text-muted)">No description</span>'}</td>
+        <td>${escapeHtml(t.description) || '<span style="color:var(--color-text-muted)">No description</span>'}${recurBadge}</td>
         <td>${formatCategory(t.category)}</td>
         <td><span class="type-badge ${typeClass}">${t.type}</span></td>
         <td class="col-amount" style="color:${amountColor}">${sign}${formatCurrency(Math.abs(t.amount))}</td>
@@ -306,6 +368,8 @@ async function saveTransaction(formData) {
     description: formData.description || null,
     date: formData.date,
     deal_id: formData.deal_id || null,
+    recurrence: formData.recurrence || 'none',
+    recurrence_end_date: formData.recurrence_end_date || null,
   };
 
   let error;
@@ -370,6 +434,11 @@ function resetTxnForm() {
   document.getElementById('txn-id').value = '';
   document.getElementById('txn-form').reset();
   document.getElementById('txn-date').value = todayISO();
+  const recSel = document.getElementById('txn-recurrence');
+  if (recSel) recSel.value = 'none';
+  const recEnd = document.getElementById('txn-recurrence-end');
+  if (recEnd) recEnd.value = '';
+  syncRecurrenceEndVisibility();
   document.getElementById('txn-error').textContent = '';
   document.getElementById('txn-modal-title').textContent = 'New Transaction';
   document.getElementById('txn-modal-subtitle').textContent = 'Record income or expense';
@@ -384,11 +453,23 @@ function populateTxnForm(txn) {
   document.getElementById('txn-amount').value = txn.amount || '';
   document.getElementById('txn-date').value = txn.date || todayISO();
   document.getElementById('txn-description').value = txn.description || '';
+  const recSel = document.getElementById('txn-recurrence');
+  if (recSel) recSel.value = txn.recurrence || 'none';
+  const recEnd = document.getElementById('txn-recurrence-end');
+  if (recEnd) recEnd.value = txn.recurrence_end_date || '';
+  syncRecurrenceEndVisibility();
   document.getElementById('txn-error').textContent = '';
   document.getElementById('txn-modal-title').textContent = 'Edit Transaction';
   document.getElementById('txn-modal-subtitle').textContent = 'Update transaction details';
   document.getElementById('txn-submit').textContent = 'Update Transaction';
   populateDealSelect(txn.deal_id || '');
+}
+
+function syncRecurrenceEndVisibility() {
+  const recSel = document.getElementById('txn-recurrence');
+  const wrap = document.getElementById('txn-recurrence-end-wrap');
+  if (!recSel || !wrap) return;
+  wrap.style.display = recSel.value && recSel.value !== 'none' ? 'block' : 'none';
 }
 
 function populateDealSelect(selectedDealId) {
@@ -521,6 +602,15 @@ function bindDealEvents(signal) {
   const tbody = document.getElementById('deals-tbody');
   if (tbody) {
     tbody.addEventListener('click', async (e) => {
+      const tagBtn = e.target.closest('[data-action="filter-tag"]');
+      if (tagBtn) {
+        e.stopPropagation();
+        currentDealTagFilter = tagBtn.dataset.tag;
+        renderActiveDealTagFilter();
+        renderDeals();
+        return;
+      }
+
       const editBtn = e.target.closest('.deal-edit-btn');
       const deleteBtn = e.target.closest('.deal-delete-btn');
 
@@ -558,6 +648,12 @@ function bindTxnEvents(signal) {
     }, { signal });
   }
 
+  // Recurrence select → show/hide end date
+  const recSel = document.getElementById('txn-recurrence');
+  if (recSel) {
+    recSel.addEventListener('change', syncRecurrenceEndVisibility, { signal });
+  }
+
   // Cancel button
   const cancelBtn = document.getElementById('txn-cancel');
   if (cancelBtn) {
@@ -593,6 +689,8 @@ function bindTxnEvents(signal) {
           description: document.getElementById('txn-description').value.trim(),
           date: document.getElementById('txn-date').value,
           deal_id: document.getElementById('txn-deal').value || null,
+          recurrence: document.getElementById('txn-recurrence')?.value || 'none',
+          recurrence_end_date: document.getElementById('txn-recurrence-end')?.value || null,
         });
         closeModal('txn-modal');
       } catch (err) {

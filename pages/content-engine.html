@@ -586,13 +586,22 @@
     <p>Track your content from idea to publication</p>
     <p class="ce-summary" id="ce-summary"></p>
   </div>
-  <button class="btn btn-primary" id="ce-new-project">
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
-      <line x1="8" y1="3" x2="8" y2="13"/>
-      <line x1="3" y1="8" x2="13" y2="8"/>
-    </svg>
-    New Project
-  </button>
+  <div style="display:flex; gap:8px; flex-shrink:0; margin-top:4px;">
+    <button class="btn btn-ghost" id="ce-generate-ideas" title="Brainstorm 5 new content ideas with AI">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M3.5 12.5l1.4-1.4M11.1 4.9l1.4-1.4"/>
+        <circle cx="8" cy="8" r="2"/>
+      </svg>
+      Generate ideas
+    </button>
+    <button class="btn btn-primary" id="ce-new-project">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+        <line x1="8" y1="3" x2="8" y2="13"/>
+        <line x1="3" y1="8" x2="13" y2="8"/>
+      </svg>
+      New Project
+    </button>
+  </div>
 </section>
 
 <!-- Search & Filter Bar -->
@@ -621,6 +630,8 @@
     <input type="checkbox" id="ce-show-archived" />
     Show Archived
   </label>
+
+  <span class="ce-tag-filter-active" id="ce-tag-filter-active" style="display:none;"></span>
 </div>
 
 <div class="kanban-board-wrapper">
@@ -825,3 +836,150 @@
     </form>
   </div>
 </div>
+
+<!-- ── AI Idea Generator Modal ──────────────────────────────────── -->
+<div class="modal-overlay ce-modal" id="ce-ideas-modal" style="display:none;">
+  <div class="modal-card" style="max-width: 640px;">
+    <div class="ce-modal-header">
+      <h2>AI content ideas</h2>
+      <button class="ce-modal-close" id="ce-ideas-close" aria-label="Close ideas modal">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <line x1="4" y1="4" x2="12" y2="12"/>
+          <line x1="12" y1="4" x2="4" y2="12"/>
+        </svg>
+      </button>
+    </div>
+    <p class="modal-subtitle">Brainstorm five fresh ideas grounded in your recent content</p>
+
+    <div class="ce-ideas-controls">
+      <input type="text" id="ce-ideas-niche" class="ce-search-input" placeholder="Optional niche or theme (e.g. cinematography, indie SaaS)" style="max-width:none; padding-left:14px;" />
+      <button class="btn btn-primary" id="ce-ideas-run">Generate</button>
+    </div>
+
+    <div class="ce-ideas-body" id="ce-ideas-body">
+      <div class="ce-ideas-hint">Click <strong>Generate</strong> to produce five new ideas tailored to your pipeline. Add any you like with one click.</div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ce-ideas-controls {
+    display: flex;
+    gap: 10px;
+    margin: 16px 0;
+    align-items: stretch;
+  }
+  .ce-ideas-controls input { flex: 1; }
+
+  .ce-ideas-body {
+    min-height: 80px;
+  }
+  .ce-ideas-hint {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    padding: 24px 4px;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .ce-ideas-hint strong { color: var(--color-text-dim); font-weight: 500; }
+
+  .ce-ideas-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 32px 12px;
+    color: var(--color-text-muted);
+    font-size: 0.82rem;
+  }
+  .ce-ideas-loading::before {
+    content: '';
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--color-border);
+    border-top-color: var(--color-text-dim);
+    border-radius: 50%;
+    animation: ce-spin 0.8s linear infinite;
+  }
+  @keyframes ce-spin { to { transform: rotate(360deg); } }
+
+  .ce-idea-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .ce-idea {
+    padding: 14px 16px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    transition: border-color var(--transition-fast);
+  }
+  .ce-idea:hover { border-color: #333; }
+  .ce-idea-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 6px;
+  }
+  .ce-idea-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--color-text);
+    line-height: 1.35;
+    flex: 1;
+  }
+  .ce-idea-platform {
+    font-size: 0.6rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid var(--color-border);
+    color: var(--color-text-dim);
+    background: var(--color-surface-2);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+  .ce-idea-desc {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+  .ce-idea-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+  .ce-idea-add {
+    font-size: 0.74rem;
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--color-border);
+    color: var(--color-text-dim);
+    background: transparent;
+    cursor: pointer;
+    transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+  }
+  .ce-idea-add:hover {
+    color: var(--color-text);
+    border-color: #444;
+    background: var(--color-surface);
+  }
+  .ce-idea-add.added {
+    color: var(--color-success);
+    border-color: rgba(74, 222, 128, 0.3);
+    cursor: default;
+  }
+  .ce-ideas-error {
+    padding: 18px 16px;
+    border: 1px solid rgba(248, 113, 113, 0.25);
+    background: rgba(248, 113, 113, 0.08);
+    color: var(--color-danger);
+    border-radius: var(--radius-sm);
+    font-size: 0.82rem;
+    line-height: 1.5;
+  }
+</style>

@@ -27,18 +27,25 @@ let draggedCardId = null;
 let slideoverProjectId = null;   // id of project shown in detail panel
 let searchQuery = '';
 let platformFilter = '';
+let tagFilter = '';
 let showArchived = false;
 let searchDebounceTimer = null;
 
 /* ── Init (called by router after HTML partial is injected) ─ */
 export async function init() {
   currentUser = await getCurrentUser();
+  searchQuery = '';
+  platformFilter = '';
+  tagFilter = '';
+  showArchived = false;
 
   bindModal();
   bindDragAndDrop();
   bindFilters();
   bindSlideover();
+  bindIdeasModal();
   bindKeyboardShortcuts();
+  renderActiveTagFilter();
   await loadProjects();
 
   // Return a cleanup function so the router can tear down listeners
@@ -83,32 +90,22 @@ async function loadArchivedProjects() {
 
 /* ── Filtering ───────────────────────────────────────────── */
 function getFilteredProjects() {
-  let filtered = projects;
-
-  // Platform filter
-  if (platformFilter) {
-    filtered = filtered.filter(p => p.platform === platformFilter);
-  }
-
-  // Search filter (title + description)
-  if (searchQuery) {
-    const q = searchQuery.toLowerCase();
-    filtered = filtered.filter(p => {
-      const title = (p.title || '').toLowerCase();
-      const desc = (p.description || '').toLowerCase();
-      const tagMatch = Array.isArray(p.tags) && p.tags.some(t => t.toLowerCase().includes(q));
-      return title.includes(q) || desc.includes(q) || tagMatch;
-    });
-  }
-
-  return filtered;
+  return applyFilters(projects);
 }
 
 function getFilteredArchived() {
-  let filtered = archivedProjects;
+  return applyFilters(archivedProjects);
+}
+
+function applyFilters(list) {
+  let filtered = list;
 
   if (platformFilter) {
     filtered = filtered.filter(p => p.platform === platformFilter);
+  }
+
+  if (tagFilter) {
+    filtered = filtered.filter(p => Array.isArray(p.tags) && p.tags.includes(tagFilter));
   }
 
   if (searchQuery) {
@@ -232,6 +229,13 @@ function renderBoard() {
         deleteProject(btn.dataset.id);
       });
     });
+
+    container.querySelectorAll('[data-action="filter-tag"]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        setTagFilter(btn.dataset.tag);
+      });
+    });
   });
 
   // Show/hide board-level empty state
@@ -273,7 +277,44 @@ function cardHTML(project) {
 
 function tagChipsHTML(tags) {
   if (!Array.isArray(tags) || tags.length === 0) return '';
-  return `<div class="tag-chip-row">${tags.map(t => `<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>`;
+  return `<div class="tag-chip-row">${tags.map(t =>
+    `<button type="button" class="tag-chip tag-chip-clickable" data-action="filter-tag" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`
+  ).join('')}</div>`;
+}
+
+function renderActiveTagFilter() {
+  const el = document.getElementById('ce-tag-filter-active');
+  if (!el) return;
+  if (!tagFilter) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+  el.style.display = 'inline-flex';
+  el.innerHTML = `
+    Filtering by
+    <span class="tag-chip">${escapeHtml(tagFilter)}</span>
+    <button type="button" class="tag-clear-btn" id="ce-tag-clear" aria-label="Clear tag filter">&times;</button>
+  `;
+  const clearBtn = document.getElementById('ce-tag-clear');
+  if (clearBtn) clearBtn.addEventListener('click', clearTagFilter);
+}
+
+function setTagFilter(tag) {
+  if (!tag) return;
+  tagFilter = tag;
+  renderActiveTagFilter();
+  renderBoard();
+  renderSummary();
+  if (showArchived) renderArchivedSection();
+}
+
+function clearTagFilter() {
+  tagFilter = '';
+  renderActiveTagFilter();
+  renderBoard();
+  renderSummary();
+  if (showArchived) renderArchivedSection();
 }
 
 function parseTagsInput(value) {
@@ -731,16 +772,164 @@ async function deleteProject(id) {
   }
 }
 
+/* ── AI Idea Generator ───────────────────────────────────── */
+function bindIdeasModal() {
+  const triggerBtn = document.getElementById('ce-generate-ideas');
+  const modal = document.getElementById('ce-ideas-modal');
+  const closeBtn = document.getElementById('ce-ideas-close');
+  const runBtn = document.getElementById('ce-ideas-run');
+
+  if (triggerBtn && modal) {
+    triggerBtn.addEventListener('click', () => {
+      modal.style.display = 'flex';
+      const input = document.getElementById('ce-ideas-niche');
+      if (input) setTimeout(() => input.focus(), 40);
+    });
+  }
+
+  if (closeBtn) closeBtn.addEventListener('click', closeIdeasModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeIdeasModal();
+    });
+  }
+
+  if (runBtn) runBtn.addEventListener('click', runIdeas);
+
+  const nicheInput = document.getElementById('ce-ideas-niche');
+  if (nicheInput) {
+    nicheInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        runIdeas();
+      }
+    });
+  }
+}
+
+function closeIdeasModal() {
+  const modal = document.getElementById('ce-ideas-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+async function runIdeas() {
+  const body = document.getElementById('ce-ideas-body');
+  const runBtn = document.getElementById('ce-ideas-run');
+  const niche = document.getElementById('ce-ideas-niche')?.value.trim() || '';
+  if (!body) return;
+
+  if (runBtn) runBtn.disabled = true;
+  body.innerHTML = '<div class="ce-ideas-loading">Asking Claude for fresh ideas&hellip;</div>';
+
+  try {
+    const { data, error } = await db.functions.invoke('generate-content-ideas', {
+      body: { niche, platform: platformFilter || undefined },
+    });
+
+    if (error) {
+      const detail = error?.context?.body
+        ? safeParseErrorMessage(await error.context.text?.()) || error.message
+        : error.message;
+      throw new Error(detail || 'Failed to generate ideas');
+    }
+
+    const ideas = Array.isArray(data?.ideas) ? data.ideas : [];
+    renderIdeas(ideas);
+  } catch (err) {
+    body.innerHTML = `<div class="ce-ideas-error">${escapeHtml(err.message || 'Failed to generate ideas. Check the function is deployed and ANTHROPIC_API_KEY is set.')}</div>`;
+  } finally {
+    if (runBtn) runBtn.disabled = false;
+  }
+}
+
+function safeParseErrorMessage(text) {
+  if (!text) return null;
+  try {
+    const parsed = JSON.parse(text);
+    return parsed?.error || null;
+  } catch {
+    return null;
+  }
+}
+
+function renderIdeas(ideas) {
+  const body = document.getElementById('ce-ideas-body');
+  if (!body) return;
+  if (!ideas.length) {
+    body.innerHTML = '<div class="ce-ideas-error">No ideas returned. Try again with more context.</div>';
+    return;
+  }
+
+  body.innerHTML = `<div class="ce-idea-list">${ideas.map((idea, i) => `
+    <div class="ce-idea" data-idx="${i}">
+      <div class="ce-idea-header">
+        <div class="ce-idea-title">${escapeHtml(idea.title || 'Untitled')}</div>
+        ${idea.platform ? `<span class="ce-idea-platform">${escapeHtml(idea.platform)}</span>` : ''}
+      </div>
+      <div class="ce-idea-desc">${escapeHtml(idea.description || '')}</div>
+      <div class="ce-idea-actions">
+        <button class="ce-idea-add" data-action="add-idea" data-idx="${i}">Add to pipeline</button>
+      </div>
+    </div>
+  `).join('')}</div>`;
+
+  body.querySelectorAll('[data-action="add-idea"]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt(btn.dataset.idx, 10);
+      const idea = ideas[idx];
+      if (!idea || btn.classList.contains('added')) return;
+      await addIdeaToPipeline(idea, btn);
+    });
+  });
+}
+
+async function addIdeaToPipeline(idea, btn) {
+  if (!currentUser) {
+    showToast('You must be signed in', 'error');
+    return;
+  }
+  btn.disabled = true;
+  try {
+    const validPlatforms = ['youtube','tiktok','instagram','twitter','linkedin','podcast','blog','other'];
+    const platform = validPlatforms.includes((idea.platform || '').toLowerCase())
+      ? idea.platform.toLowerCase() : null;
+
+    const { error } = await db.from('content_projects').insert({
+      user_id: currentUser.id,
+      title: idea.title,
+      description: idea.description || null,
+      platform,
+      status: 'idea',
+      tags: ['ai-generated'],
+    });
+    if (error) throw error;
+
+    btn.textContent = 'Added';
+    btn.classList.add('added');
+    showToast(`Added "${truncate(idea.title, 40)}" to your pipeline`, 'success');
+    // Refresh board in the background
+    loadProjects().then(() => bindDragAndDrop());
+  } catch (err) {
+    btn.disabled = false;
+    showToast(err.message || 'Failed to add idea', 'error');
+  }
+}
+
 /* ── Keyboard Shortcuts ──────────────────────────────────── */
 function bindKeyboardShortcuts() {
   document.addEventListener('keydown', onGlobalKeydown);
 }
 
 function onGlobalKeydown(e) {
-  // Escape: close slideover first, then modal
+  // Escape: close slideover first, then ideas modal, then create modal
   if (e.key === 'Escape') {
     if (slideoverProjectId !== null) {
       closeSlideover();
+      return;
+    }
+    const ideasModal = document.getElementById('ce-ideas-modal');
+    if (ideasModal && ideasModal.style.display === 'flex') {
+      closeIdeasModal();
       return;
     }
     closeModal();
