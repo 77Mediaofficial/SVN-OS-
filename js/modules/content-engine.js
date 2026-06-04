@@ -3,6 +3,9 @@ import { showToast } from '../toast.js';
 import { makeDraggable, registerDropZone } from '/js/drag.js';
 import { queueOrRun, newId } from '/js/offline.js';
 import { skLine } from '/js/skeleton.js';
+import { bindDraft, restoreDraft, clearDraft } from '/js/form-cache.js';
+
+const DRAFT_KEY = 'content-project';
 import { TEMPLATES, buildProjectsFromTemplate } from './content-templates.js';
 import {
   loadPreferences,
@@ -631,6 +634,9 @@ function bindModal() {
   if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
   if (form) form.addEventListener('submit', handleSubmit);
 
+  // Persist drafts while creating (never while editing an existing record).
+  if (form) bindDraft(DRAFT_KEY, form, () => !editingId);
+
   // Close on overlay click (not card click)
   if (overlay) {
     overlay.addEventListener('click', (e) => {
@@ -650,6 +656,9 @@ function openCreateModal() {
   if (titleEl) titleEl.textContent = 'New Project';
   if (subtitleEl) subtitleEl.textContent = 'Add a new content project to your pipeline';
   if (submitEl) submitEl.textContent = 'Create Project';
+
+  // Bring back anything left unsaved last time.
+  restoreDraft(DRAFT_KEY, document.getElementById('ce-form'));
 
   showModal();
 }
@@ -797,6 +806,7 @@ async function handleSubmit(e) {
       // Optimistic insert into the right bucket.
       if (status === 'archived') archivedProjects.unshift(row);
       else projects.unshift(row);
+      clearDraft(DRAFT_KEY);
       showToast(result.queued ? 'Saved offline — will sync' : 'Project created', result.queued ? 'info' : 'success');
     }
 

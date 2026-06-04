@@ -4,6 +4,10 @@ import { rolloverRecurringTransactions } from './recurrence.js';
 import { generateInvoice } from './invoice.js';
 import { queueOrRun, newId } from '/js/offline.js';
 import { skTableRows } from '/js/skeleton.js';
+import { bindDraft, restoreDraft, clearDraft } from '/js/form-cache.js';
+
+const DEAL_DRAFT = 'deal';
+const TXN_DRAFT = 'transaction';
 import {
   loadPreferences,
   getDealStages,
@@ -667,8 +671,16 @@ function bindDealEvents(signal) {
   if (newDealBtn) {
     newDealBtn.addEventListener('click', () => {
       resetDealForm();
+      restoreDraft(DEAL_DRAFT, document.getElementById('deal-form'));
       openModal('deal-modal');
     }, { signal });
+  }
+
+  // Auto-save the new-deal draft as the user types (never while editing).
+  const dealForm0 = document.getElementById('deal-form');
+  if (dealForm0) {
+    bindDraft(DEAL_DRAFT, dealForm0,
+      () => !document.getElementById('deal-id').value, { signal });
   }
 
   // Cancel button
@@ -697,6 +709,7 @@ function bindDealEvents(signal) {
       errorEl.textContent = '';
       submitBtn.disabled = true;
 
+      const isCreate = !document.getElementById('deal-id').value;
       try {
         await saveDeal({
           id: document.getElementById('deal-id').value || null,
@@ -710,6 +723,7 @@ function bindDealEvents(signal) {
           notes: document.getElementById('deal-notes').value.trim(),
           tags: parseTagsInput(document.getElementById('deal-tags').value),
         });
+        if (isCreate) clearDraft(DEAL_DRAFT);
         closeModal('deal-modal');
       } catch (err) {
         errorEl.style.color = 'var(--color-danger)';
@@ -774,8 +788,17 @@ function bindTxnEvents(signal) {
   if (newTxnBtn) {
     newTxnBtn.addEventListener('click', () => {
       resetTxnForm();
+      restoreDraft(TXN_DRAFT, document.getElementById('txn-form'));
+      syncRecurrenceEndVisibility();
       openModal('txn-modal');
     }, { signal });
+  }
+
+  // Auto-save the new-transaction draft as the user types.
+  const txnForm0 = document.getElementById('txn-form');
+  if (txnForm0) {
+    bindDraft(TXN_DRAFT, txnForm0,
+      () => !document.getElementById('txn-id').value, { signal });
   }
 
   // Recurrence select → show/hide end date
@@ -810,6 +833,7 @@ function bindTxnEvents(signal) {
       errorEl.textContent = '';
       submitBtn.disabled = true;
 
+      const isCreate = !document.getElementById('txn-id').value;
       try {
         await saveTransaction({
           id: document.getElementById('txn-id').value || null,
@@ -822,6 +846,7 @@ function bindTxnEvents(signal) {
           recurrence: document.getElementById('txn-recurrence')?.value || 'none',
           recurrence_end_date: document.getElementById('txn-recurrence-end')?.value || null,
         });
+        if (isCreate) clearDraft(TXN_DRAFT);
         closeModal('txn-modal');
       } catch (err) {
         errorEl.style.color = 'var(--color-danger)';
