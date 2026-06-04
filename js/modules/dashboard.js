@@ -2,6 +2,7 @@ import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { hasAnyUserData, seedDemoData } from './demo-data.js';
 import { skLine } from '/js/skeleton.js';
+import { maybeStartOnboarding, isActivated } from '/js/onboarding.js';
 
 const ONBOARDING_DISMISSED_KEY = 'svn-os-onboarding-dismissed';
 
@@ -106,19 +107,43 @@ function paintDashboardSkeletons() {
   set('activity-feed', listSkel(5));
 }
 
+// ── Reload every data section (after seeding / activation) ───
+async function reloadAllSections() {
+  await Promise.all([
+    loadRevenueMetrics(),
+    loadActionItems(),
+    loadPipelineSnapshot(),
+    loadRecentDeals(),
+    loadRecentActivity(),
+    loadPlatformDistribution(),
+    loadUpcomingDeadlines(),
+    loadActiveDealsMetric(),
+  ]);
+  startCountUpAnimations();
+}
+
 // ── Onboarding Banner ────────────────────────────────────────
 async function maybeShowOnboarding() {
-  const banner = document.getElementById('dash-onboarding');
-  if (!banner) return;
-
-  if (localStorage.getItem(ONBOARDING_DISMISSED_KEY) === '1') return;
-
+  let hasData = false;
   try {
-    const hasData = await hasAnyUserData();
-    if (hasData) return;
+    hasData = await hasAnyUserData();
   } catch {
     return;
   }
+
+  // First-ever boot with an empty workspace: run the full Modular
+  // Activation flow instead of the inline empty-state banner.
+  if (!isActivated() && !hasData) {
+    const started = maybeStartOnboarding({ onSeeded: reloadAllSections });
+    if (started) return;
+  }
+
+  // Anyone who already has data has effectively activated — don't nag.
+  if (hasData) return;
+
+  const banner = document.getElementById('dash-onboarding');
+  if (!banner) return;
+  if (localStorage.getItem(ONBOARDING_DISMISSED_KEY) === '1') return;
 
   banner.style.display = 'flex';
 
