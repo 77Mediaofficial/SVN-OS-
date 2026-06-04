@@ -42,8 +42,21 @@ export async function init() {
   bindAppearance();
   bindDataActions();
   bindWorkspaceForm();
+  bindAdvancedDisclosure();
 
   return cleanup;
+}
+
+/** Fold the power-user pipeline + tag editors behind an opt-in toggle. */
+function bindAdvancedDisclosure() {
+  const section = document.getElementById('settings-advanced');
+  const btn = document.getElementById('settings-advanced-toggle');
+  if (!section || !btn) return;
+  btn.addEventListener('click', () => {
+    const open = section.getAttribute('data-open') !== 'true';
+    section.setAttribute('data-open', String(open));
+    btn.setAttribute('aria-expanded', String(open));
+  });
 }
 
 /* ── Workspace customization ──────────────────────────────── */

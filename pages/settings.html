@@ -501,7 +501,7 @@
   <div class="settings-card">
     <div class="settings-card-title">Workspace</div>
     <p class="settings-hint" style="margin-bottom:18px;">
-      Rename your pipeline to match how you actually work. Hide stages you don't need.
+      Tell us about your business. When you're ready, you can fine-tune your pipeline and tags to match exactly how you work.
     </p>
 
     <form id="settings-workspace-form" autocomplete="off">
@@ -525,26 +525,41 @@
         </div>
       </div>
 
-      <div class="settings-form-group" style="margin-top:18px;">
-        <label>Content Pipeline Stages</label>
-        <div id="settings-content-stages" class="settings-stage-list"></div>
-      </div>
+      <div class="disclosure" id="settings-advanced" data-open="false" style="margin-top:18px;">
+        <button type="button" class="disclosure-toggle" id="settings-advanced-toggle"
+                aria-expanded="false" aria-controls="settings-advanced-body"
+                data-tooltip="Rename pipeline stages and set tag shortcuts — only if you want to">
+          <svg class="disclosure-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polyline points="9 6 15 12 9 18"/>
+          </svg>
+          Customize pipeline &amp; tags
+          <span class="disclosure-meta">Advanced</span>
+        </button>
+        <div class="disclosure-body" id="settings-advanced-body" role="region" aria-label="Pipeline and tag customization">
+          <div>
+            <div class="settings-form-group">
+              <label>Content Pipeline Stages</label>
+              <div id="settings-content-stages" class="settings-stage-list"></div>
+            </div>
 
-      <div class="settings-form-group">
-        <label>Deal Pipeline Stages</label>
-        <div id="settings-deal-stages" class="settings-stage-list"></div>
-      </div>
+            <div class="settings-form-group">
+              <label>Deal Pipeline Stages</label>
+              <div id="settings-deal-stages" class="settings-stage-list"></div>
+            </div>
 
-      <div class="settings-form-group">
-        <label for="settings-content-tags">Content Tag Presets</label>
-        <input type="text" id="settings-content-tags" placeholder="evergreen, q1, launch (comma separated)" />
-        <p class="settings-hint">These appear as one-click chips in the project form.</p>
-      </div>
+            <div class="settings-form-group">
+              <label for="settings-content-tags">Content Tag Presets</label>
+              <input type="text" id="settings-content-tags" placeholder="evergreen, q1, launch (comma separated)" />
+              <p class="settings-hint">These appear as one-click chips in the project form.</p>
+            </div>
 
-      <div class="settings-form-group">
-        <label for="settings-deal-tags">Deal Tag Presets</label>
-        <input type="text" id="settings-deal-tags" placeholder="retainer, recurring, referral" />
-        <p class="settings-hint">These appear as one-click chips in the deal form.</p>
+            <div class="settings-form-group">
+              <label for="settings-deal-tags">Deal Tag Presets</label>
+              <input type="text" id="settings-deal-tags" placeholder="retainer, recurring, referral" />
+              <p class="settings-hint">These appear as one-click chips in the deal form.</p>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div class="settings-actions">
