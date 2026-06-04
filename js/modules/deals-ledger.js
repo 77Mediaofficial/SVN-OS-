@@ -2,7 +2,7 @@ import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { rolloverRecurringTransactions } from './recurrence.js';
 import { generateInvoice } from './invoice.js';
-import { queueOrRun } from '/js/offline.js';
+import { queueOrRun, newId } from '/js/offline.js';
 import {
   loadPreferences,
   getDealStages,
@@ -286,18 +286,34 @@ async function saveDeal(formData) {
     tags: formData.tags || [],
   };
 
-  let error;
+  const now = new Date().toISOString();
+
   if (id) {
-    ({ error } = await db.from('brand_deals').update(payload).eq('id', id));
+    const result = await queueOrRun(
+      { table: 'brand_deals', action: 'update', payload, match: { id } },
+      `Edit deal "${payload.brand_name}"`
+    );
+    if (result.error) throw result.error;
+
+    const existing = deals.find(d => d.id === id);
+    if (existing) Object.assign(existing, payload, { updated_at: now });
+    renderDeals();
+    populateDealSelect('');
+    showToast(result.queued ? 'Saved offline — will sync' : 'Deal updated', result.queued ? 'info' : 'success');
   } else {
-    payload.user_id = user.id;
-    ({ error } = await db.from('brand_deals').insert(payload));
+    // Client-minted id so the optimistic row keeps its identity on sync.
+    const row = { ...payload, id: newId(), user_id: user.id, created_at: now, updated_at: now };
+    const result = await queueOrRun(
+      { table: 'brand_deals', action: 'insert', payload: row },
+      `New deal "${payload.brand_name}"`
+    );
+    if (result.error) throw result.error;
+
+    deals.unshift(row);
+    renderDeals();
+    populateDealSelect('');
+    showToast(result.queued ? 'Saved offline — will sync' : 'Deal created successfully', result.queued ? 'info' : 'success');
   }
-
-  if (error) throw error;
-  await loadDeals();
-
-  showToast(id ? 'Deal updated' : 'Deal created successfully', 'success');
 }
 
 async function deleteDeal(id) {
@@ -448,18 +464,34 @@ async function saveTransaction(formData) {
     recurrence_end_date: formData.recurrence_end_date || null,
   };
 
-  let error;
+  const now = new Date().toISOString();
+
   if (id) {
-    ({ error } = await db.from('transactions').update(payload).eq('id', id));
+    const result = await queueOrRun(
+      { table: 'transactions', action: 'update', payload, match: { id } },
+      'Edit transaction'
+    );
+    if (result.error) throw result.error;
+
+    const existing = transactions.find(t => t.id === id);
+    if (existing) Object.assign(existing, payload, { updated_at: now });
+    renderTransactions();
+    renderSummary();
+    showToast(result.queued ? 'Saved offline — will sync' : 'Transaction updated', result.queued ? 'info' : 'success');
   } else {
-    payload.user_id = user.id;
-    ({ error } = await db.from('transactions').insert(payload));
+    // Client-minted id so the optimistic row keeps its identity on sync.
+    const row = { ...payload, id: newId(), user_id: user.id, created_at: now, updated_at: now };
+    const result = await queueOrRun(
+      { table: 'transactions', action: 'insert', payload: row },
+      'New transaction'
+    );
+    if (result.error) throw result.error;
+
+    transactions.unshift(row);
+    renderTransactions();
+    renderSummary();
+    showToast(result.queued ? 'Saved offline — will sync' : 'Transaction logged', result.queued ? 'info' : 'success');
   }
-
-  if (error) throw error;
-  await loadTransactions();
-
-  showToast(id ? 'Transaction updated' : 'Transaction logged', 'success');
 }
 
 async function deleteTransaction(id) {

@@ -38,6 +38,16 @@ export function isOnline() {
   return navigator.onLine;
 }
 
+/**
+ * Generate a client-side UUID for new rows. Letting the client mint the
+ * primary key means an optimistic row created offline keeps the same id
+ * when it finally syncs — no reconciliation needed, and links between
+ * rows (e.g. a transaction's deal_id) stay valid before the insert lands.
+ */
+export function newId() {
+  return cryptoId();
+}
+
 /** Subscribe to queue-length changes. Returns an unsubscribe fn. */
 export function onQueueChange(cb) {
   listeners.push(cb);

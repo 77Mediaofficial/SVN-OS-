@@ -1,7 +1,7 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { makeDraggable, registerDropZone } from '/js/drag.js';
-import { queueOrRun } from '/js/offline.js';
+import { queueOrRun, newId } from '/js/offline.js';
 import { TEMPLATES, buildProjectsFromTemplate } from './content-templates.js';
 import {
   loadPreferences,
@@ -725,10 +725,12 @@ async function handleSubmit(e) {
   const scheduled_at = scheduledRaw ? new Date(scheduledRaw).toISOString() : null;
   const published_at = status === 'posted' ? new Date().toISOString() : null;
 
+  const now = new Date().toISOString();
+
   try {
     if (editingId) {
       // Update
-      const payload = { title, description, platform, status, scheduled_at, notes, tags };
+      const payload = { title, description: description || null, platform, status, scheduled_at, notes: notes || null, tags };
       // Only set published_at when transitioning to posted
       const existing = projects.find(p => p.id === editingId)
         || archivedProjects.find(p => p.id === editingId);
@@ -736,13 +738,19 @@ async function handleSubmit(e) {
         payload.published_at = published_at;
       }
 
-      const { error } = await db
-        .from('content_projects')
-        .update(payload)
-        .eq('id', editingId);
+      const result = await queueOrRun(
+        { table: 'content_projects', action: 'update', payload, match: { id: editingId } },
+        `Edit "${truncate(title, 30)}"`
+      );
+      if (result.error) throw result.error;
 
-      if (error) throw error;
-      showToast('Project updated', 'success');
+      // Optimistic local merge so the edit shows instantly (online or not).
+      if (existing) {
+        Object.assign(existing, payload, { updated_at: now });
+        // Status may have moved the row in/out of the archived bucket.
+        applyLocalStatusBucket(existing);
+      }
+      showToast(result.queued ? 'Saved offline — will sync' : 'Project updated', result.queued ? 'info' : 'success');
     } else {
       // Create
       if (!currentUser) {
@@ -751,33 +759,57 @@ async function handleSubmit(e) {
         return;
       }
 
-      const { error } = await db
-        .from('content_projects')
-        .insert({
-          user_id: currentUser.id,
-          title,
-          description: description || null,
-          platform,
-          status,
-          scheduled_at,
-          published_at,
-          notes: notes || null,
-          tags,
-        });
+      // Client-minted id so the optimistic row keeps its identity on sync.
+      const id = newId();
+      const row = {
+        id,
+        user_id: currentUser.id,
+        title,
+        description: description || null,
+        platform,
+        status,
+        scheduled_at,
+        published_at,
+        notes: notes || null,
+        tags,
+        created_at: now,
+        updated_at: now,
+      };
 
-      if (error) throw error;
-      showToast('Project created', 'success');
+      const result = await queueOrRun(
+        { table: 'content_projects', action: 'insert', payload: row },
+        `New project "${truncate(title, 30)}"`
+      );
+      if (result.error) throw result.error;
+
+      // Optimistic insert into the right bucket.
+      if (status === 'archived') archivedProjects.unshift(row);
+      else projects.unshift(row);
+      showToast(result.queued ? 'Saved offline — will sync' : 'Project created', result.queued ? 'info' : 'success');
     }
 
     closeModal();
-    await loadProjects();
-    /* drag bindings re-applied by renderBoard */
-    if (showArchived) await loadArchivedProjects();
+    renderBoard();
+    renderSummary();
+    if (showArchived) renderArchivedSection();
   } catch (err) {
     if (errorEl) errorEl.textContent = err.message || 'Something went wrong.';
   } finally {
     if (submitBtn) submitBtn.disabled = false;
   }
+}
+
+/**
+ * Keep a project in the correct in-memory bucket after an edit changes
+ * its status. Active statuses live in `projects`; 'archived' lives in
+ * `archivedProjects`.
+ */
+function applyLocalStatusBucket(project) {
+  const isArchived = project.status === 'archived';
+  projects = projects.filter(p => p.id !== project.id);
+  archivedProjects = archivedProjects.filter(p => p.id !== project.id);
+  if (isArchived) archivedProjects.unshift(project);
+  else projects.unshift(project);
 }
 
 /* ── Delete ───────────────────────────────────────────────── */

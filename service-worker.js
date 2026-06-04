@@ -3,7 +3,7 @@
    without network. Supabase API requests always go to the network
    (they're auth + user-scoped data; never cache those). */
 
-const VERSION = 'svn-os-v4';
+const VERSION = 'svn-os-v5';
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 

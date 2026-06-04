@@ -177,7 +177,7 @@
   <div class="kpis">
     <div class="kpi">
       <div class="kpi-label">Lines of code</div>
-      <div class="kpi-value">14,444</div>
+      <div class="kpi-value">15,260</div>
       <div class="kpi-foot">JS · CSS · HTML · SQL</div>
     </div>
     <div class="kpi">
@@ -187,8 +187,8 @@
     </div>
     <div class="kpi">
       <div class="kpi-label">Features shipped</div>
-      <div class="kpi-value">47</div>
-      <div class="kpi-foot">across 9 release batches</div>
+      <div class="kpi-value">48</div>
+      <div class="kpi-foot">across 10 release batches</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Awaiting deploy</div>
@@ -210,7 +210,8 @@
   <div class="section-title">Release Timeline</div>
   <div class="card">
     <div class="timeline">
-      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>Revenue tooling</strong> — client invoicing (PDF), content templates (one brief → many projects), offline deal/transaction deletes</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>Full offline CRUD</strong> — creates &amp; edits with client-side UUIDs; projects, deals, transactions all save instantly offline and replay on reconnect</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">05fff3c</span><span class="tl-msg">Revenue tooling — client invoicing (PDF), content templates (one brief → many projects), offline deal/transaction deletes</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">bd9eae4</span><span class="tl-msg">App Store track — PWA install prompt, offline write queue + sync indicator, marketing landing page, Capacitor scaffolding</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">d67a578</span><span class="tl-msg">Universal flexibility — touch drag, custom pipeline stages, tag presets, dashboard cross-sync, universal copy</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">4e988ea</span><span class="tl-msg">Calendar drag-to-reschedule + tag filter, Goals page, notifications center, mobile + Lighthouse pass</span><span class="tl-date">2026-06-04</span></div>
@@ -263,6 +264,7 @@
         <tr><td>iOS PWA standalone meta</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>apple-touch-icon, status bar style</td></tr>
         <tr><td>PWA install prompt</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/install-prompt.js · Chromium + iOS hint</td></tr>
         <tr><td>Offline write queue + sync</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/offline.js · queue, replay, indicator</td></tr>
+        <tr><td>Full offline CRUD</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>Creates &amp; edits use client-side UUIDs · projects, deals, txns all save offline</td></tr>
         <tr><td>Connectivity indicator</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>Offline / syncing / back-online pill</td></tr>
         <tr><td>Capacitor scaffolding</td><td>Mobile</td><td><span class="pill pill-config">Config ready</span></td><td>capacitor.config.json + docs/NATIVE_APP.md</td></tr>
         <tr><td>Native store build</td><td>Mobile</td><td><span class="pill pill-planned">Planned</span></td><td>npx cap add ios/android, signing</td></tr>
@@ -412,8 +414,11 @@
   <!-- ── Roadmap chips ── -->
   <div class="section-title">Next-batch candidates</div>
   <div class="chip-row">
+    <div class="roadmap-chip"><strong>Skeleton loaders</strong> · every list/table shows shape, not spinner, while data loads</div>
+    <div class="roadmap-chip"><strong>Cache all inputs</strong> · drafts auto-saved per-form so nothing is ever lost mid-edit</div>
+    <div class="roadmap-chip"><strong>Optimistic rendering everywhere</strong> · every action lands instantly, reconciles on response</div>
+    <div class="roadmap-chip"><strong>Tooltips</strong> · accessible hover/focus hints across every nav, action, and badge</div>
     <div class="roadmap-chip"><strong>Native build</strong> · npx cap add ios/android, signing, store submission</div>
-    <div class="roadmap-chip"><strong>Full offline CRUD</strong> · creates + edits with client-side UUIDs</div>
     <div class="roadmap-chip"><strong>Invoice history</strong> · save issued invoices, mark paid</div>
     <div class="roadmap-chip"><strong>Team</strong> · RLS sharing model for collaborators</div>
     <div class="roadmap-chip"><strong>Custom stage creation</strong> · enum → text + check, true free-form</div>
