@@ -177,7 +177,7 @@
   <div class="kpis">
     <div class="kpi">
       <div class="kpi-label">Lines of code</div>
-      <div class="kpi-value">13,935</div>
+      <div class="kpi-value">14,444</div>
       <div class="kpi-foot">JS · CSS · HTML · SQL</div>
     </div>
     <div class="kpi">
@@ -187,8 +187,8 @@
     </div>
     <div class="kpi">
       <div class="kpi-label">Features shipped</div>
-      <div class="kpi-value">44</div>
-      <div class="kpi-foot">across 8 release batches</div>
+      <div class="kpi-value">47</div>
+      <div class="kpi-foot">across 9 release batches</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Awaiting deploy</div>
@@ -210,7 +210,8 @@
   <div class="section-title">Release Timeline</div>
   <div class="card">
     <div class="timeline">
-      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>App Store track</strong> — PWA install prompt, offline write queue + sync indicator, signed-out marketing landing page, Capacitor scaffolding</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>Revenue tooling</strong> — client invoicing (PDF), content templates (one brief → many projects), offline deal/transaction deletes</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">bd9eae4</span><span class="tl-msg">App Store track — PWA install prompt, offline write queue + sync indicator, marketing landing page, Capacitor scaffolding</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">d67a578</span><span class="tl-msg">Universal flexibility — touch drag, custom pipeline stages, tag presets, dashboard cross-sync, universal copy</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">4e988ea</span><span class="tl-msg">Calendar drag-to-reschedule + tag filter, Goals page, notifications center, mobile + Lighthouse pass</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">8321ba4</span><span class="tl-msg">Universal Cmd+K search, bulk operations, deadline-reminder edge function</span><span class="tl-date">2026-06-03</span></div>
@@ -242,7 +243,7 @@
         <tr><td>Dashboard (revenue, sparkline, deadlines)</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Now includes today's scheduled content</td></tr>
         <tr><td>Content Engine kanban</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>5 stages, touch-drag, bulk ops, AI ideas</td></tr>
         <tr><td>Calendar</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Touch drag-to-reschedule, tag filter</td></tr>
-        <tr><td>Deals &amp; Ledger</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Recurring transactions, tags, custom labels</td></tr>
+        <tr><td>Deals &amp; Ledger</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Recurring transactions, tags, custom labels, invoicing</td></tr>
         <tr><td>Analytics</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>3/6/12-mo · KPIs · charts</td></tr>
         <tr><td>Goals</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Monthly targets + progress, feeds Dashboard</td></tr>
         <tr><td>Settings</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Profile, Workspace, Appearance, Data, Account</td></tr>
@@ -267,6 +268,10 @@
         <tr><td>Native store build</td><td>Mobile</td><td><span class="pill pill-planned">Planned</span></td><td>npx cap add ios/android, signing</td></tr>
 
         <tr><td>Marketing landing page (/welcome)</td><td>Growth</td><td><span class="pill pill-shipped">Shipped</span></td><td>Signed-out visitors · CTAs open auth</td></tr>
+
+        <tr><td>Client invoicing (PDF)</td><td>Revenue</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/modules/invoice.js · print-ready, deliverables → line items</td></tr>
+        <tr><td>Content templates</td><td>Revenue</td><td><span class="pill pill-shipped">Shipped</span></td><td>5 templates · one brief → many linked projects</td></tr>
+        <tr><td>Offline deal/transaction deletes</td><td>Revenue</td><td><span class="pill pill-shipped">Shipped</span></td><td>Routed through the offline queue</td></tr>
 
         <tr><td>SEO meta · OG · Twitter</td><td>SEO/a11y</td><td><span class="pill pill-shipped">Shipped</span></td><td>preconnect fonts + dns-prefetch CDN</td></tr>
         <tr><td>Skip link + focus-visible</td><td>SEO/a11y</td><td><span class="pill pill-shipped">Shipped</span></td><td>prefers-reduced-motion respected</td></tr>
@@ -303,7 +308,9 @@
     <div class="mod-row"><span class="mod-name">js/modules/analytics.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:30%"></div></div><span class="mod-lines">339</span></div>
     <div class="mod-row"><span class="mod-name">pages/analytics.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:24%"></div></div><span class="mod-lines">271</span></div>
     <div class="mod-row"><span class="mod-name">js/drag.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:22%"></div></div><span class="mod-lines">251</span></div>
-    <div class="mod-row"><span class="mod-name">js/offline.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:25%"></div></div><span class="mod-lines">285</span></div>
+    <div class="mod-row"><span class="mod-name">js/offline.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:25%"></div></div><span class="mod-lines">285</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/invoice.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:21%"></div></div><span class="mod-lines">238</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/content-templates.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:8%"></div></div><span class="mod-lines">91</span></div>
     <div class="mod-row"><span class="mod-name">pages/landing.html (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:19%"></div></div><span class="mod-lines">221</span></div>
     <div class="mod-row"><span class="mod-name">js/install-prompt.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:17%"></div></div><span class="mod-lines">199</span></div>
     <div class="mod-row"><span class="mod-name">js/modules/landing.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:3%"></div></div><span class="mod-lines">37</span></div>
@@ -406,8 +413,8 @@
   <div class="section-title">Next-batch candidates</div>
   <div class="chip-row">
     <div class="roadmap-chip"><strong>Native build</strong> · npx cap add ios/android, signing, store submission</div>
-    <div class="roadmap-chip"><strong>Content templates</strong> · one brief → multi-platform variants</div>
-    <div class="roadmap-chip"><strong>Invoicing</strong> · PDF generation from deals</div>
+    <div class="roadmap-chip"><strong>Full offline CRUD</strong> · creates + edits with client-side UUIDs</div>
+    <div class="roadmap-chip"><strong>Invoice history</strong> · save issued invoices, mark paid</div>
     <div class="roadmap-chip"><strong>Team</strong> · RLS sharing model for collaborators</div>
     <div class="roadmap-chip"><strong>Custom stage creation</strong> · enum → text + check, true free-form</div>
     <div class="roadmap-chip"><strong>Real Lighthouse run</strong> · perf budget</div>

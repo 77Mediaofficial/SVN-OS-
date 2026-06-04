@@ -2,6 +2,7 @@ import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { makeDraggable, registerDropZone } from '/js/drag.js';
 import { queueOrRun } from '/js/offline.js';
+import { TEMPLATES, buildProjectsFromTemplate } from './content-templates.js';
 import {
   loadPreferences,
   getContentStages,
@@ -57,6 +58,7 @@ export async function init() {
   bindFilters();
   bindSlideover();
   bindIdeasModal();
+  bindTemplatesModal();
   bindBulkBar();
   bindKeyboardShortcuts();
   renderActiveTagFilter();
@@ -945,6 +947,89 @@ function closeIdeasModal() {
   if (modal) modal.style.display = 'none';
 }
 
+/* ── Project Templates ───────────────────────────────────── */
+function bindTemplatesModal() {
+  const triggerBtn = document.getElementById('ce-templates');
+  const modal = document.getElementById('ce-templates-modal');
+  const closeBtn = document.getElementById('ce-templates-close');
+
+  if (triggerBtn && modal) {
+    triggerBtn.addEventListener('click', () => {
+      renderTemplates();
+      modal.style.display = 'flex';
+      const input = document.getElementById('ce-template-topic');
+      if (input) setTimeout(() => input.focus(), 40);
+    });
+  }
+  if (closeBtn) closeBtn.addEventListener('click', closeTemplatesModal);
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeTemplatesModal();
+    });
+  }
+}
+
+function closeTemplatesModal() {
+  const modal = document.getElementById('ce-templates-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function renderTemplates() {
+  const list = document.getElementById('ce-templates-list');
+  if (!list) return;
+  list.innerHTML = TEMPLATES.map(t => `
+    <div class="ce-template-card" data-template="${t.id}">
+      <div class="ce-template-head">
+        <span class="ce-template-name">${escapeHtml(t.name)}</span>
+        <button class="btn btn-primary" data-action="use-template" data-template="${t.id}">Create ${t.steps.length}</button>
+      </div>
+      <div class="ce-template-desc">${escapeHtml(t.description)}</div>
+      <div class="ce-template-steps">
+        ${t.steps.map(s => `<span class="ce-template-step">${escapeHtml(s.suffix.replace(/^—\s*/, ''))}</span>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('[data-action="use-template"]').forEach(btn => {
+    btn.addEventListener('click', () => applyTemplate(btn.dataset.template, btn));
+  });
+}
+
+async function applyTemplate(templateId, btn) {
+  if (!currentUser) {
+    showToast('You must be signed in', 'error');
+    return;
+  }
+  const template = TEMPLATES.find(t => t.id === templateId);
+  if (!template) return;
+
+  const topic = document.getElementById('ce-template-topic')?.value.trim() || '';
+  if (!topic) {
+    showToast('Add a topic or working title first', 'warning');
+    document.getElementById('ce-template-topic')?.focus();
+    return;
+  }
+
+  btn.disabled = true;
+  const rows = buildProjectsFromTemplate(template, topic).map(r => ({
+    ...r,
+    user_id: currentUser.id,
+  }));
+
+  try {
+    const { error } = await db.from('content_projects').insert(rows);
+    if (error) throw error;
+    showToast(`Created ${rows.length} projects from "${template.name}"`, 'success');
+    closeTemplatesModal();
+    const topicInput = document.getElementById('ce-template-topic');
+    if (topicInput) topicInput.value = '';
+    await loadProjects();
+  } catch (err) {
+    btn.disabled = false;
+    showToast(err.message || 'Failed to create projects', 'error');
+  }
+}
+
 async function runIdeas() {
   const body = document.getElementById('ce-ideas-body');
   const runBtn = document.getElementById('ce-ideas-run');
@@ -1063,6 +1148,11 @@ function onGlobalKeydown(e) {
     const ideasModal = document.getElementById('ce-ideas-modal');
     if (ideasModal && ideasModal.style.display === 'flex') {
       closeIdeasModal();
+      return;
+    }
+    const templatesModal = document.getElementById('ce-templates-modal');
+    if (templatesModal && templatesModal.style.display === 'flex') {
+      closeTemplatesModal();
       return;
     }
     if (selectedIds.size > 0) {

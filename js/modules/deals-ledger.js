@@ -1,6 +1,8 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { rolloverRecurringTransactions } from './recurrence.js';
+import { generateInvoice } from './invoice.js';
+import { queueOrRun } from '/js/offline.js';
 import {
   loadPreferences,
   getDealStages,
@@ -51,8 +53,13 @@ export async function init() {
 
   await Promise.all([loadDeals(), loadTransactions()]);
 
+  // Reload once queued offline changes finish syncing.
+  const onSynced = () => { loadDeals(); loadTransactions(); };
+  window.addEventListener('svn-os:synced', onSynced);
+
   // Return cleanup function for the router
   return () => {
+    window.removeEventListener('svn-os:synced', onSynced);
     if (abortController) {
       abortController.abort();
       abortController = null;
@@ -253,6 +260,7 @@ function renderDeals() {
       <td class="col-value">${d.value ? formatCurrency(d.value) : '--'}</td>
       <td class="col-date">${formatDate(d.deadline)}</td>
       <td class="col-actions">
+        <button class="dl-row-btn deal-invoice-btn" data-id="${d.id}" title="Generate invoice">Invoice</button>
         <button class="dl-row-btn deal-edit-btn" data-id="${d.id}">Edit</button>
         <button class="dl-row-btn danger deal-delete-btn" data-id="${d.id}">Delete</button>
       </td>
@@ -293,10 +301,20 @@ async function saveDeal(formData) {
 }
 
 async function deleteDeal(id) {
-  const { error } = await db.from('brand_deals').delete().eq('id', id);
-  if (error) throw error;
-  await Promise.all([loadDeals(), loadTransactions()]);
-  showToast('Deal deleted', 'info');
+  const result = await queueOrRun(
+    { table: 'brand_deals', action: 'delete', match: { id } },
+    'Delete deal'
+  );
+  if (result.error) throw result.error;
+  if (result.queued) {
+    // Optimistic local removal; full reload happens on reconnect/sync.
+    deals = deals.filter(d => d.id !== id);
+    renderDeals();
+    populateDealSelect('');
+  } else {
+    await Promise.all([loadDeals(), loadTransactions()]);
+    showToast('Deal deleted', 'info');
+  }
 }
 
 /* ── TRANSACTIONS: Load & Render ──────────────────────────── */
@@ -445,10 +463,19 @@ async function saveTransaction(formData) {
 }
 
 async function deleteTransaction(id) {
-  const { error } = await db.from('transactions').delete().eq('id', id);
-  if (error) throw error;
-  await loadTransactions();
-  showToast('Transaction deleted', 'info');
+  const result = await queueOrRun(
+    { table: 'transactions', action: 'delete', match: { id } },
+    'Delete transaction'
+  );
+  if (result.error) throw result.error;
+  if (result.queued) {
+    transactions = transactions.filter(t => t.id !== id);
+    renderTransactions();
+    renderSummary();
+  } else {
+    await loadTransactions();
+    showToast('Transaction deleted', 'info');
+  }
 }
 
 /* ── Modal Helpers ────────────────────────────────────────── */
@@ -669,8 +696,15 @@ function bindDealEvents(signal) {
         return;
       }
 
+      const invoiceBtn = e.target.closest('.deal-invoice-btn');
       const editBtn = e.target.closest('.deal-edit-btn');
       const deleteBtn = e.target.closest('.deal-delete-btn');
+
+      if (invoiceBtn) {
+        const deal = deals.find(d => d.id === invoiceBtn.dataset.id);
+        if (deal) generateInvoice(deal);
+        return;
+      }
 
       if (editBtn) {
         const deal = deals.find(d => d.id === editBtn.dataset.id);

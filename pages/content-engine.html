@@ -694,7 +694,14 @@
     <p>Move every project from brief to delivery</p>
     <p class="ce-summary" id="ce-summary"></p>
   </div>
-  <div style="display:flex; gap:8px; flex-shrink:0; margin-top:4px;">
+  <div style="display:flex; gap:8px; flex-shrink:0; margin-top:4px; flex-wrap:wrap;">
+    <button class="btn btn-ghost" id="ce-templates" title="Spin up a multi-step project from a template">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
+        <rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>
+      </svg>
+      Templates
+    </button>
     <button class="btn btn-ghost" id="ce-generate-ideas" title="Brainstorm 5 new content ideas with AI">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M8 2v2M8 12v2M2 8h2M12 8h2M3.5 3.5l1.4 1.4M11.1 11.1l1.4 1.4M3.5 12.5l1.4-1.4M11.1 4.9l1.4-1.4"/>
@@ -946,6 +953,55 @@
     </div>
   </div>
 </div>
+
+<!-- ── Project Templates Modal ──────────────────────────────────── -->
+<div class="modal-overlay ce-modal" id="ce-templates-modal" style="display:none;">
+  <div class="modal-card" style="max-width: 640px;">
+    <div class="ce-modal-header">
+      <h2>Project templates</h2>
+      <button class="ce-modal-close" id="ce-templates-close" aria-label="Close templates modal">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <line x1="4" y1="4" x2="12" y2="12"/>
+          <line x1="12" y1="4" x2="4" y2="12"/>
+        </svg>
+      </button>
+    </div>
+    <p class="modal-subtitle">Turn one brief into a coordinated set of projects across formats</p>
+
+    <div class="ce-templates-controls">
+      <input type="text" id="ce-template-topic" class="ce-search-input" placeholder="Topic or working title (e.g. Spring product launch)" style="max-width:none; padding-left:14px;" />
+    </div>
+
+    <div class="ce-templates-list" id="ce-templates-list"></div>
+  </div>
+</div>
+
+<style>
+  .ce-templates-controls { margin: 16px 0 8px; }
+  .ce-templates-controls input { width: 100%; }
+  .ce-templates-list { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+  .ce-template-card {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    background: var(--color-bg);
+    transition: border-color var(--transition-fast);
+  }
+  .ce-template-card:hover { border-color: #333; }
+  .ce-template-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-bottom: 8px;
+  }
+  .ce-template-name { font-size: 0.92rem; font-weight: 600; color: var(--color-text); }
+  .ce-template-desc { font-size: 0.78rem; color: var(--color-text-dim); margin-bottom: 12px; line-height: 1.5; }
+  .ce-template-steps { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+  .ce-template-step {
+    font-size: 0.66rem; padding: 3px 9px; border-radius: 999px;
+    background: var(--color-surface-2); color: var(--color-text-dim);
+    border: 1px solid var(--color-border);
+  }
+  .ce-template-card .btn { font-size: 0.78rem; padding: 7px 14px; }
+</style>
 
 <style>
   .ce-ideas-controls {
