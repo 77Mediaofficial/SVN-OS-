@@ -2,6 +2,7 @@ import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { makeDraggable, registerDropZone } from '/js/drag.js';
 import { queueOrRun, newId } from '/js/offline.js';
+import { skLine } from '/js/skeleton.js';
 import { TEMPLATES, buildProjectsFromTemplate } from './content-templates.js';
 import {
   loadPreferences,
@@ -121,7 +122,18 @@ function renderTagPresets() {
 }
 
 /* ── Data ─────────────────────────────────────────────────── */
+/** Fill each kanban column with a couple of skeleton cards while loading. */
+function renderBoardLoading() {
+  const board = document.getElementById('kanban-board');
+  if (!board) return;
+  const card = `<div class="kanban-card sk-card" style="margin-bottom:10px">${skLine(70)}${skLine(40, 'sk-sm')}</div>`;
+  board.querySelectorAll('.kanban-col-cards').forEach((col, i) => {
+    col.innerHTML = card.repeat(i === 0 ? 3 : 2);
+  });
+}
+
 async function loadProjects() {
+  if (projects.length === 0) renderBoardLoading();
   try {
     const { data, error } = await db
       .from('content_projects')

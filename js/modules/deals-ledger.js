@@ -3,6 +3,7 @@ import { showToast } from '../toast.js';
 import { rolloverRecurringTransactions } from './recurrence.js';
 import { generateInvoice } from './invoice.js';
 import { queueOrRun, newId } from '/js/offline.js';
+import { skTableRows } from '/js/skeleton.js';
 import {
   loadPreferences,
   getDealStages,
@@ -208,6 +209,9 @@ async function loadDeals() {
   const tbody = document.getElementById('deals-tbody');
   if (!tbody) return;
 
+  // Show shape-of-content while the query runs.
+  if (deals.length === 0) tbody.innerHTML = skTableRows(5, 5);
+
   try {
     const { data, error } = await db
       .from('brand_deals')
@@ -337,6 +341,8 @@ async function deleteDeal(id) {
 async function loadTransactions() {
   const tbody = document.getElementById('txn-tbody');
   if (!tbody) return;
+
+  if (transactions.length === 0) tbody.innerHTML = skTableRows(5, 6);
 
   try {
     const { data, error } = await db

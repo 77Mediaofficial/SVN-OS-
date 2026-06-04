@@ -1,6 +1,7 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { hasAnyUserData, seedDemoData } from './demo-data.js';
+import { skLine } from '/js/skeleton.js';
 
 const ONBOARDING_DISMISSED_KEY = 'svn-os-onboarding-dismissed';
 
@@ -33,6 +34,8 @@ export async function init() {
   const user = await getCurrentUser();
   if (!user) return;
 
+  paintDashboardSkeletons();
+
   await Promise.all([
     loadRevenueMetrics(),
     loadActionItems(),
@@ -52,6 +55,30 @@ export async function init() {
     animationFrames.forEach(id => cancelAnimationFrame(id));
     animationFrames = [];
   };
+}
+
+/** Paint shape-of-content placeholders into every dashboard panel
+ *  before the parallel loads resolve, so nothing flashes empty. */
+function paintDashboardSkeletons() {
+  const listSkel = (rows) =>
+    Array.from({ length: rows }, () =>
+      `<li class="dash-skel-row">${skLine(70)}${skLine(40, 'sk-sm')}</li>`
+    ).join('');
+  const barSkel = (rows) =>
+    Array.from({ length: rows }, () =>
+      `<div class="dash-skel-row">${skLine(60)}</div>`
+    ).join('');
+
+  const set = (id, html) => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  };
+  set('action-items', listSkel(3));
+  set('pipeline-bars', barSkel(4));
+  set('recent-deals', listSkel(4));
+  set('platform-distribution', barSkel(4));
+  set('upcoming-deadlines', barSkel(3));
+  set('activity-feed', listSkel(5));
 }
 
 // ── Onboarding Banner ────────────────────────────────────────
