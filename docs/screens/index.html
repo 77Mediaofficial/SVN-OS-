@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>SVN OS — Visual Index</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --panel: #111;
+    --panel-2: #1a1a1a;
+    --line: #222;
+    --line-2: #2a2a2a;
+    --ink: #f5f5f5;
+    --ink-dim: #a3a3a3;
+    --ink-faint: #6b6b6b;
+    --accent: #fff;
+    --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); font-family: 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+
+  header {
+    border-bottom: 1px solid var(--line);
+    padding: 56px 48px 40px;
+    background:
+      radial-gradient(1200px 400px at 20% -10%, rgba(255,255,255,0.04), transparent 60%),
+      radial-gradient(900px 300px at 90% 0%, rgba(255,255,255,0.03), transparent 60%);
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 18px;
+  }
+  h1 {
+    font-weight: 300;
+    font-size: clamp(36px, 5vw, 60px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
+  }
+  h1 b { font-weight: 600; }
+  .lede {
+    color: var(--ink-dim);
+    font-size: 17px;
+    line-height: 1.6;
+    max-width: 720px;
+    margin: 0;
+  }
+  .meta {
+    margin-top: 28px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+  .meta b { color: var(--ink); font-weight: 500; }
+  .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #4ade80; box-shadow: 0 0 12px rgba(74, 222, 128, 0.6); vertical-align: middle; margin-right: 8px; }
+
+  nav.toc {
+    border-bottom: 1px solid var(--line);
+    padding: 18px 48px;
+    background: var(--panel);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    backdrop-filter: blur(12px);
+  }
+  nav.toc a {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    transition: all .15s ease;
+  }
+  nav.toc a:hover { color: var(--ink); border-color: var(--line-2); background: var(--panel-2); }
+
+  main { padding: 56px 48px 96px; max-width: 1480px; margin: 0 auto; }
+
+  section.screen {
+    margin-bottom: 88px;
+    scroll-margin-top: 80px;
+  }
+  .screen-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 14px;
+  }
+  .screen-head h2 {
+    font-weight: 400;
+    font-size: 28px;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .screen-head .route {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+  .screen-desc {
+    color: var(--ink-dim);
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 14px 0 28px;
+    max-width: 820px;
+  }
+
+  .shots {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 280px;
+    gap: 24px;
+    align-items: start;
+  }
+  @media (max-width: 1024px) {
+    .shots { grid-template-columns: 1fr; }
+    main, header, nav.toc { padding-left: 24px; padding-right: 24px; }
+  }
+
+  .shot {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    transition: border-color .15s ease, transform .2s ease;
+  }
+  .shot:hover { border-color: var(--line-2); }
+  .shot .label {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel-2);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .shot .label .dim { color: var(--ink-faint); }
+  .shot img { display: block; width: 100%; height: auto; }
+  .shot.mobile { max-width: 280px; }
+  .shot.mobile img { background: #000; }
+
+  footer {
+    border-top: 1px solid var(--line);
+    margin-top: 56px;
+    padding: 32px 48px;
+    color: var(--ink-faint);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Visual Index · Build Preview</div>
+  <h1>SVN <b>OS</b> — every screen at a glance.</h1>
+  <p class="lede">The full creator operating system, rendered with a representative workspace. Cinematic dark UI, progressive disclosure, frictionless onboarding. Desktop captures at 1440×900; mobile at 390×844.</p>
+  <div class="meta">
+    <span><span class="dot"></span><b>Build </b>claude/lucid-bell-AfUBt</span>
+    <span>7 screens · 14 captures</span>
+    <span>Tap any image to open full-size</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <a href="#dashboard">Dashboard</a>
+  <a href="#content-engine">Content Engine</a>
+  <a href="#calendar">Calendar</a>
+  <a href="#deals-ledger">Deals &amp; Ledger</a>
+  <a href="#analytics">Analytics</a>
+  <a href="#goals">Goals</a>
+  <a href="#settings">Settings</a>
+</nav>
+
+<main>
+
+  <section class="screen" id="dashboard">
+    <div class="screen-head">
+      <h2>Dashboard</h2>
+      <span class="route">/</span>
+    </div>
+    <p class="screen-desc">The command centre. Revenue metrics with count-up animation, 30-day sparkline, monthly comparisons, and the new <b>What Needs You</b> / <b>Coming Up</b> priority view. Dense analytics (pipeline bars, platform mix, recent deals, activity feed) tuck behind a single <i>System Telemetry</i> toggle so the first impression breathes.</p>
+    <div class="shots">
+      <a class="shot" href="dashboard.png" target="_blank" rel="noopener">
+        <div class="label"><span>Desktop · 1440 × 900</span><span class="dim">dashboard.png</span></div>
+        <img src="dashboard.png" alt="SVN OS dashboard, desktop view" loading="lazy">
+      </a>
+      <a class="shot mobile" href="dashboard-mobile.png" target="_blank" rel="noopener">
+        <div class="label"><span>Mobile · 390 × 844</span><span class="dim">.png</span></div>
+        <img src="dashboard-mobile.png" alt="SVN OS dashboard, mobile view" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+  <section class="screen" id="content-engine">
+    <div class="screen-head">
+      <h2>Content Engine</h2>
+      <span class="route">/content</span>
+    </div>
+    <p class="screen-desc">Kanban for the pipeline — idea → scripting → production → ready → posted. Optimistic drag-and-drop with offline-safe revert, search and platform filters, slide-over detail panel, draft autosave on the create form, and skeleton loaders during fetch.</p>
+    <div class="shots">
+      <a class="shot" href="content-engine.png" target="_blank" rel="noopener">
+        <div class="label"><span>Desktop · 1440 × 900</span><span class="dim">content-engine.png</span></div>
+        <img src="content-engine.png" alt="Content Engine kanban, desktop" loading="lazy">
+      </a>
+      <a class="shot mobile" href="content-engine-mobile.png" target="_blank" rel="noopener">
+        <div class="label"><span>Mobile · 390 × 844</span><span class="dim">.png</span></div>
+        <img src="content-engine-mobile.png" alt="Content Engine kanban, mobile" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+  <section class="screen" id="calendar">
+    <div class="screen-head">
+      <h2>Calendar</h2>
+      <span class="route">/calendar</span>
+    </div>
+    <p class="screen-desc">Monthly grid with ISO week numbers, platform filter chips, and platform-coloured pills (up to 3 per cell with overflow indicator). Click any day for a slide-down detail of everything scheduled.</p>
+    <div class="shots">
+      <a class="shot" href="calendar.png" target="_blank" rel="noopener">
+        <div class="label"><span>Desktop · 1440 × 900</span><span class="dim">calendar.png</span></div>
+        <img src="calendar.png" alt="Calendar, desktop" loading="lazy">
+      </a>
+      <a class="shot mobile" href="calendar-mobile.png" target="_blank" rel="noopener">
+        <div class="label"><span>Mobile · 390 × 844</span><span class="dim">.png</span></div>
+        <img src="calendar-mobile.png" alt="Calendar, mobile" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+  <section class="screen" id="deals-ledger">
+    <div class="screen-head">
+      <h2>Deals &amp; Ledger</h2>
+      <span class="route">/deals</span>
+    </div>
+    <p class="screen-desc">Your clients, deals, and money — in one place. CRM table with status filter chips, financial summary (income / expenses / net), transactions ledger with income vs. expense colour-coding, and one-click invoice generation per deal.</p>
+    <div class="shots">
+      <a class="shot" href="deals-ledger.png" target="_blank" rel="noopener">
+        <div class="label"><span>Desktop · 1440 × 900</span><span class="dim">deals-ledger.png</span></div>
+        <img src="deals-ledger.png" alt="Deals and ledger, desktop" loading="lazy">
+      </a>
+      <a class="shot mobile" href="deals-ledger-mobile.png" target="_blank" rel="noopener">
+        <div class="label"><span>Mobile · 390 × 844</span><span class="dim">.png</span></div>
+        <img src="deals-ledger-mobile.png" alt="Deals and ledger, mobile" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+  <section class="screen" id="analytics">
+    <div class="screen-head">
+      <h2>Analytics</h2>
+      <span class="route">/analytics</span>
+    </div>
+    <p class="screen-desc">Revenue trend lines, deal conversion funnel, platform performance breakdown, and cohort comparisons. Every chart hand-rendered SVG — no chart-library bloat.</p>
+    <div class="shots">
+      <a class="shot" href="analytics.png" target="_blank" rel="noopener">
+        <div class="label"><span>Desktop · 1440 × 900</span><span class="dim">analytics.png</span></div>
+        <img src="analytics.png" alt="Analytics, desktop" loading="lazy">
+      </a>
+      <a class="shot mobile" href="analytics-mobile.png" target="_blank" rel="noopener">
+        <div class="label"><span>Mobile · 390 × 844</span><span class="dim">.png</span></div>
+        <img src="analytics-mobile.png" alt="Analytics, mobile" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+  <section class="screen" id="goals">
+    <div class="screen-head">
+      <h2>Goals</h2>
+      <span class="route">/goals</span>
+    </div>
+    <p class="screen-desc">Set targets for revenue, content output, follower growth — and watch the progress rings fill in real time as deals close and projects ship.</p>
+    <div class="shots">
+      <a class="shot" href="goals.png" target="_blank" rel="noopener">
+        <div class="label"><span>Desktop · 1440 × 900</span><span class="dim">goals.png</span></div>
+        <img src="goals.png" alt="Goals, desktop" loading="lazy">
+      </a>
+      <a class="shot mobile" href="goals-mobile.png" target="_blank" rel="noopener">
+        <div class="label"><span>Mobile · 390 × 844</span><span class="dim">.png</span></div>
+        <img src="goals-mobile.png" alt="Goals, mobile" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+  <section class="screen" id="settings">
+    <div class="screen-head">
+      <h2>Settings</h2>
+      <span class="route">/settings</span>
+    </div>
+    <p class="screen-desc">Profile, appearance (font size, compact mode), password, account, and a folded <i>Advanced</i> disclosure for power users (pipeline-stage and tag editors). Keyboard-shortcut reference included.</p>
+    <div class="shots">
+      <a class="shot" href="settings.png" target="_blank" rel="noopener">
+        <div class="label"><span>Desktop · 1440 × 900</span><span class="dim">settings.png</span></div>
+        <img src="settings.png" alt="Settings, desktop" loading="lazy">
+      </a>
+      <a class="shot mobile" href="settings-mobile.png" target="_blank" rel="noopener">
+        <div class="label"><span>Mobile · 390 × 844</span><span class="dim">.png</span></div>
+        <img src="settings-mobile.png" alt="Settings, mobile" loading="lazy">
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  SVN OS · Visual Index · Captured against a representative sample workspace
+</footer>
+
+</body>
+</html>
