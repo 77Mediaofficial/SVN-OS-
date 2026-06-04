@@ -2,6 +2,19 @@ import { db, getCurrentUser, signOut } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { seedDemoData, clearDemoData } from './demo-data.js';
 import { exportTransactionsCsv, exportDealsCsv, exportContentCsv } from './export.js';
+import {
+  loadPreferences,
+  savePreferences,
+  clearPreferencesCache,
+  getAllContentStages,
+  getAllDealStages,
+  getContentTagPresets,
+  getDealTagPresets,
+  getBusinessName,
+  getBusinessType,
+  DEFAULT_CONTENT_STAGES,
+  DEFAULT_DEAL_STAGES,
+} from '/js/preferences.js';
 
 const FONT_SIZE_KEY = 'svn-os-font-size';
 const COMPACT_KEY = 'svn-os-compact-mode';
@@ -21,14 +34,166 @@ export async function init() {
 
   populateEmail(user);
   await loadProfile(user);
+  await loadPreferences({ force: true });
   bindProfileForm(user);
   bindPasswordForm();
   bindSignOut();
   bindDeleteAccount();
   bindAppearance();
   bindDataActions();
+  bindWorkspaceForm();
 
   return cleanup;
+}
+
+/* ── Workspace customization ──────────────────────────────── */
+// Local working copies so the UI can be edited before saving.
+let editContentStages = [];
+let editDealStages = [];
+
+function bindWorkspaceForm() {
+  editContentStages = getAllContentStages().map(s => ({ ...s }));
+  editDealStages = getAllDealStages().map(s => ({ ...s }));
+
+  const nameInput = document.getElementById('settings-business-name');
+  const typeSelect = document.getElementById('settings-business-type');
+  const contentTagsInput = document.getElementById('settings-content-tags');
+  const dealTagsInput = document.getElementById('settings-deal-tags');
+  const form = document.getElementById('settings-workspace-form');
+  const resetBtn = document.getElementById('settings-reset-workspace');
+
+  if (nameInput) nameInput.value = getBusinessName();
+  if (typeSelect) typeSelect.value = getBusinessType();
+  if (contentTagsInput) contentTagsInput.value = getContentTagPresets().join(', ');
+  if (dealTagsInput) dealTagsInput.value = getDealTagPresets().join(', ');
+
+  renderStageList('settings-content-stages', editContentStages);
+  renderStageList('settings-deal-stages', editDealStages);
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await saveWorkspace();
+    });
+  }
+  if (resetBtn) {
+    resetBtn.addEventListener('click', async () => {
+      if (!confirm('Reset pipeline labels and tag presets to defaults?')) return;
+      editContentStages = DEFAULT_CONTENT_STAGES.map(s => ({ ...s }));
+      editDealStages = DEFAULT_DEAL_STAGES.map(s => ({ ...s }));
+      renderStageList('settings-content-stages', editContentStages);
+      renderStageList('settings-deal-stages', editDealStages);
+      if (contentTagsInput) contentTagsInput.value = '';
+      if (dealTagsInput) dealTagsInput.value = '';
+    });
+  }
+}
+
+function renderStageList(containerId, list) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = list.map((s, idx) => `
+    <div class="settings-stage-row${s.hidden ? ' hidden-stage' : ''}" data-key="${escapeAttr(s.key)}">
+      <span class="settings-stage-handle">${idx + 1}</span>
+      <input type="text" class="settings-stage-input" value="${escapeAttr(s.label)}" data-field="label" maxlength="40" />
+      <div class="settings-stage-actions">
+        <button type="button" class="settings-stage-btn" data-action="up" ${idx === 0 ? 'disabled' : ''} aria-label="Move up" title="Move up">↑</button>
+        <button type="button" class="settings-stage-btn" data-action="down" ${idx === list.length - 1 ? 'disabled' : ''} aria-label="Move down" title="Move down">↓</button>
+      </div>
+      <div class="settings-stage-actions">
+        <button type="button" class="settings-stage-btn" data-action="toggle-hidden" aria-label="${s.hidden ? 'Show' : 'Hide'}" title="${s.hidden ? 'Show' : 'Hide'}">${s.hidden ? '○' : '●'}</button>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.settings-stage-row').forEach(row => {
+    const key = row.dataset.key;
+    const target = list.find(s => s.key === key);
+    if (!target) return;
+
+    row.querySelector('input[data-field="label"]').addEventListener('input', (e) => {
+      target.label = e.target.value;
+    });
+    row.querySelector('[data-action="up"]')?.addEventListener('click', () => {
+      const i = list.indexOf(target);
+      if (i > 0) {
+        [list[i - 1], list[i]] = [list[i], list[i - 1]];
+        normalizeSort(list);
+        renderStageList(containerId, list);
+      }
+    });
+    row.querySelector('[data-action="down"]')?.addEventListener('click', () => {
+      const i = list.indexOf(target);
+      if (i < list.length - 1) {
+        [list[i + 1], list[i]] = [list[i], list[i + 1]];
+        normalizeSort(list);
+        renderStageList(containerId, list);
+      }
+    });
+    row.querySelector('[data-action="toggle-hidden"]')?.addEventListener('click', () => {
+      target.hidden = !target.hidden;
+      renderStageList(containerId, list);
+    });
+  });
+}
+
+function normalizeSort(list) {
+  list.forEach((s, i) => { s.sort = i; });
+}
+
+function buildOverridesFromList(list, defaults) {
+  const overrides = {};
+  list.forEach((s) => {
+    const def = defaults.find(d => d.key === s.key);
+    const override = {};
+    if (!def || def.label !== s.label) override.label = s.label;
+    if (typeof s.sort === 'number') override.sort = s.sort;
+    if (s.hidden) override.hidden = true;
+    if (Object.keys(override).length > 0) overrides[s.key] = override;
+  });
+  return overrides;
+}
+
+async function saveWorkspace() {
+  const nameInput = document.getElementById('settings-business-name');
+  const typeSelect = document.getElementById('settings-business-type');
+  const contentTagsInput = document.getElementById('settings-content-tags');
+  const dealTagsInput = document.getElementById('settings-deal-tags');
+  const submitBtn = document.getElementById('settings-save-workspace');
+
+  if (submitBtn) submitBtn.disabled = true;
+  try {
+    normalizeSort(editContentStages);
+    normalizeSort(editDealStages);
+
+    await savePreferences({
+      businessName: nameInput?.value.trim() || '',
+      businessType: typeSelect?.value || '',
+      pipelineOverrides: buildOverridesFromList(editContentStages, DEFAULT_CONTENT_STAGES),
+      dealStatusOverrides: buildOverridesFromList(editDealStages, DEFAULT_DEAL_STAGES),
+      contentTagPresets: parseTagList(contentTagsInput?.value),
+      dealTagPresets: parseTagList(dealTagsInput?.value),
+    });
+    showToast('Workspace saved', 'success');
+  } catch (err) {
+    const msg = err?.message || String(err);
+    if (/relation .*user_preferences.* does not exist/i.test(msg) || /Could not find the table/i.test(msg)) {
+      showToast('Run sql/migration_user_preferences.sql in Supabase first', 'error');
+    } else {
+      showToast(msg, 'error');
+    }
+  } finally {
+    if (submitBtn) submitBtn.disabled = false;
+  }
+}
+
+function parseTagList(s) {
+  if (!s) return [];
+  return s.split(',').map(t => t.trim()).filter(Boolean).slice(0, 24);
+}
+
+function escapeAttr(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
 /* ── Helpers ──────────────────────────────────────────────────── */

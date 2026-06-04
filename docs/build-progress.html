@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SVN OS — Build Progress</title>
+<style>
+  :root {
+    --bg: #0a0a0a; --surface: #111; --surface-2: #1a1a1a; --border: #222;
+    --text: #f0f0f0; --dim: #888; --muted: #555; --accent: #fff;
+    --success: #34d399; --warn: #fbbf24; --danger: #f87171; --info: #60a5fa;
+    --purple: #a78bfa;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 15px; -webkit-font-smoothing: antialiased; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+    line-height: 1.6; padding: 32px 24px 80px; min-height: 100vh;
+  }
+  a { color: inherit; }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+  h1 {
+    font-size: 2.4rem; font-weight: 300; letter-spacing: -0.02em;
+    margin-bottom: 6px;
+  }
+  .subtitle {
+    color: var(--dim); font-size: 0.95rem;
+    margin-bottom: 36px; font-variant-numeric: tabular-nums;
+  }
+  .section-title {
+    font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--muted);
+    margin: 40px 0 14px;
+  }
+
+  /* Header KPIs */
+  .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 22px;
+  }
+  .kpi-label {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--muted); margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-size: 1.7rem; font-weight: 300; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi-foot { color: var(--dim); font-size: 0.74rem; margin-top: 6px; }
+
+  /* Cards */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 22px;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; }
+
+  /* Features table */
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th, td {
+    padding: 10px 12px; border-bottom: 1px solid var(--border);
+    text-align: left; vertical-align: top;
+  }
+  th {
+    font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+    font-weight: 600; color: var(--muted);
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.muted { color: var(--dim); }
+
+  .pill {
+    display: inline-block; padding: 2px 9px; border-radius: 999px;
+    font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.06em; font-variant-numeric: tabular-nums;
+  }
+  .pill-shipped { color: var(--success); background: rgba(52,211,153,0.08); }
+  .pill-progress { color: var(--warn); background: rgba(251,191,36,0.08); }
+  .pill-planned { color: var(--info); background: rgba(96,165,250,0.08); }
+  .pill-blocked { color: var(--danger); background: rgba(247,113,113,0.08); }
+  .pill-config { color: var(--purple); background: rgba(167,139,250,0.08); }
+
+  /* Timeline */
+  .timeline { display: flex; flex-direction: column; gap: 12px; }
+  .tl-row {
+    display: grid; grid-template-columns: 80px 1fr auto;
+    gap: 14px; align-items: baseline;
+    padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  .tl-row:last-child { border-bottom: none; }
+  .tl-hash {
+    color: var(--muted); font-family: ui-monospace, "JetBrains Mono", monospace;
+    font-size: 0.78rem;
+  }
+  .tl-msg { color: var(--text); font-size: 0.86rem; }
+  .tl-date { color: var(--dim); font-size: 0.72rem; font-variant-numeric: tabular-nums; }
+
+  /* Module bars */
+  .mod-row {
+    display: grid; grid-template-columns: 230px 1fr 60px;
+    gap: 14px; align-items: center;
+    padding: 7px 0;
+  }
+  .mod-name {
+    font-family: ui-monospace, "JetBrains Mono", monospace;
+    font-size: 0.78rem; color: var(--text);
+  }
+  .mod-bar {
+    height: 5px; background: var(--surface-2); border-radius: 999px; overflow: hidden;
+  }
+  .mod-bar-fill {
+    height: 100%; background: var(--accent); border-radius: 999px;
+  }
+  .mod-lines {
+    text-align: right; color: var(--dim); font-size: 0.72rem;
+    font-variant-numeric: tabular-nums;
+    font-family: ui-monospace, monospace;
+  }
+
+  /* Schema diagram */
+  .schema-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px;
+  }
+  .tbl {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px;
+  }
+  .tbl-name {
+    font-family: ui-monospace, monospace;
+    color: var(--accent); font-size: 0.85rem;
+    margin-bottom: 8px; font-weight: 500;
+  }
+  .tbl-col {
+    font-family: ui-monospace, monospace;
+    color: var(--dim); font-size: 0.74rem;
+    display: flex; justify-content: space-between; padding: 2px 0;
+  }
+  .tbl-col .type { color: var(--muted); }
+  .tbl-col.key { color: var(--text); }
+
+  /* Roadmap chips */
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .roadmap-chip {
+    padding: 8px 14px; border: 1px solid var(--border); border-radius: 999px;
+    background: var(--surface-2); color: var(--dim); font-size: 0.78rem;
+  }
+  .roadmap-chip strong { color: var(--text); font-weight: 500; }
+
+  /* Stack diagram */
+  .stack {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  .stack-box {
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 14px; text-align: center;
+  }
+  .stack-name {
+    font-size: 0.82rem; color: var(--text); margin-bottom: 4px; font-weight: 500;
+  }
+  .stack-role { font-size: 0.66rem; color: var(--muted); }
+
+  @media (max-width: 900px) {
+    .kpis, .grid-2, .stack, .schema-grid { grid-template-columns: 1fr; }
+    .mod-row { grid-template-columns: 1fr 70px; }
+    .mod-row .mod-bar { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>SVN OS — Build Progress</h1>
+  <p class="subtitle">Local developer view · regenerate by re-running the build-progress task</p>
+
+  <!-- ── Top-level KPIs ── -->
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi-label">Lines of code</div>
+      <div class="kpi-value">12,848</div>
+      <div class="kpi-foot">JS · CSS · HTML · SQL</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Routes shipped</div>
+      <div class="kpi-value">7</div>
+      <div class="kpi-foot">+ 1 public, + 1 dynamic</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Features shipped</div>
+      <div class="kpi-value">38</div>
+      <div class="kpi-foot">across 7 release batches</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Awaiting deploy</div>
+      <div class="kpi-value">4</div>
+      <div class="kpi-foot">DB migration · 2 edge fns · Vercel</div>
+    </div>
+  </div>
+
+  <!-- ── Tech Stack ── -->
+  <div class="section-title">Stack</div>
+  <div class="stack">
+    <div class="stack-box"><div class="stack-name">Vanilla JS · ES modules</div><div class="stack-role">No bundler</div></div>
+    <div class="stack-box"><div class="stack-name">Supabase</div><div class="stack-role">Postgres · Auth · RLS · Edge</div></div>
+    <div class="stack-box"><div class="stack-name">Vercel</div><div class="stack-role">Static hosting · SPA rewrites</div></div>
+    <div class="stack-box"><div class="stack-name">PWA</div><div class="stack-role">Service worker · manifest</div></div>
+  </div>
+
+  <!-- ── Release Timeline ── -->
+  <div class="section-title">Release Timeline</div>
+  <div class="card">
+    <div class="timeline">
+      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>Universal flexibility</strong> — touch drag, custom pipeline stages, tag presets, dashboard cross-sync, universal copy</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">4e988ea</span><span class="tl-msg">Calendar drag-to-reschedule + tag filter, Goals page, notifications center, mobile + Lighthouse pass</span><span class="tl-date">2026-06-04</span></div>
+      <div class="tl-row"><span class="tl-hash">8321ba4</span><span class="tl-msg">Universal Cmd+K search, bulk operations, deadline-reminder edge function</span><span class="tl-date">2026-06-03</span></div>
+      <div class="tl-row"><span class="tl-hash">11f58a2</span><span class="tl-msg">Tag filters, recurring transactions, public profiles, AI idea generator</span><span class="tl-date">2026-06-03</span></div>
+      <div class="tl-row"><span class="tl-hash">6f48123</span><span class="tl-msg">Analytics page, onboarding banner, PWA service worker</span><span class="tl-date">2026-06-03</span></div>
+      <div class="tl-row"><span class="tl-hash">443a547</span><span class="tl-msg">Demo data seeder, CSV export, tags on content & deals</span><span class="tl-date">2026-06-03</span></div>
+      <div class="tl-row"><span class="tl-hash">9639ce9</span><span class="tl-msg">Finalize app: Supabase wired, PWA manifest, icons</span><span class="tl-date">2026-06-02</span></div>
+      <div class="tl-row"><span class="tl-hash">bbe6e29</span><span class="tl-msg">Restyle auth modal</span><span class="tl-date">2026-05-28</span></div>
+    </div>
+  </div>
+
+  <!-- ── Feature Inventory ── -->
+  <div class="section-title">Feature Inventory</div>
+  <div class="card">
+    <table>
+      <thead>
+        <tr><th>Feature</th><th>Area</th><th>Status</th><th>Notes</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>SPA router (History API)</td><td>Core</td><td><span class="pill pill-shipped">Shipped</span></td><td>Dynamic segments, cleanup callbacks</td></tr>
+        <tr><td>Supabase auth + RLS</td><td>Core</td><td><span class="pill pill-shipped">Shipped</span></td><td>Sign in / up / out + modal</td></tr>
+        <tr><td>Toast system</td><td>Core</td><td><span class="pill pill-shipped">Shipped</span></td><td>4-max, auto-dismiss, XSS-safe</td></tr>
+        <tr><td>Command palette (Cmd+K)</td><td>Core</td><td><span class="pill pill-shipped">Shipped</span></td><td>Fuzzy nav + live data search</td></tr>
+        <tr><td>PWA shell + service worker</td><td>Core</td><td><span class="pill pill-shipped">Shipped</span></td><td>v2 — shell precache + runtime</td></tr>
+        <tr><td>Notifications center</td><td>Core</td><td><span class="pill pill-shipped">Shipped</span></td><td>Bell · overdue + recent activity</td></tr>
+        <tr><td>Touch + mouse drag helper</td><td>Core</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/drag.js · pointer-events</td></tr>
+        <tr><td>User preferences helper</td><td>Core</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/preferences.js · cache + persist</td></tr>
+
+        <tr><td>Dashboard (revenue, sparkline, deadlines)</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Now includes today's scheduled content</td></tr>
+        <tr><td>Content Engine kanban</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>5 stages, touch-drag, bulk ops, AI ideas</td></tr>
+        <tr><td>Calendar</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Touch drag-to-reschedule, tag filter</td></tr>
+        <tr><td>Deals &amp; Ledger</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Recurring transactions, tags, custom labels</td></tr>
+        <tr><td>Analytics</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>3/6/12-mo · KPIs · charts</td></tr>
+        <tr><td>Goals</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Monthly targets + progress, feeds Dashboard</td></tr>
+        <tr><td>Settings</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Profile, Workspace, Appearance, Data, Account</td></tr>
+        <tr><td>Public profile (/u/:username)</td><td>Routes</td><td><span class="pill pill-shipped">Shipped</span></td><td>Anon read · RLS public policy</td></tr>
+
+        <tr><td>Custom pipeline stage labels</td><td>Universal</td><td><span class="pill pill-shipped">Shipped</span></td><td>Stored in user_preferences (jsonb)</td></tr>
+        <tr><td>Custom deal status labels</td><td>Universal</td><td><span class="pill pill-shipped">Shipped</span></td><td>Same overrides pattern</td></tr>
+        <tr><td>Stage reorder + hide</td><td>Universal</td><td><span class="pill pill-shipped">Shipped</span></td><td>Settings → Workspace card</td></tr>
+        <tr><td>Tag presets (content + deals)</td><td>Universal</td><td><span class="pill pill-shipped">Shipped</span></td><td>One-click chips in forms</td></tr>
+        <tr><td>Add net-new stages</td><td>Universal</td><td><span class="pill pill-planned">Planned</span></td><td>Requires enum→text migration</td></tr>
+
+        <tr><td>Universal copy / industry-agnostic</td><td>Copy</td><td><span class="pill pill-shipped">Shipped</span></td><td>"Creative Business OS" + neutral demo data</td></tr>
+        <tr><td>Empty-state polish</td><td>Copy</td><td><span class="pill pill-shipped">Shipped</span></td><td>Every page + CTA</td></tr>
+
+        <tr><td>Mobile 480px pass</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>All pages + 32px tap targets</td></tr>
+        <tr><td>Touch drag on kanban + calendar</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>Pointer events · long-press to grab</td></tr>
+        <tr><td>iOS PWA standalone meta</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>apple-touch-icon, status bar style</td></tr>
+        <tr><td>Capacitor / native shell</td><td>Mobile</td><td><span class="pill pill-planned">Planned</span></td><td>For App Store submission</td></tr>
+        <tr><td>Offline write queue</td><td>Mobile</td><td><span class="pill pill-planned">Planned</span></td><td>Currently read-cache only</td></tr>
+
+        <tr><td>SEO meta · OG · Twitter</td><td>SEO/a11y</td><td><span class="pill pill-shipped">Shipped</span></td><td>preconnect fonts + dns-prefetch CDN</td></tr>
+        <tr><td>Skip link + focus-visible</td><td>SEO/a11y</td><td><span class="pill pill-shipped">Shipped</span></td><td>prefers-reduced-motion respected</td></tr>
+        <tr><td>Real Lighthouse audit run</td><td>SEO/a11y</td><td><span class="pill pill-planned">Planned</span></td><td>Run on deployed Vercel build</td></tr>
+
+        <tr><td>AI Generate-Ideas edge function</td><td>Backend</td><td><span class="pill pill-config">Needs deploy</span></td><td>supabase/functions/generate-content-ideas</td></tr>
+        <tr><td>Deadline-reminder cron function</td><td>Backend</td><td><span class="pill pill-config">Needs deploy</span></td><td>supabase/functions/send-deadline-reminders</td></tr>
+        <tr><td>user_preferences table</td><td>Backend</td><td><span class="pill pill-config">Needs migration</span></td><td>sql/migration_user_preferences.sql</td></tr>
+        <tr><td>Live Supabase credentials</td><td>Backend</td><td><span class="pill pill-config">Needs config</span></td><td>js/supabase.js — placeholders today</td></tr>
+        <tr><td>Vercel production deploy</td><td>Backend</td><td><span class="pill pill-config">Needs deploy</span></td><td>vercel.json ready</td></tr>
+
+        <tr><td>Unit tests</td><td>Quality</td><td><span class="pill pill-planned">Planned</span></td><td>No coverage today</td></tr>
+        <tr><td>Avatar uploads (Supabase Storage)</td><td>Quality</td><td><span class="pill pill-planned">Planned</span></td><td>Initials-only today</td></tr>
+        <tr><td>Marketing landing page</td><td>Quality</td><td><span class="pill pill-planned">Planned</span></td><td>For signed-out visitors</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Module Map ── -->
+  <div class="section-title">Module Map (lines of code)</div>
+  <div class="card">
+    <div class="mod-row"><span class="mod-name">js/modules/content-engine.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:100%"></div></div><span class="mod-lines">1148</span></div>
+    <div class="mod-row"><span class="mod-name">pages/content-engine.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:93%"></div></div><span class="mod-lines">1070</span></div>
+    <div class="mod-row"><span class="mod-name">css/main.css</span><div class="mod-bar"><div class="mod-bar-fill" style="width:93%"></div></div><span class="mod-lines">1065</span></div>
+    <div class="mod-row"><span class="mod-name">pages/deals-ledger.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:79%"></div></div><span class="mod-lines">902</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/deals-ledger.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:69%"></div></div><span class="mod-lines">792</span></div>
+    <div class="mod-row"><span class="mod-name">pages/dashboard.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:65%"></div></div><span class="mod-lines">743</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/dashboard.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:64%"></div></div><span class="mod-lines">730</span></div>
+    <div class="mod-row"><span class="mod-name">pages/settings.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:61%"></div></div><span class="mod-lines">705</span></div>
+    <div class="mod-row"><span class="mod-name">pages/calendar.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:61%"></div></div><span class="mod-lines">699</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/calendar.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:52%"></div></div><span class="mod-lines">597</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/settings.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:49%"></div></div><span class="mod-lines">564</span></div>
+    <div class="mod-row"><span class="mod-name">js/command-palette.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:45%"></div></div><span class="mod-lines">512</span></div>
+    <div class="mod-row"><span class="mod-name">js/notifications.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:41%"></div></div><span class="mod-lines">470</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/analytics.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:30%"></div></div><span class="mod-lines">339</span></div>
+    <div class="mod-row"><span class="mod-name">pages/analytics.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:24%"></div></div><span class="mod-lines">271</span></div>
+    <div class="mod-row"><span class="mod-name">js/drag.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:22%"></div></div><span class="mod-lines">251</span></div>
+    <div class="mod-row"><span class="mod-name">sql/schema.sql</span><div class="mod-bar"><div class="mod-bar-fill" style="width:21%"></div></div><span class="mod-lines">237</span></div>
+    <div class="mod-row"><span class="mod-name">pages/goals.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:20%"></div></div><span class="mod-lines">230</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/goals.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:18%"></div></div><span class="mod-lines">207</span></div>
+    <div class="mod-row"><span class="mod-name">js/preferences.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:16%"></div></div><span class="mod-lines">180</span></div>
+    <div class="mod-row"><span class="mod-name">js/toast.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:15%"></div></div><span class="mod-lines">173</span></div>
+    <div class="mod-row"><span class="mod-name">js/auth.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:14%"></div></div><span class="mod-lines">157</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/public-profile.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:13%"></div></div><span class="mod-lines">148</span></div>
+    <div class="mod-row"><span class="mod-name">pages/public-profile.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:12%"></div></div><span class="mod-lines">140</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/demo-data.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:11%"></div></div><span class="mod-lines">131</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/export.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:9%"></div></div><span class="mod-lines">105</span></div>
+    <div class="mod-row"><span class="mod-name">js/router.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:9%"></div></div><span class="mod-lines">100</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/recurrence.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:8%"></div></div><span class="mod-lines">93</span></div>
+    <div class="mod-row"><span class="mod-name">js/supabase.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:4%"></div></div><span class="mod-lines">50</span></div>
+    <div class="mod-row"><span class="mod-name">sql/migration_user_preferences.sql</span><div class="mod-bar"><div class="mod-bar-fill" style="width:3%"></div></div><span class="mod-lines">39</span></div>
+  </div>
+
+  <!-- ── DB Schema ── -->
+  <div class="section-title">Database Schema</div>
+  <div class="card">
+    <div class="schema-grid">
+      <div class="tbl">
+        <div class="tbl-name">profiles</div>
+        <div class="tbl-col key"><span>id</span><span class="type">uuid PK · auth.users</span></div>
+        <div class="tbl-col"><span>username</span><span class="type">text · unique (lower)</span></div>
+        <div class="tbl-col"><span>full_name, avatar_url</span><span class="type">text</span></div>
+        <div class="tbl-col"><span>bio, website</span><span class="type">text</span></div>
+      </div>
+      <div class="tbl">
+        <div class="tbl-name">user_preferences <span class="pill pill-config" style="margin-left:6px;font-size:0.55rem;">new</span></div>
+        <div class="tbl-col key"><span>user_id</span><span class="type">uuid PK</span></div>
+        <div class="tbl-col"><span>business_name, type</span><span class="type">text</span></div>
+        <div class="tbl-col"><span>pipeline_overrides</span><span class="type">jsonb</span></div>
+        <div class="tbl-col"><span>deal_status_overrides</span><span class="type">jsonb</span></div>
+        <div class="tbl-col"><span>content_tag_presets</span><span class="type">text[]</span></div>
+        <div class="tbl-col"><span>deal_tag_presets</span><span class="type">text[]</span></div>
+      </div>
+      <div class="tbl">
+        <div class="tbl-name">content_projects</div>
+        <div class="tbl-col key"><span>id</span><span class="type">uuid PK</span></div>
+        <div class="tbl-col"><span>user_id</span><span class="type">→ profiles</span></div>
+        <div class="tbl-col"><span>title, description, notes</span><span class="type">text</span></div>
+        <div class="tbl-col"><span>status</span><span class="type">enum content_status</span></div>
+        <div class="tbl-col"><span>platform</span><span class="type">enum content_platform</span></div>
+        <div class="tbl-col"><span>scheduled_at, published_at</span><span class="type">timestamptz</span></div>
+        <div class="tbl-col"><span>tags</span><span class="type">text[] · GIN</span></div>
+      </div>
+      <div class="tbl">
+        <div class="tbl-name">brand_deals</div>
+        <div class="tbl-col key"><span>id</span><span class="type">uuid PK</span></div>
+        <div class="tbl-col"><span>user_id</span><span class="type">→ profiles</span></div>
+        <div class="tbl-col"><span>brand_name, contact_*</span><span class="type">text</span></div>
+        <div class="tbl-col"><span>status</span><span class="type">enum deal_status</span></div>
+        <div class="tbl-col"><span>value</span><span class="type">numeric</span></div>
+        <div class="tbl-col"><span>deadline</span><span class="type">date</span></div>
+        <div class="tbl-col"><span>tags</span><span class="type">text[] · GIN</span></div>
+      </div>
+      <div class="tbl">
+        <div class="tbl-name">transactions</div>
+        <div class="tbl-col key"><span>id</span><span class="type">uuid PK</span></div>
+        <div class="tbl-col"><span>user_id</span><span class="type">→ profiles</span></div>
+        <div class="tbl-col"><span>type, category</span><span class="type">enums</span></div>
+        <div class="tbl-col"><span>amount</span><span class="type">numeric</span></div>
+        <div class="tbl-col"><span>recurrence, end_date</span><span class="type">enum, date</span></div>
+        <div class="tbl-col"><span>parent_transaction_id</span><span class="type">→ self</span></div>
+        <div class="tbl-col"><span>deal_id</span><span class="type">→ brand_deals</span></div>
+      </div>
+      <div class="tbl">
+        <div class="tbl-name">RLS · all tables</div>
+        <div class="tbl-col"><span>Read</span><span class="type">auth.uid() = user_id</span></div>
+        <div class="tbl-col"><span>Write</span><span class="type">auth.uid() = user_id</span></div>
+        <div class="tbl-col"><span>Public</span><span class="type">profiles where username IS NOT NULL</span></div>
+        <div class="tbl-col"><span>Triggers</span><span class="type">updated_at on all</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Deploy Checklist ── -->
+  <div class="section-title">Deploy Checklist (you · the developer)</div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Step</th><th>Command</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>1. Set real Supabase credentials</td><td class="muted">edit <code>js/supabase.js</code></td><td><span class="pill pill-blocked">Pending</span></td></tr>
+        <tr><td>2. Run schema</td><td class="muted">paste <code>sql/schema.sql</code> in Supabase SQL editor</td><td><span class="pill pill-config">Needs run</span></td></tr>
+        <tr><td>3. Run preferences migration</td><td class="muted">paste <code>sql/migration_user_preferences.sql</code></td><td><span class="pill pill-config">Needs run</span></td></tr>
+        <tr><td>4. Deploy AI edge fn</td><td class="muted">supabase functions deploy generate-content-ideas</td><td><span class="pill pill-config">Needs run</span></td></tr>
+        <tr><td>5. Deploy reminder edge fn</td><td class="muted">supabase functions deploy send-deadline-reminders</td><td><span class="pill pill-config">Needs run</span></td></tr>
+        <tr><td>6. Configure secrets</td><td class="muted">ANTHROPIC_API_KEY · RESEND_API_KEY · CRON_SECRET</td><td><span class="pill pill-config">Needs run</span></td></tr>
+        <tr><td>7. Schedule cron</td><td class="muted">.github/workflows/deadline-reminders.yml (sample in README)</td><td><span class="pill pill-config">Needs run</span></td></tr>
+        <tr><td>8. Vercel deploy</td><td class="muted">vercel --prod</td><td><span class="pill pill-config">Needs run</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Roadmap chips ── -->
+  <div class="section-title">Next-batch candidates</div>
+  <div class="chip-row">
+    <div class="roadmap-chip"><strong>App Store track</strong> · Capacitor wrapper, install prompt, offline writes</div>
+    <div class="roadmap-chip"><strong>Marketing</strong> · signed-out landing page</div>
+    <div class="roadmap-chip"><strong>Content templates</strong> · one brief → multi-platform variants</div>
+    <div class="roadmap-chip"><strong>Invoicing</strong> · PDF generation from deals</div>
+    <div class="roadmap-chip"><strong>Team</strong> · RLS sharing model for collaborators</div>
+    <div class="roadmap-chip"><strong>Custom stage creation</strong> · enum → text + check, true free-form</div>
+    <div class="roadmap-chip"><strong>Real Lighthouse run</strong> · perf budget</div>
+    <div class="roadmap-chip"><strong>Avatar storage</strong> · Supabase Storage uploads</div>
+    <div class="roadmap-chip"><strong>Unit tests</strong> · Vitest scaffolding</div>
+  </div>
+
+  <p class="subtitle" style="margin-top:32px;">Generated locally · Auto-regenerate by editing <code>docs/build-progress.html</code></p>
+
+</div>
+</body>
+</html>

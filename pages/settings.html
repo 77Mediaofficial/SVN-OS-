@@ -360,6 +360,73 @@
     flex-wrap: wrap;
   }
 
+  /* Stage editor (workspace card) */
+  .settings-stage-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .settings-stage-row {
+    display: grid;
+    grid-template-columns: 24px 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    padding: 8px 10px;
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+  .settings-stage-row.hidden-stage { opacity: 0.5; }
+  .settings-stage-handle {
+    color: var(--color-text-muted);
+    font-size: 0.65rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    user-select: none;
+  }
+  .settings-stage-input {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--color-text);
+    font-size: 0.85rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    width: 100%;
+    transition: border-color var(--transition-fast);
+  }
+  .settings-stage-input:focus {
+    outline: none;
+    border-color: #333;
+    background: var(--color-surface);
+  }
+  .settings-stage-actions {
+    display: flex;
+    gap: 4px;
+  }
+  .settings-stage-btn {
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    color: var(--color-text-dim);
+    cursor: pointer;
+    font-size: 0.7rem;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+  }
+  .settings-stage-btn:hover {
+    color: var(--color-text);
+    border-color: #444;
+  }
+  .settings-stage-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+  }
+
   /* ── Responsive ─────────────────────────────────────────────── */
   @media (max-width: 600px) {
     .settings-password-grid {
@@ -426,6 +493,63 @@
 
       <div class="settings-actions">
         <button type="submit" class="btn btn-primary" id="settings-save-profile">Save Profile</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ── Workspace ──────────────────────────────────────────── -->
+  <div class="settings-card">
+    <div class="settings-card-title">Workspace</div>
+    <p class="settings-hint" style="margin-bottom:18px;">
+      Rename your pipeline to match how you actually work. Hide stages you don't need.
+    </p>
+
+    <form id="settings-workspace-form" autocomplete="off">
+      <div class="settings-password-grid">
+        <div class="settings-form-group">
+          <label for="settings-business-name">Business Name</label>
+          <input type="text" id="settings-business-name" placeholder="Your studio, agency, or freelance name" />
+        </div>
+        <div class="settings-form-group">
+          <label for="settings-business-type">Business Type</label>
+          <select id="settings-business-type">
+            <option value="">Select…</option>
+            <option value="solo">Solo / Freelance</option>
+            <option value="studio">Studio</option>
+            <option value="agency">Agency</option>
+            <option value="production">Production Company</option>
+            <option value="consulting">Consulting</option>
+            <option value="creator">Creator</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="settings-form-group" style="margin-top:18px;">
+        <label>Content Pipeline Stages</label>
+        <div id="settings-content-stages" class="settings-stage-list"></div>
+      </div>
+
+      <div class="settings-form-group">
+        <label>Deal Pipeline Stages</label>
+        <div id="settings-deal-stages" class="settings-stage-list"></div>
+      </div>
+
+      <div class="settings-form-group">
+        <label for="settings-content-tags">Content Tag Presets</label>
+        <input type="text" id="settings-content-tags" placeholder="evergreen, q1, launch (comma separated)" />
+        <p class="settings-hint">These appear as one-click chips in the project form.</p>
+      </div>
+
+      <div class="settings-form-group">
+        <label for="settings-deal-tags">Deal Tag Presets</label>
+        <input type="text" id="settings-deal-tags" placeholder="retainer, recurring, referral" />
+        <p class="settings-hint">These appear as one-click chips in the deal form.</p>
+      </div>
+
+      <div class="settings-actions">
+        <button type="submit" class="btn btn-primary" id="settings-save-workspace">Save Workspace</button>
+        <button type="button" class="btn btn-ghost" id="settings-reset-workspace">Reset to defaults</button>
       </div>
     </form>
   </div>

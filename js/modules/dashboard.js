@@ -5,10 +5,25 @@ import { hasAnyUserData, seedDemoData } from './demo-data.js';
 const ONBOARDING_DISMISSED_KEY = 'svn-os-onboarding-dismissed';
 
 // ── Constants ────────────────────────────────────────────────
-const REVENUE_GOAL = 10000;
+const REVENUE_GOAL_DEFAULT = 10000;
 const ACTIVITY_LIMIT = 10;
 const DEADLINE_DAYS_AHEAD = 14;
 const COUNTUP_DURATION = 1200;
+
+/** Pull the user's income goal from the /goals page localStorage if set. */
+async function getIncomeGoal() {
+  try {
+    const user = await getCurrentUser();
+    const key = 'svn-os-goals-' + (user?.id || 'anon');
+    const raw = localStorage.getItem(key);
+    if (!raw) return REVENUE_GOAL_DEFAULT;
+    const parsed = JSON.parse(raw);
+    const v = Number(parsed?.income);
+    return isFinite(v) && v > 0 ? v : REVENUE_GOAL_DEFAULT;
+  } catch {
+    return REVENUE_GOAL_DEFAULT;
+  }
+}
 
 // ── Cleanup tracking ─────────────────────────────────────────
 let animationFrames = [];
@@ -132,12 +147,13 @@ async function loadRevenueMetrics() {
     setMonthlyChange('metric-expenses-change', curExpenses, prevExpenses, true);
     setMonthlyChange('metric-net-change', curNet, prevNet);
 
-    // Revenue goal progress
-    const goalPct = Math.min((curIncome / REVENUE_GOAL) * 100, 100);
+    // Revenue goal progress (reads the income goal set on /goals)
+    const goalTarget = await getIncomeGoal();
+    const goalPct = Math.min((curIncome / goalTarget) * 100, 100);
     const goalFill = document.getElementById('revenue-goal-fill');
     const goalPctLabel = document.getElementById('revenue-goal-pct');
     if (goalFill) goalFill.style.width = goalPct + '%';
-    if (goalPctLabel) goalPctLabel.textContent = Math.round(goalPct) + '% of ' + formatCurrency(REVENUE_GOAL);
+    if (goalPctLabel) goalPctLabel.textContent = Math.round(goalPct) + '% of ' + formatCurrency(goalTarget);
 
     // Sparkline
     renderSparkline('sparkline-revenue', sparkTx);
@@ -338,33 +354,67 @@ async function loadUpcomingDeadlines() {
   try {
     const now = new Date();
     const futureDate = new Date(now.getTime() + DEADLINE_DAYS_AHEAD * 24 * 60 * 60 * 1000);
+    const todayKey = now.toISOString().split('T')[0];
+    const futureKey = futureDate.toISOString().split('T')[0];
 
-    const { data: deals } = await db
-      .from('brand_deals')
-      .select('brand_name, deadline, status, value')
-      .not('deadline', 'is', null)
-      .gte('deadline', now.toISOString().split('T')[0])
-      .lte('deadline', futureDate.toISOString().split('T')[0])
-      .in('status', ['signed', 'in_progress', 'negotiating'])
-      .order('deadline', { ascending: true })
-      .limit(5);
+    const [dealsRes, contentRes] = await Promise.all([
+      db.from('brand_deals')
+        .select('brand_name, deadline, status, value')
+        .not('deadline', 'is', null)
+        .gte('deadline', todayKey)
+        .lte('deadline', futureKey)
+        .in('status', ['signed', 'in_progress', 'negotiating'])
+        .order('deadline', { ascending: true })
+        .limit(8),
+      db.from('content_projects')
+        .select('title, platform, status, scheduled_at')
+        .not('scheduled_at', 'is', null)
+        .gte('scheduled_at', now.toISOString())
+        .lte('scheduled_at', futureDate.toISOString())
+        .neq('status', 'posted')
+        .neq('status', 'archived')
+        .order('scheduled_at', { ascending: true })
+        .limit(8),
+    ]);
 
-    if (!deals || deals.length === 0) {
-      container.innerHTML = '<div class="empty-cta"><h3>No upcoming deadlines</h3><p>All clear for now. Deadlines from active deals will appear here automatically.</p></div>';
+    const events = [];
+    (dealsRes.data || []).forEach(d => {
+      events.push({
+        kind: 'deal',
+        date: d.deadline,
+        primary: d.brand_name,
+        secondary: `${d.status}${d.value ? ' · ' + formatCurrency(d.value) : ''}`,
+      });
+    });
+    (contentRes.data || []).forEach(c => {
+      const date = c.scheduled_at.slice(0, 10);
+      events.push({
+        kind: 'content',
+        date,
+        primary: c.title || 'Untitled project',
+        secondary: `Scheduled · ${c.platform || c.status}`,
+      });
+    });
+
+    events.sort((a, b) => a.date.localeCompare(b.date));
+    const top = events.slice(0, 6);
+
+    if (top.length === 0) {
+      container.innerHTML = '<div class="empty-cta"><h3>Nothing on the horizon</h3><p>Deal deadlines and scheduled content land here as you add them.</p></div>';
       return;
     }
 
-    container.innerHTML = deals.map(d => {
-      const daysLeft = daysUntil(d.deadline);
-      const urgencyClass = daysLeft <= 3 ? 'urgent' : daysLeft <= 7 ? 'soon' : 'normal';
-      const daysLabel = daysLeft === 0 ? 'Today' : daysLeft === 1 ? '1 day' : daysLeft + ' days';
-
+    container.innerHTML = top.map(e => {
+      const daysLeft = daysUntil(e.date);
+      const urgencyClass = daysLeft <= 1 ? 'urgent' : daysLeft <= 7 ? 'soon' : 'normal';
+      const daysLabel = daysLeft <= 0 ? 'Today' : daysLeft === 1 ? '1 day' : daysLeft + ' days';
+      const kindLabel = e.kind === 'deal' ? 'Deal' : 'Content';
       return `
         <div class="deadline-item">
           <div class="deadline-urgency ${urgencyClass}"></div>
           <div class="deadline-info">
-            <div class="deadline-brand">${escapeHtml(d.brand_name)}</div>
-            <div class="deadline-meta">${escapeHtml(d.status)} ${d.value ? '&middot; ' + formatCurrency(d.value) : ''}</div>
+            <div class="deadline-brand">${escapeHtml(e.primary)}</div>
+            <div class="deadline-meta">${kindLabel} &middot; ${escapeHtml(e.secondary)}</div>
           </div>
           <span class="deadline-days ${urgencyClass}">${daysLabel}</span>
         </div>
@@ -372,7 +422,7 @@ async function loadUpcomingDeadlines() {
     }).join('');
   } catch {
     container.innerHTML = '<div class="empty-cta"><h3>Could not load deadlines</h3><p>Check your connection and try refreshing the page.</p></div>';
-    showToast('Failed to load upcoming deadlines', 'error');
+    showToast('Failed to load upcoming items', 'error');
   }
 }
 

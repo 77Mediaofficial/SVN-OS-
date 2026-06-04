@@ -1,6 +1,12 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { rolloverRecurringTransactions } from './recurrence.js';
+import {
+  loadPreferences,
+  getDealStages,
+  getDealStageLabel,
+  getDealTagPresets,
+} from '/js/preferences.js';
 
 /* ── State ────────────────────────────────────────────────── */
 let deals = [];
@@ -32,6 +38,11 @@ export async function init() {
   currentTxnSearch = '';
   currentTxnCategory = 'all';
 
+  await loadPreferences();
+  renderDealFilterChips();
+  renderDealStatusSelect();
+  renderDealTagPresets();
+
   bindDealEvents(signal);
   bindTxnEvents(signal);
   bindFilterEvents(signal);
@@ -49,11 +60,55 @@ export async function init() {
   };
 }
 
+/* ── Preference-driven UI population ────────────────────── */
+function renderDealFilterChips() {
+  const bar = document.getElementById('deal-filters');
+  if (!bar) return;
+  const stages = getDealStages();
+  const chips = [`<button class="dl-filter-btn active" data-status="all">All</button>`]
+    .concat(stages.map(s =>
+      `<button class="dl-filter-btn" data-status="${s.key}">${escapeHtml(s.label)}</button>`
+    ));
+  bar.innerHTML = chips.join('');
+}
+
+function renderDealStatusSelect() {
+  const sel = document.getElementById('deal-status');
+  if (!sel) return;
+  sel.innerHTML = getDealStages().map(s =>
+    `<option value="${s.key}">${escapeHtml(s.label)}</option>`
+  ).join('');
+}
+
+function renderDealTagPresets() {
+  const slot = document.getElementById('deal-tag-presets');
+  if (!slot) return;
+  const presets = getDealTagPresets();
+  if (!presets.length) { slot.innerHTML = ''; return; }
+  slot.innerHTML = presets.map(t =>
+    `<button type="button" class="tag-chip tag-chip-clickable" data-preset="${escapeAttr(t)}">${escapeHtml(t)}</button>`
+  ).join('');
+  slot.querySelectorAll('[data-preset]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('deal-tags');
+      if (!input) return;
+      const current = input.value.split(',').map(s => s.trim()).filter(Boolean);
+      const t = btn.dataset.preset;
+      if (!current.includes(t)) current.push(t);
+      input.value = current.join(', ');
+    });
+  });
+}
+
 /* ── Helpers ──────────────────────────────────────────────── */
 function escapeHtml(str) {
   const d = document.createElement('div');
   d.textContent = str || '';
   return d.innerHTML;
+}
+
+function escapeAttr(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
 function formatCurrency(n) {
@@ -78,6 +133,9 @@ function formatCategory(cat) {
 
 function formatStatus(status) {
   if (!status) return '';
+  // Prefer the user's custom label if one exists.
+  const custom = getDealStageLabel(status);
+  if (custom && custom !== status) return custom;
   return status.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 

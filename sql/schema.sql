@@ -202,3 +202,36 @@ create trigger svnos_set_brand_deals_updated_at
 create trigger svnos_set_transactions_updated_at
   before update on public.transactions
   for each row execute function public.svnos_update_updated_at();
+
+
+-- ── USER PREFERENCES ─────────────────────────────────────────
+-- Per-user workspace customization: pipeline stage labels & order,
+-- deal status labels, tag presets, business identity. All optional —
+-- the app falls back to sensible defaults when this row is absent.
+
+create table public.user_preferences (
+  user_id                uuid primary key references public.profiles(id) on delete cascade,
+  business_name          text,
+  business_type          text,
+  pipeline_overrides     jsonb not null default '{}'::jsonb,
+  deal_status_overrides  jsonb not null default '{}'::jsonb,
+  content_tag_presets    text[] not null default '{}',
+  deal_tag_presets       text[] not null default '{}',
+  created_at             timestamptz not null default now(),
+  updated_at             timestamptz not null default now()
+);
+
+alter table public.user_preferences enable row level security;
+
+create policy "Users view own preferences"
+  on public.user_preferences for select using (auth.uid() = user_id);
+create policy "Users insert own preferences"
+  on public.user_preferences for insert with check (auth.uid() = user_id);
+create policy "Users update own preferences"
+  on public.user_preferences for update using (auth.uid() = user_id);
+create policy "Users delete own preferences"
+  on public.user_preferences for delete using (auth.uid() = user_id);
+
+create trigger svnos_set_user_preferences_updated_at
+  before update on public.user_preferences
+  for each row execute function public.svnos_update_updated_at();

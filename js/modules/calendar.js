@@ -1,6 +1,7 @@
 import { db } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { navigate } from '../router.js';
+import { makeDraggable, registerDropZone } from '/js/drag.js';
 
 const PLATFORM_COLORS = {
   youtube:   '#ff4444',
@@ -357,24 +358,13 @@ function createCell(dayNum, isOutside, dateKey, isToday) {
       showDayDetail(dateKey);
     });
 
-    // Drop target for drag-to-reschedule
-    cell.addEventListener('dragover', (e) => {
-      if (!e.dataTransfer?.types?.includes('application/x-svn-content')) return;
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      cell.classList.add('drop-target');
+    // Drop target for drag-to-reschedule (touch + mouse).
+    const teardown = registerDropZone(cell, {
+      highlightClass: 'drop-target',
+      accept: (payload) => payload && payload.kind === 'calendar-pill',
+      onDrop: (payload) => rescheduleItem(payload.id, dateKey),
     });
-    cell.addEventListener('dragleave', (e) => {
-      // Only remove if leaving the cell (not entering a child)
-      if (!cell.contains(e.relatedTarget)) cell.classList.remove('drop-target');
-    });
-    cell.addEventListener('drop', (e) => {
-      cell.classList.remove('drop-target');
-      const id = e.dataTransfer?.getData('application/x-svn-content');
-      if (!id) return;
-      e.preventDefault();
-      rescheduleItem(id, dateKey);
-    });
+    cleanupFns.push(teardown);
   }
 
   return cell;
@@ -401,27 +391,17 @@ function renderPills() {
       pill.className = 'calendar-pill';
       pill.setAttribute('data-platform', item.platform || 'other');
       pill.setAttribute('data-content-id', item.id);
-      pill.setAttribute('draggable', 'true');
       pill.textContent = item.title;
-      pill.title = `${item.title} — drag to reschedule`;
+      pill.title = `${item.title} — long-press or drag to reschedule`;
 
-      pill.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showToast('Opening in Content Engine...', 'info');
-        navigate('/content');
+      const teardown = makeDraggable(pill, {
+        getPayload: () => ({ kind: 'calendar-pill', id: item.id }),
+        clickFallback: () => {
+          showToast('Opening in Content Engine...', 'info');
+          navigate('/content');
+        },
       });
-
-      pill.addEventListener('dragstart', (e) => {
-        e.stopPropagation();
-        if (!e.dataTransfer) return;
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('application/x-svn-content', item.id);
-        pill.classList.add('dragging');
-      });
-      pill.addEventListener('dragend', () => {
-        pill.classList.remove('dragging');
-        document.querySelectorAll('.calendar-cell.drop-target').forEach(c => c.classList.remove('drop-target'));
-      });
+      cleanupFns.push(teardown);
 
       container.appendChild(pill);
     }

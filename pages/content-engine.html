@@ -691,7 +691,7 @@
 <section class="page-header ce-header">
   <div>
     <h2>Content Engine</h2>
-    <p>Track your content from idea to publication</p>
+    <p>Move every project from brief to delivery</p>
     <p class="ce-summary" id="ce-summary"></p>
   </div>
   <div style="display:flex; gap:8px; flex-shrink:0; margin-top:4px;">
@@ -745,52 +745,12 @@
 <div class="kanban-board-wrapper">
 <div class="kanban-board-empty" id="kanban-board-empty" style="display:none;">
   <div class="empty-cta">
-    <h3>Your content pipeline is empty</h3>
-    <p>Every great creator starts with a single idea. Add your first project and watch your pipeline come to life.</p>
-    <button class="btn btn-primary" id="btn-new-project">Create Your First Project</button>
+    <h3>Nothing in the pipeline yet</h3>
+    <p>Add a project to start tracking it from idea through delivery.</p>
+    <button class="btn btn-primary" id="btn-new-project">Create your first project</button>
   </div>
 </div>
-<div class="kanban-board" id="kanban-board">
-  <div class="kanban-col" data-status="idea">
-    <div class="kanban-col-header">
-      <span class="kanban-col-title">Idea</span>
-      <span class="kanban-col-count" data-count="idea">0</span>
-    </div>
-    <div class="kanban-col-cards" data-status="idea"></div>
-  </div>
-
-  <div class="kanban-col" data-status="scripting">
-    <div class="kanban-col-header">
-      <span class="kanban-col-title">Scripting</span>
-      <span class="kanban-col-count" data-count="scripting">0</span>
-    </div>
-    <div class="kanban-col-cards" data-status="scripting"></div>
-  </div>
-
-  <div class="kanban-col" data-status="production">
-    <div class="kanban-col-header">
-      <span class="kanban-col-title">Production</span>
-      <span class="kanban-col-count" data-count="production">0</span>
-    </div>
-    <div class="kanban-col-cards" data-status="production"></div>
-  </div>
-
-  <div class="kanban-col" data-status="ready">
-    <div class="kanban-col-header">
-      <span class="kanban-col-title">Ready</span>
-      <span class="kanban-col-count" data-count="ready">0</span>
-    </div>
-    <div class="kanban-col-cards" data-status="ready"></div>
-  </div>
-
-  <div class="kanban-col" data-status="posted">
-    <div class="kanban-col-header">
-      <span class="kanban-col-title">Posted</span>
-      <span class="kanban-col-count" data-count="posted">0</span>
-    </div>
-    <div class="kanban-col-cards" data-status="posted"></div>
-  </div>
-</div>
+<div class="kanban-board" id="kanban-board"></div>
 </div>
 
 <!-- Archived Projects Section (hidden by default) -->
@@ -878,7 +838,7 @@
         </svg>
       </button>
     </div>
-    <p class="modal-subtitle" id="ce-modal-subtitle">Add a new content project to your pipeline</p>
+    <p class="modal-subtitle" id="ce-modal-subtitle">Add a new project to your pipeline</p>
 
     <form id="ce-form" class="ce-form">
       <input type="hidden" id="ce-id" />
@@ -927,7 +887,8 @@
 
       <div class="form-group">
         <label for="ce-tags">Tags</label>
-        <input type="text" id="ce-tags" placeholder="thumbnail, evergreen, series-2026" autocomplete="off" />
+        <input type="text" id="ce-tags" placeholder="evergreen, q4, launch" autocomplete="off" />
+        <div class="tag-chip-row" id="ce-tag-presets" style="margin-top:8px;"></div>
       </div>
 
       <div class="form-group">

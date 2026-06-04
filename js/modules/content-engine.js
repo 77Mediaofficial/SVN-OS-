@@ -1,29 +1,34 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
+import { makeDraggable, registerDropZone } from '/js/drag.js';
+import {
+  loadPreferences,
+  getContentStages,
+  getContentStageLabel,
+  getContentTagPresets,
+} from '/js/preferences.js';
 
 /* ── Constants ────────────────────────────────────────────── */
-const STATUSES = ['idea', 'scripting', 'production', 'ready', 'posted'];
 const PLATFORMS = ['youtube', 'tiktok', 'instagram', 'twitter', 'linkedin', 'podcast', 'blog', 'other'];
 
-/** Pipeline step index (1-based) for progress indicator */
-const STATUS_STEP = { idea: 1, scripting: 2, production: 3, ready: 4, posted: 5 };
-
-/** Human-readable status labels */
-const STATUS_LABEL = {
-  idea: 'Idea',
-  scripting: 'Scripting',
-  production: 'Production',
-  ready: 'Ready',
-  posted: 'Posted',
-  archived: 'Archived',
-};
+/** Current ordered stages (rebuilt after preferences load) */
+let stages = [];
+function STATUSES() { return stages.map(s => s.key); }
+function statusStep(key) {
+  const idx = stages.findIndex(s => s.key === key);
+  return idx === -1 ? 1 : idx + 1;
+}
+function statusLabel(key) {
+  if (key === 'archived') return 'Archived';
+  return getContentStageLabel(key);
+}
+let dragCleanups = []; // teardown handles from drag helper bindings
 
 /* ── State ────────────────────────────────────────────────── */
 let projects = [];          // all loaded projects (non-archived)
 let archivedProjects = [];  // archived projects (loaded on demand)
 let currentUser = null;
 let editingId = null;       // null = create, uuid = edit
-let draggedCardId = null;
 let slideoverProjectId = null;   // id of project shown in detail panel
 let searchQuery = '';
 let platformFilter = '';
@@ -41,8 +46,13 @@ export async function init() {
   showArchived = false;
   selectedIds = new Set();
 
+  await loadPreferences();
+  stages = getContentStages();
+
+  renderBoardSkeleton();
+  populateStatusSelects();
+  renderTagPresets();
   bindModal();
-  bindDragAndDrop();
   bindFilters();
   bindSlideover();
   bindIdeasModal();
@@ -55,13 +65,58 @@ export async function init() {
   return cleanup;
 }
 
+/** Build column shells dynamically from preferences. */
+function renderBoardSkeleton() {
+  const board = document.getElementById('kanban-board');
+  if (!board) return;
+  board.innerHTML = stages.map(s => `
+    <div class="kanban-col" data-status="${s.key}">
+      <div class="kanban-col-header">
+        <span class="kanban-col-title">${escapeHtml(s.label)}</span>
+        <span class="kanban-col-count" data-count="${s.key}">0</span>
+      </div>
+      <div class="kanban-col-cards" data-status="${s.key}"></div>
+    </div>
+  `).join('');
+}
+
+/** Populate the modal + bulk-bar status <select> elements with custom labels. */
+function populateStatusSelects() {
+  const opts = stages.map(s => `<option value="${s.key}">${escapeHtml(s.label)}</option>`).join('');
+  const ceStatus = document.getElementById('ce-status');
+  if (ceStatus) ceStatus.innerHTML = opts;
+  const bulkMove = document.getElementById('ce-bulk-move');
+  if (bulkMove) bulkMove.innerHTML = `<option value="">Move to…</option>` + opts;
+}
+
+/** Render tag preset chips into the modal's tag field. */
+function renderTagPresets() {
+  const slot = document.getElementById('ce-tag-presets');
+  if (!slot) return;
+  const presets = getContentTagPresets();
+  if (!presets.length) { slot.innerHTML = ''; return; }
+  slot.innerHTML = presets.map(t =>
+    `<button type="button" class="tag-chip tag-chip-clickable" data-preset="${escapeAttr(t)}">${escapeHtml(t)}</button>`
+  ).join('');
+  slot.querySelectorAll('[data-preset]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const input = document.getElementById('ce-tags');
+      if (!input) return;
+      const current = input.value.split(',').map(s => s.trim()).filter(Boolean);
+      const t = btn.dataset.preset;
+      if (!current.includes(t)) current.push(t);
+      input.value = current.join(', ');
+    });
+  });
+}
+
 /* ── Data ─────────────────────────────────────────────────── */
 async function loadProjects() {
   try {
     const { data, error } = await db
       .from('content_projects')
       .select('*')
-      .in('status', STATUSES)
+      .in('status', STATUSES())
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
@@ -171,16 +226,15 @@ function renderSummary() {
   const filtered = getFilteredProjects();
   const total = filtered.length;
   const counts = {};
-  STATUSES.forEach(s => { counts[s] = 0; });
+  STATUSES().forEach(s => { counts[s] = 0; });
   filtered.forEach(p => {
     if (counts[p.status] !== undefined) counts[p.status]++;
   });
 
   const parts = [`<span>${total}</span> project${total !== 1 ? 's' : ''}`];
-  STATUSES.forEach(s => {
-    if (counts[s] > 0) {
-      const label = s === 'production' ? 'in production' : STATUS_LABEL[s].toLowerCase();
-      parts.push(`<span>${counts[s]}</span> ${label}`);
+  stages.forEach(s => {
+    if (counts[s.key] > 0) {
+      parts.push(`<span>${counts[s.key]}</span> ${s.label.toLowerCase()}`);
     }
   });
 
@@ -191,7 +245,11 @@ function renderSummary() {
 function renderBoard() {
   const filtered = getFilteredProjects();
 
-  STATUSES.forEach(status => {
+  // Tear down previous drag bindings before re-rendering.
+  dragCleanups.forEach(fn => { try { fn(); } catch {} });
+  dragCleanups = [];
+
+  STATUSES().forEach(status => {
     const container = document.querySelector(`.kanban-col-cards[data-status="${status}"]`);
     const countEl = document.querySelector(`[data-count="${status}"]`);
     if (!container) return;
@@ -202,21 +260,26 @@ function renderBoard() {
     if (countEl) countEl.textContent = items.length;
 
     if (items.length === 0) {
-      const statusLabel = STATUS_LABEL[status] || status;
-      container.innerHTML = `<div class="kanban-empty">No ${statusLabel.toLowerCase()} projects yet</div>`;
-      return;
+      const label = statusLabel(status);
+      container.innerHTML = `<div class="kanban-empty">No ${label.toLowerCase()} projects yet</div>`;
+    } else {
+      container.innerHTML = items.map(p => cardHTML(p)).join('');
     }
 
-    container.innerHTML = items.map(p => cardHTML(p)).join('');
+    // Register this column as a drop zone.
+    dragCleanups.push(registerDropZone(container, {
+      highlightClass: 'drag-over',
+      accept: (payload) => payload && payload.kind === 'content-card',
+      onDrop: (payload) => moveProjectToStatus(payload.id, status),
+    }));
 
-    // Bind card-level events
+    // Bind card-level events + draggable
     container.querySelectorAll('.kanban-card').forEach(card => {
-      card.setAttribute('draggable', 'true');
-      card.addEventListener('dragstart', onDragStart);
-      card.addEventListener('dragend', onDragEnd);
-
-      // Click to open detail panel (not on action buttons)
-      card.addEventListener('click', onCardClick);
+      const id = card.dataset.id;
+      dragCleanups.push(makeDraggable(card, {
+        getPayload: () => ({ kind: 'content-card', id }),
+        clickFallback: (ev) => onCardClick({ target: ev.target, currentTarget: card, stopPropagation() {} }),
+      }));
     });
 
     container.querySelectorAll('[data-action="edit"]').forEach(btn => {
@@ -268,7 +331,7 @@ function cardHTML(project) {
   const platformLabel = project.platform
     ? escapeHtml(project.platform)
     : 'none';
-  const step = STATUS_STEP[project.status] || 1;
+  const step = statusStep(project.status);
   const isSelected = selectedIds.has(project.id);
 
   return `
@@ -440,7 +503,7 @@ function openSlideover(project) {
   // Populate fields
   setText('ce-slideover-title', project.title || 'Untitled');
   setDetailValue('ce-detail-platform', project.platform ? capitalize(project.platform) : null);
-  setDetailValue('ce-detail-status', STATUS_LABEL[project.status] || project.status);
+  setDetailValue('ce-detail-status', statusLabel(project.status));
   setDetailValue('ce-detail-description', project.description);
   setDetailValue('ce-detail-scheduled', project.scheduled_at ? formatDateTime(project.scheduled_at) : null);
   setDetailValue('ce-detail-published', project.published_at ? formatDateTime(project.published_at) : null);
@@ -491,67 +554,13 @@ function setText(id, text) {
   if (el) el.textContent = text;
 }
 
-/* ── Drag and Drop ────────────────────────────────────────── */
-function bindDragAndDrop() {
-  document.querySelectorAll('.kanban-col-cards').forEach(zone => {
-    zone.addEventListener('dragover', onDragOver);
-    zone.addEventListener('dragenter', onDragEnter);
-    zone.addEventListener('dragleave', onDragLeave);
-    zone.addEventListener('drop', onDrop);
-  });
-}
-
-function onDragStart(e) {
-  const card = e.target.closest('.kanban-card');
-  if (!card) return;
-  draggedCardId = card.dataset.id;
-  card.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', draggedCardId);
-}
-
-function onDragEnd(e) {
-  const card = e.target.closest('.kanban-card');
-  if (card) card.classList.remove('dragging');
-  draggedCardId = null;
-  // Remove all drag-over highlights
-  document.querySelectorAll('.kanban-col-cards.drag-over').forEach(el => {
-    el.classList.remove('drag-over');
-  });
-}
-
-function onDragOver(e) {
-  e.preventDefault();
-  e.dataTransfer.dropEffect = 'move';
-}
-
-function onDragEnter(e) {
-  e.preventDefault();
-  const zone = e.currentTarget;
-  zone.classList.add('drag-over');
-}
-
-function onDragLeave(e) {
-  const zone = e.currentTarget;
-  // Only remove if leaving the zone entirely (not entering a child)
-  if (!zone.contains(e.relatedTarget)) {
-    zone.classList.remove('drag-over');
-  }
-}
-
-async function onDrop(e) {
-  e.preventDefault();
-  const zone = e.currentTarget;
-  zone.classList.remove('drag-over');
-
-  const id = e.dataTransfer.getData('text/plain');
-  const newStatus = zone.dataset.status;
-  if (!id || !newStatus) return;
-
+/* ── Move project to a different stage (used by drag + bulk) ── */
+async function moveProjectToStatus(id, newStatus) {
   const project = projects.find(p => p.id === id);
   if (!project || project.status === newStatus) return;
 
   const oldStatus = project.status;
+  const oldPublished = project.published_at;
 
   // Optimistic update
   project.status = newStatus;
@@ -560,11 +569,9 @@ async function onDrop(e) {
   }
   renderBoard();
   renderSummary();
-  bindDragAndDrop();
 
-  // Toast notification
   showToast(
-    `Moved "${truncate(project.title, 30)}" to ${STATUS_LABEL[newStatus]}`,
+    `Moved "${truncate(project.title, 30)}" to ${statusLabel(newStatus)}`,
     'success'
   );
 
@@ -577,12 +584,14 @@ async function onDrop(e) {
       .from('content_projects')
       .update(update)
       .eq('id', id);
-
     if (error) throw error;
   } catch {
     // Revert on failure
+    project.status = oldStatus;
+    project.published_at = oldPublished;
+    renderBoard();
+    renderSummary();
     showToast('Failed to update status. Reverting.', 'error');
-    await loadProjects();
   }
 }
 
@@ -751,7 +760,7 @@ async function handleSubmit(e) {
 
     closeModal();
     await loadProjects();
-    bindDragAndDrop();
+    /* drag bindings re-applied by renderBoard */
     if (showArchived) await loadArchivedProjects();
   } catch (err) {
     if (errorEl) errorEl.textContent = err.message || 'Something went wrong.';
@@ -780,13 +789,13 @@ async function deleteProject(id) {
     archivedProjects = archivedProjects.filter(p => p.id !== id);
     renderBoard();
     renderSummary();
-    bindDragAndDrop();
+    /* drag bindings re-applied by renderBoard */
     if (showArchived) renderArchivedSection();
     showToast('Project deleted', 'info');
   } catch {
     // Silently reload to stay in sync
     await loadProjects();
-    bindDragAndDrop();
+    /* drag bindings re-applied by renderBoard */
   }
 }
 
@@ -859,10 +868,10 @@ async function bulkMove(newStatus) {
       .update(payload)
       .in('id', ids);
     if (error) throw error;
-    showToast(`Moved ${ids.length} project${ids.length !== 1 ? 's' : ''} to ${STATUS_LABEL[newStatus] || newStatus}`, 'success');
+    showToast(`Moved ${ids.length} project${ids.length !== 1 ? 's' : ''} to ${statusLabel(newStatus)}`, 'success');
     clearSelection();
     await loadProjects();
-    bindDragAndDrop();
+    /* drag bindings re-applied by renderBoard */
     if (showArchived) await loadArchivedProjects();
   } catch (err) {
     showToast(err.message || 'Failed to move projects', 'error');
@@ -880,7 +889,7 @@ async function bulkDelete() {
     showToast(`Deleted ${ids.length} project${ids.length !== 1 ? 's' : ''}`, 'info');
     clearSelection();
     await loadProjects();
-    bindDragAndDrop();
+    /* drag bindings re-applied by renderBoard */
     if (showArchived) await loadArchivedProjects();
   } catch (err) {
     showToast(err.message || 'Failed to delete projects', 'error');
@@ -1023,7 +1032,7 @@ async function addIdeaToPipeline(idea, btn) {
     btn.classList.add('added');
     showToast(`Added "${truncate(idea.title, 40)}" to your pipeline`, 'success');
     // Refresh board in the background
-    loadProjects().then(() => bindDragAndDrop());
+    loadProjects();
   } catch (err) {
     btn.disabled = false;
     showToast(err.message || 'Failed to add idea', 'error');
@@ -1074,6 +1083,8 @@ function cleanup() {
   document.removeEventListener('keydown', onGlobalKeydown);
   clearTimeout(searchDebounceTimer);
   closeSlideover();
+  dragCleanups.forEach(fn => { try { fn(); } catch {} });
+  dragCleanups = [];
 }
 
 /* ── Helpers ──────────────────────────────────────────────── */
@@ -1081,6 +1092,10 @@ function escapeHtml(str) {
   const d = document.createElement('div');
   d.textContent = str || '';
   return d.innerHTML;
+}
+
+function escapeAttr(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
 function relativeTime(dateStr) {
