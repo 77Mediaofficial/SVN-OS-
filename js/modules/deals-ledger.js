@@ -264,7 +264,7 @@ function renderDeals() {
       <td class="col-value">${d.value ? formatCurrency(d.value) : '--'}</td>
       <td class="col-date">${formatDate(d.deadline)}</td>
       <td class="col-actions">
-        <button class="dl-row-btn deal-invoice-btn" data-id="${d.id}" title="Generate invoice">Invoice</button>
+        <button class="dl-row-btn deal-invoice-btn" data-id="${d.id}" data-tooltip="Generate a print-ready PDF invoice for this deal">Invoice</button>
         <button class="dl-row-btn deal-edit-btn" data-id="${d.id}">Edit</button>
         <button class="dl-row-btn danger deal-delete-btn" data-id="${d.id}">Delete</button>
       </td>
