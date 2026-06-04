@@ -944,6 +944,11 @@ body.public-view .app-nav,
 body.public-view .mobile-toggle { display: none; }
 body.public-view .app-main { margin-left: 0; padding-top: 48px; }
 
+/* Landing-view hides the workspace nav for signed-out visitors (/welcome) */
+body.landing-view .app-nav,
+body.landing-view .mobile-toggle { display: none; }
+body.landing-view .app-main { margin-left: 0; max-width: none; padding: 48px 32px; }
+
 /* ── Accessibility — focus styles ──────────────────────────── */
 :focus { outline: none; }
 :focus-visible {

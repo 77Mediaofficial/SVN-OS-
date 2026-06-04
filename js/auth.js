@@ -66,7 +66,7 @@ function showAuthModal(options = {}) {
       ${closeBtn}
       <div class="auth-header">
         <h2>Welcome to SVN OS</h2>
-        <p>Sign in to your creator dashboard</p>
+        <p>Sign in to your workspace</p>
       </div>
       <form id="auth-form">
         <div class="auth-form-group">

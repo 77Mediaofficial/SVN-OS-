@@ -1,7 +1,7 @@
 {
-  "name": "SVN OS — Creator Dashboard",
+  "name": "SVN OS — Creative Business OS",
   "short_name": "SVN OS",
-  "description": "A centralized business operating system for digital creators — content pipelines, posting schedules, brand deals, and financial tracking.",
+  "description": "The operating system for creative businesses — content pipelines, scheduling, client deals, and finances in one minimalist workspace.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -1,6 +1,7 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { makeDraggable, registerDropZone } from '/js/drag.js';
+import { queueOrRun } from '/js/offline.js';
 import {
   loadPreferences,
   getContentStages,
@@ -61,8 +62,15 @@ export async function init() {
   renderActiveTagFilter();
   await loadProjects();
 
+  // Refresh the board once offline changes finish syncing.
+  window.addEventListener('svn-os:synced', onSynced);
+
   // Return a cleanup function so the router can tear down listeners
   return cleanup;
+}
+
+function onSynced() {
+  loadProjects();
 }
 
 /** Build column shells dynamically from preferences. */
@@ -570,28 +578,29 @@ async function moveProjectToStatus(id, newStatus) {
   renderBoard();
   renderSummary();
 
-  showToast(
-    `Moved "${truncate(project.title, 30)}" to ${statusLabel(newStatus)}`,
-    'success'
+  const update = { status: newStatus };
+  if (newStatus === 'posted' && project.published_at) {
+    update.published_at = project.published_at;
+  }
+
+  // Persist — queues automatically if offline, replays on reconnect.
+  const result = await queueOrRun(
+    { table: 'content_projects', action: 'update', payload: update, match: { id } },
+    `Move "${truncate(project.title, 30)}" to ${statusLabel(newStatus)}`
   );
 
-  try {
-    const update = { status: newStatus };
-    if (newStatus === 'posted' && project.published_at) {
-      update.published_at = project.published_at;
-    }
-    const { error } = await db
-      .from('content_projects')
-      .update(update)
-      .eq('id', id);
-    if (error) throw error;
-  } catch {
-    // Revert on failure
+  if (result.error) {
+    // Real (non-network) failure — revert.
     project.status = oldStatus;
     project.published_at = oldPublished;
     renderBoard();
     renderSummary();
     showToast('Failed to update status. Reverting.', 'error');
+  } else if (!result.queued) {
+    showToast(
+      `Moved "${truncate(project.title, 30)}" to ${statusLabel(newStatus)}`,
+      'success'
+    );
   }
 }
 
@@ -1081,6 +1090,7 @@ function isInputFocused() {
 /* ── Cleanup (called by router on route change) ──────────── */
 function cleanup() {
   document.removeEventListener('keydown', onGlobalKeydown);
+  window.removeEventListener('svn-os:synced', onSynced);
   clearTimeout(searchDebounceTimer);
   closeSlideover();
   dragCleanups.forEach(fn => { try { fn(); } catch {} });

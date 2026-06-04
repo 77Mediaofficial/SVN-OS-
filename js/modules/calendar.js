@@ -2,6 +2,7 @@ import { db } from '../supabase.js';
 import { showToast } from '../toast.js';
 import { navigate } from '../router.js';
 import { makeDraggable, registerDropZone } from '/js/drag.js';
+import { queueOrRun } from '/js/offline.js';
 
 const PLATFORM_COLORS = {
   youtube:   '#ff4444',
@@ -566,15 +567,14 @@ async function rescheduleItem(id, newDateKey) {
   renderPills();
   updateCountBadge();
 
-  try {
-    const { error } = await db
-      .from('content_projects')
-      .update({ scheduled_at: newIso })
-      .eq('id', id);
-    if (error) throw error;
-    showToast(`Moved to ${newDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, 'success');
-  } catch (e) {
-    // Revert
+  const labelDate = newDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  const result = await queueOrRun(
+    { table: 'content_projects', action: 'update', payload: { scheduled_at: newIso }, match: { id } },
+    `Reschedule "${item.title}" to ${labelDate}`
+  );
+
+  if (result.error) {
+    // Real (non-network) failure — revert.
     const reIdx = contentByDay[newDateKey].findIndex(it => String(it.id) === String(id));
     if (reIdx !== -1) contentByDay[newDateKey].splice(reIdx, 1);
     if (contentByDay[newDateKey] && contentByDay[newDateKey].length === 0) delete contentByDay[newDateKey];
@@ -582,7 +582,9 @@ async function rescheduleItem(id, newDateKey) {
     (contentByDay[oldKey] ||= []).push(item);
     renderPills();
     updateCountBadge();
-    showToast(e.message || 'Failed to reschedule', 'error');
+    showToast(result.error.message || 'Failed to reschedule', 'error');
+  } else if (!result.queued) {
+    showToast(`Moved to ${labelDate}`, 'success');
   }
 }
 

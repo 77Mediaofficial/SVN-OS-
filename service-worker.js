@@ -3,7 +3,7 @@
    without network. Supabase API requests always go to the network
    (they're auth + user-scoped data; never cache those). */
 
-const VERSION = 'svn-os-v2';
+const VERSION = 'svn-os-v3';
 const SHELL_CACHE = `${VERSION}-shell`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 
@@ -21,11 +21,17 @@ const SHELL_ASSETS = [
   '/js/auth.js',
   '/js/toast.js',
   '/js/command-palette.js',
+  '/js/notifications.js',
+  '/js/install-prompt.js',
+  '/js/offline.js',
+  '/js/drag.js',
+  '/js/preferences.js',
   '/js/modules/dashboard.js',
   '/js/modules/content-engine.js',
   '/js/modules/calendar.js',
   '/js/modules/deals-ledger.js',
   '/js/modules/analytics.js',
+  '/js/modules/goals.js',
   '/js/modules/settings.js',
   '/js/modules/demo-data.js',
   '/js/modules/export.js',
@@ -36,8 +42,10 @@ const SHELL_ASSETS = [
   '/pages/calendar.html',
   '/pages/deals-ledger.html',
   '/pages/analytics.html',
+  '/pages/goals.html',
   '/pages/settings.html',
   '/pages/public-profile.html',
+  '/pages/landing.html',
 ];
 
 self.addEventListener('install', (event) => {

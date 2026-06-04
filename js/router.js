@@ -1,7 +1,9 @@
 import { requireAuth } from './auth.js';
+import { isAuthenticated } from './supabase.js';
 
 export const routes = {
   '/':        { page: 'dashboard',      module: () => import('./modules/dashboard.js'),      requiresAuth: true },
+  '/welcome': { page: 'landing',        module: () => import('./modules/landing.js'),        requiresAuth: false },
   '/content': { page: 'content-engine',  module: () => import('./modules/content-engine.js'), requiresAuth: true },
   '/calendar':{ page: 'calendar',        module: () => import('./modules/calendar.js'),       requiresAuth: true },
   '/deals':   { page: 'deals-ledger',    module: () => import('./modules/deals-ledger.js'),   requiresAuth: true },
@@ -43,10 +45,18 @@ async function loadRoute(path) {
     route = matchRoute('/');
   }
 
-  // Enforce auth for protected routes
+  // Enforce auth for protected routes.
   if (route.requiresAuth) {
-    const user = await requireAuth();
-    if (!user) return; // Auth modal is displayed; don't load the route
+    // First-time / signed-out visitors landing on the root see the
+    // marketing page instead of a bare auth modal. Deep links to a
+    // specific protected route still prompt to sign in directly.
+    if (!isAuthenticated() && (path === '/' || path === '')) {
+      window.history.replaceState({}, '', '/welcome');
+      route = matchRoute('/welcome');
+    } else {
+      const user = await requireAuth();
+      if (!user) return; // Auth modal is displayed; don't load the route
+    }
   }
 
   const outlet = document.getElementById('app-outlet');

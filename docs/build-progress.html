@@ -177,18 +177,18 @@
   <div class="kpis">
     <div class="kpi">
       <div class="kpi-label">Lines of code</div>
-      <div class="kpi-value">12,848</div>
+      <div class="kpi-value">13,935</div>
       <div class="kpi-foot">JS · CSS · HTML · SQL</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Routes shipped</div>
-      <div class="kpi-value">7</div>
-      <div class="kpi-foot">+ 1 public, + 1 dynamic</div>
+      <div class="kpi-value">8</div>
+      <div class="kpi-foot">+ landing, + public, + dynamic</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Features shipped</div>
-      <div class="kpi-value">38</div>
-      <div class="kpi-foot">across 7 release batches</div>
+      <div class="kpi-value">44</div>
+      <div class="kpi-foot">across 8 release batches</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Awaiting deploy</div>
@@ -210,7 +210,8 @@
   <div class="section-title">Release Timeline</div>
   <div class="card">
     <div class="timeline">
-      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>Universal flexibility</strong> — touch drag, custom pipeline stages, tag presets, dashboard cross-sync, universal copy</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>App Store track</strong> — PWA install prompt, offline write queue + sync indicator, signed-out marketing landing page, Capacitor scaffolding</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">d67a578</span><span class="tl-msg">Universal flexibility — touch drag, custom pipeline stages, tag presets, dashboard cross-sync, universal copy</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">4e988ea</span><span class="tl-msg">Calendar drag-to-reschedule + tag filter, Goals page, notifications center, mobile + Lighthouse pass</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">8321ba4</span><span class="tl-msg">Universal Cmd+K search, bulk operations, deadline-reminder edge function</span><span class="tl-date">2026-06-03</span></div>
       <div class="tl-row"><span class="tl-hash">11f58a2</span><span class="tl-msg">Tag filters, recurring transactions, public profiles, AI idea generator</span><span class="tl-date">2026-06-03</span></div>
@@ -259,8 +260,13 @@
         <tr><td>Mobile 480px pass</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>All pages + 32px tap targets</td></tr>
         <tr><td>Touch drag on kanban + calendar</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>Pointer events · long-press to grab</td></tr>
         <tr><td>iOS PWA standalone meta</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>apple-touch-icon, status bar style</td></tr>
-        <tr><td>Capacitor / native shell</td><td>Mobile</td><td><span class="pill pill-planned">Planned</span></td><td>For App Store submission</td></tr>
-        <tr><td>Offline write queue</td><td>Mobile</td><td><span class="pill pill-planned">Planned</span></td><td>Currently read-cache only</td></tr>
+        <tr><td>PWA install prompt</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/install-prompt.js · Chromium + iOS hint</td></tr>
+        <tr><td>Offline write queue + sync</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/offline.js · queue, replay, indicator</td></tr>
+        <tr><td>Connectivity indicator</td><td>Mobile</td><td><span class="pill pill-shipped">Shipped</span></td><td>Offline / syncing / back-online pill</td></tr>
+        <tr><td>Capacitor scaffolding</td><td>Mobile</td><td><span class="pill pill-config">Config ready</span></td><td>capacitor.config.json + docs/NATIVE_APP.md</td></tr>
+        <tr><td>Native store build</td><td>Mobile</td><td><span class="pill pill-planned">Planned</span></td><td>npx cap add ios/android, signing</td></tr>
+
+        <tr><td>Marketing landing page (/welcome)</td><td>Growth</td><td><span class="pill pill-shipped">Shipped</span></td><td>Signed-out visitors · CTAs open auth</td></tr>
 
         <tr><td>SEO meta · OG · Twitter</td><td>SEO/a11y</td><td><span class="pill pill-shipped">Shipped</span></td><td>preconnect fonts + dns-prefetch CDN</td></tr>
         <tr><td>Skip link + focus-visible</td><td>SEO/a11y</td><td><span class="pill pill-shipped">Shipped</span></td><td>prefers-reduced-motion respected</td></tr>
@@ -269,12 +275,11 @@
         <tr><td>AI Generate-Ideas edge function</td><td>Backend</td><td><span class="pill pill-config">Needs deploy</span></td><td>supabase/functions/generate-content-ideas</td></tr>
         <tr><td>Deadline-reminder cron function</td><td>Backend</td><td><span class="pill pill-config">Needs deploy</span></td><td>supabase/functions/send-deadline-reminders</td></tr>
         <tr><td>user_preferences table</td><td>Backend</td><td><span class="pill pill-config">Needs migration</span></td><td>sql/migration_user_preferences.sql</td></tr>
-        <tr><td>Live Supabase credentials</td><td>Backend</td><td><span class="pill pill-config">Needs config</span></td><td>js/supabase.js — placeholders today</td></tr>
+        <tr><td>Live Supabase credentials</td><td>Backend</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/supabase.js — real project wired</td></tr>
         <tr><td>Vercel production deploy</td><td>Backend</td><td><span class="pill pill-config">Needs deploy</span></td><td>vercel.json ready</td></tr>
 
         <tr><td>Unit tests</td><td>Quality</td><td><span class="pill pill-planned">Planned</span></td><td>No coverage today</td></tr>
         <tr><td>Avatar uploads (Supabase Storage)</td><td>Quality</td><td><span class="pill pill-planned">Planned</span></td><td>Initials-only today</td></tr>
-        <tr><td>Marketing landing page</td><td>Quality</td><td><span class="pill pill-planned">Planned</span></td><td>For signed-out visitors</td></tr>
       </tbody>
     </table>
   </div>
@@ -297,7 +302,11 @@
     <div class="mod-row"><span class="mod-name">js/notifications.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:41%"></div></div><span class="mod-lines">470</span></div>
     <div class="mod-row"><span class="mod-name">js/modules/analytics.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:30%"></div></div><span class="mod-lines">339</span></div>
     <div class="mod-row"><span class="mod-name">pages/analytics.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:24%"></div></div><span class="mod-lines">271</span></div>
-    <div class="mod-row"><span class="mod-name">js/drag.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:22%"></div></div><span class="mod-lines">251</span></div>
+    <div class="mod-row"><span class="mod-name">js/drag.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:22%"></div></div><span class="mod-lines">251</span></div>
+    <div class="mod-row"><span class="mod-name">js/offline.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:25%"></div></div><span class="mod-lines">285</span></div>
+    <div class="mod-row"><span class="mod-name">pages/landing.html (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:19%"></div></div><span class="mod-lines">221</span></div>
+    <div class="mod-row"><span class="mod-name">js/install-prompt.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:17%"></div></div><span class="mod-lines">199</span></div>
+    <div class="mod-row"><span class="mod-name">js/modules/landing.js (new)</span><div class="mod-bar"><div class="mod-bar-fill" style="width:3%"></div></div><span class="mod-lines">37</span></div>
     <div class="mod-row"><span class="mod-name">sql/schema.sql</span><div class="mod-bar"><div class="mod-bar-fill" style="width:21%"></div></div><span class="mod-lines">237</span></div>
     <div class="mod-row"><span class="mod-name">pages/goals.html</span><div class="mod-bar"><div class="mod-bar-fill" style="width:20%"></div></div><span class="mod-lines">230</span></div>
     <div class="mod-row"><span class="mod-name">js/modules/goals.js</span><div class="mod-bar"><div class="mod-bar-fill" style="width:18%"></div></div><span class="mod-lines">207</span></div>
@@ -380,7 +389,7 @@
     <table>
       <thead><tr><th>Step</th><th>Command</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td>1. Set real Supabase credentials</td><td class="muted">edit <code>js/supabase.js</code></td><td><span class="pill pill-blocked">Pending</span></td></tr>
+        <tr><td>1. Set real Supabase credentials</td><td class="muted">edit <code>js/supabase.js</code></td><td><span class="pill pill-shipped">Done</span></td></tr>
         <tr><td>2. Run schema</td><td class="muted">paste <code>sql/schema.sql</code> in Supabase SQL editor</td><td><span class="pill pill-config">Needs run</span></td></tr>
         <tr><td>3. Run preferences migration</td><td class="muted">paste <code>sql/migration_user_preferences.sql</code></td><td><span class="pill pill-config">Needs run</span></td></tr>
         <tr><td>4. Deploy AI edge fn</td><td class="muted">supabase functions deploy generate-content-ideas</td><td><span class="pill pill-config">Needs run</span></td></tr>
@@ -388,6 +397,7 @@
         <tr><td>6. Configure secrets</td><td class="muted">ANTHROPIC_API_KEY · RESEND_API_KEY · CRON_SECRET</td><td><span class="pill pill-config">Needs run</span></td></tr>
         <tr><td>7. Schedule cron</td><td class="muted">.github/workflows/deadline-reminders.yml (sample in README)</td><td><span class="pill pill-config">Needs run</span></td></tr>
         <tr><td>8. Vercel deploy</td><td class="muted">vercel --prod</td><td><span class="pill pill-config">Needs run</span></td></tr>
+        <tr><td>9. (Optional) Native build</td><td class="muted">npx cap add ios/android — see docs/NATIVE_APP.md</td><td><span class="pill pill-planned">When ready</span></td></tr>
       </tbody>
     </table>
   </div>
@@ -395,8 +405,7 @@
   <!-- ── Roadmap chips ── -->
   <div class="section-title">Next-batch candidates</div>
   <div class="chip-row">
-    <div class="roadmap-chip"><strong>App Store track</strong> · Capacitor wrapper, install prompt, offline writes</div>
-    <div class="roadmap-chip"><strong>Marketing</strong> · signed-out landing page</div>
+    <div class="roadmap-chip"><strong>Native build</strong> · npx cap add ios/android, signing, store submission</div>
     <div class="roadmap-chip"><strong>Content templates</strong> · one brief → multi-platform variants</div>
     <div class="roadmap-chip"><strong>Invoicing</strong> · PDF generation from deals</div>
     <div class="roadmap-chip"><strong>Team</strong> · RLS sharing model for collaborators</div>

@@ -147,9 +147,13 @@
     import { onAuthStateChange } from '/js/auth.js';
     import { initCommandPalette } from '/js/command-palette.js';
     import { initNotifications } from '/js/notifications.js';
+    import { initInstallPrompt } from '/js/install-prompt.js';
+    import { initOffline } from '/js/offline.js';
 
     initCommandPalette();
     initNotifications();
+    initOffline();
+    initInstallPrompt();
 
     document.getElementById('mobile-toggle').addEventListener('click', () => {
       document.getElementById('app-nav').classList.toggle('open');

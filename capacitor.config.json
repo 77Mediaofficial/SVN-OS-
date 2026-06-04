@@ -1,0 +1,23 @@
+{
+  "appId": "com.svnos.app",
+  "appName": "SVN OS",
+  "webDir": ".",
+  "server": {
+    "androidScheme": "https",
+    "iosScheme": "https"
+  },
+  "ios": {
+    "contentInset": "always",
+    "backgroundColor": "#0a0a0a"
+  },
+  "android": {
+    "backgroundColor": "#0a0a0a"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "backgroundColor": "#0a0a0a",
+      "showSpinner": false,
+      "launchAutoHide": true
+    }
+  }
+}
