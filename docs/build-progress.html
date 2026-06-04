@@ -177,7 +177,7 @@
   <div class="kpis">
     <div class="kpi">
       <div class="kpi-label">Lines of code</div>
-      <div class="kpi-value">15,640</div>
+      <div class="kpi-value">16,400</div>
       <div class="kpi-foot">JS · CSS · HTML · SQL</div>
     </div>
     <div class="kpi">
@@ -187,8 +187,8 @@
     </div>
     <div class="kpi">
       <div class="kpi-label">Features shipped</div>
-      <div class="kpi-value">52</div>
-      <div class="kpi-foot">across 13 release batches</div>
+      <div class="kpi-value">57</div>
+      <div class="kpi-foot">across 15 release batches</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Awaiting deploy</div>
@@ -210,7 +210,8 @@
   <div class="section-title">Release Timeline</div>
   <div class="card">
     <div class="timeline">
-      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>Premium UX polish</strong> — skeleton loaders everywhere, accessible tooltips, auto-saved form drafts, and optimistic bulk actions</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>De-intimidation pass</strong> — progressive disclosure (System Telemetry, advanced settings), Modular Activation onboarding, density &amp; hierarchy, value-driven copy</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">732d0e3</span><span class="tl-msg">Premium UX polish — skeleton loaders everywhere, accessible tooltips, auto-saved form drafts, and optimistic bulk actions</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">a8f3f50</span><span class="tl-msg">Full offline CRUD — creates &amp; edits with client-side UUIDs; projects, deals, transactions all save instantly offline and replay on reconnect</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">05fff3c</span><span class="tl-msg">Revenue tooling — client invoicing (PDF), content templates (one brief → many projects), offline deal/transaction deletes</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">bd9eae4</span><span class="tl-msg">App Store track — PWA install prompt, offline write queue + sync indicator, marketing landing page, Capacitor scaffolding</span><span class="tl-date">2026-06-04</span></div>
@@ -282,6 +283,10 @@
         <tr><td>Accessible tooltips</td><td>UX polish</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/tooltips.js · hover + focus, a11y + touch fallback</td></tr>
         <tr><td>Form draft autosave</td><td>UX polish</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/form-cache.js · projects, deals, transactions</td></tr>
         <tr><td>Optimistic bulk actions</td><td>UX polish</td><td><span class="pill pill-shipped">Shipped</span></td><td>Bulk move/delete update instantly + offline-aware</td></tr>
+        <tr><td>Progressive disclosure</td><td>UX architecture</td><td><span class="pill pill-shipped">Shipped</span></td><td>.disclosure pattern · dashboard "System Telemetry" + advanced settings fold away</td></tr>
+        <tr><td>Modular Activation onboarding</td><td>UX architecture</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/onboarding.js · 3-step first-run, essentials on, advanced unlocks later</td></tr>
+        <tr><td>Density &amp; hierarchy pass</td><td>UX architecture</td><td><span class="pill pill-shipped">Shipped</span></td><td>Roomier tables, muted secondary panels, lifted primary CTAs</td></tr>
+        <tr><td>Value-driven copy pass</td><td>UX architecture</td><td><span class="pill pill-shipped">Shipped</span></td><td>Plain-language titles, business-owner framing across app + landing</td></tr>
         <tr><td>Real Lighthouse audit run</td><td>SEO/a11y</td><td><span class="pill pill-planned">Planned</span></td><td>Run on deployed Vercel build</td></tr>
 
         <tr><td>AI Generate-Ideas edge function</td><td>Backend</td><td><span class="pill pill-config">Needs deploy</span></td><td>supabase/functions/generate-content-ideas</td></tr>
