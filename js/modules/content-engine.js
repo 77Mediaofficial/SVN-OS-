@@ -927,19 +927,31 @@ async function bulkMove(newStatus) {
   const payload = { status: newStatus };
   if (newStatus === 'posted') payload.published_at = new Date().toISOString();
 
-  try {
-    const { error } = await db
-      .from('content_projects')
-      .update(payload)
-      .in('id', ids);
-    if (error) throw error;
-    showToast(`Moved ${ids.length} project${ids.length !== 1 ? 's' : ''} to ${statusLabel(newStatus)}`, 'success');
-    clearSelection();
+  // Optimistic: update + re-bucket each selected project immediately.
+  const all = [...projects, ...archivedProjects];
+  all.forEach(p => {
+    if (!ids.includes(p.id)) return;
+    p.status = newStatus;
+    if (newStatus === 'posted' && payload.published_at) p.published_at = payload.published_at;
+    applyLocalStatusBucket(p);
+  });
+  const count = ids.length;
+  clearSelection();
+  renderBoard();
+  renderSummary();
+  if (showArchived) renderArchivedSection();
+
+  const result = await queueOrRun(
+    { table: 'content_projects', action: 'update', payload, match: { id: ids } },
+    `Move ${count} project${count !== 1 ? 's' : ''} to ${statusLabel(newStatus)}`
+  );
+
+  if (result.error) {
+    showToast(result.error.message || 'Failed to move projects', 'error');
     await loadProjects();
-    /* drag bindings re-applied by renderBoard */
     if (showArchived) await loadArchivedProjects();
-  } catch (err) {
-    showToast(err.message || 'Failed to move projects', 'error');
+  } else if (!result.queued) {
+    showToast(`Moved ${count} project${count !== 1 ? 's' : ''} to ${statusLabel(newStatus)}`, 'success');
   }
 }
 
@@ -948,16 +960,26 @@ async function bulkDelete() {
   const ids = Array.from(selectedIds);
   if (!confirm(`Delete ${ids.length} project${ids.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
 
-  try {
-    const { error } = await db.from('content_projects').delete().in('id', ids);
-    if (error) throw error;
-    showToast(`Deleted ${ids.length} project${ids.length !== 1 ? 's' : ''}`, 'info');
-    clearSelection();
+  // Optimistic removal.
+  const count = ids.length;
+  projects = projects.filter(p => !ids.includes(p.id));
+  archivedProjects = archivedProjects.filter(p => !ids.includes(p.id));
+  clearSelection();
+  renderBoard();
+  renderSummary();
+  if (showArchived) renderArchivedSection();
+
+  const result = await queueOrRun(
+    { table: 'content_projects', action: 'delete', match: { id: ids } },
+    `Delete ${count} project${count !== 1 ? 's' : ''}`
+  );
+
+  if (result.error) {
+    showToast(result.error.message || 'Failed to delete projects', 'error');
     await loadProjects();
-    /* drag bindings re-applied by renderBoard */
     if (showArchived) await loadArchivedProjects();
-  } catch (err) {
-    showToast(err.message || 'Failed to delete projects', 'error');
+  } else if (!result.queued) {
+    showToast(`Deleted ${count} project${count !== 1 ? 's' : ''}`, 'info');
   }
 }
 

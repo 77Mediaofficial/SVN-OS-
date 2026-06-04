@@ -177,7 +177,7 @@
   <div class="kpis">
     <div class="kpi">
       <div class="kpi-label">Lines of code</div>
-      <div class="kpi-value">15,260</div>
+      <div class="kpi-value">15,640</div>
       <div class="kpi-foot">JS · CSS · HTML · SQL</div>
     </div>
     <div class="kpi">
@@ -187,8 +187,8 @@
     </div>
     <div class="kpi">
       <div class="kpi-label">Features shipped</div>
-      <div class="kpi-value">48</div>
-      <div class="kpi-foot">across 10 release batches</div>
+      <div class="kpi-value">52</div>
+      <div class="kpi-foot">across 13 release batches</div>
     </div>
     <div class="kpi">
       <div class="kpi-label">Awaiting deploy</div>
@@ -210,7 +210,8 @@
   <div class="section-title">Release Timeline</div>
   <div class="card">
     <div class="timeline">
-      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>Full offline CRUD</strong> — creates &amp; edits with client-side UUIDs; projects, deals, transactions all save instantly offline and replay on reconnect</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">HEAD</span><span class="tl-msg"><strong>Premium UX polish</strong> — skeleton loaders everywhere, accessible tooltips, auto-saved form drafts, and optimistic bulk actions</span><span class="tl-date">in flight</span></div>
+      <div class="tl-row"><span class="tl-hash">a8f3f50</span><span class="tl-msg">Full offline CRUD — creates &amp; edits with client-side UUIDs; projects, deals, transactions all save instantly offline and replay on reconnect</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">05fff3c</span><span class="tl-msg">Revenue tooling — client invoicing (PDF), content templates (one brief → many projects), offline deal/transaction deletes</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">bd9eae4</span><span class="tl-msg">App Store track — PWA install prompt, offline write queue + sync indicator, marketing landing page, Capacitor scaffolding</span><span class="tl-date">2026-06-04</span></div>
       <div class="tl-row"><span class="tl-hash">d67a578</span><span class="tl-msg">Universal flexibility — touch drag, custom pipeline stages, tag presets, dashboard cross-sync, universal copy</span><span class="tl-date">2026-06-04</span></div>
@@ -277,6 +278,10 @@
 
         <tr><td>SEO meta · OG · Twitter</td><td>SEO/a11y</td><td><span class="pill pill-shipped">Shipped</span></td><td>preconnect fonts + dns-prefetch CDN</td></tr>
         <tr><td>Skip link + focus-visible</td><td>SEO/a11y</td><td><span class="pill pill-shipped">Shipped</span></td><td>prefers-reduced-motion respected</td></tr>
+        <tr><td>Skeleton loaders</td><td>UX polish</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/skeleton.js · dashboard, kanban, ledger tables</td></tr>
+        <tr><td>Accessible tooltips</td><td>UX polish</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/tooltips.js · hover + focus, a11y + touch fallback</td></tr>
+        <tr><td>Form draft autosave</td><td>UX polish</td><td><span class="pill pill-shipped">Shipped</span></td><td>js/form-cache.js · projects, deals, transactions</td></tr>
+        <tr><td>Optimistic bulk actions</td><td>UX polish</td><td><span class="pill pill-shipped">Shipped</span></td><td>Bulk move/delete update instantly + offline-aware</td></tr>
         <tr><td>Real Lighthouse audit run</td><td>SEO/a11y</td><td><span class="pill pill-planned">Planned</span></td><td>Run on deployed Vercel build</td></tr>
 
         <tr><td>AI Generate-Ideas edge function</td><td>Backend</td><td><span class="pill pill-config">Needs deploy</span></td><td>supabase/functions/generate-content-ideas</td></tr>
@@ -414,10 +419,6 @@
   <!-- ── Roadmap chips ── -->
   <div class="section-title">Next-batch candidates</div>
   <div class="chip-row">
-    <div class="roadmap-chip"><strong>Skeleton loaders</strong> · every list/table shows shape, not spinner, while data loads</div>
-    <div class="roadmap-chip"><strong>Cache all inputs</strong> · drafts auto-saved per-form so nothing is ever lost mid-edit</div>
-    <div class="roadmap-chip"><strong>Optimistic rendering everywhere</strong> · every action lands instantly, reconciles on response</div>
-    <div class="roadmap-chip"><strong>Tooltips</strong> · accessible hover/focus hints across every nav, action, and badge</div>
     <div class="roadmap-chip"><strong>Native build</strong> · npx cap add ios/android, signing, store submission</div>
     <div class="roadmap-chip"><strong>Invoice history</strong> · save issued invoices, mark paid</div>
     <div class="roadmap-chip"><strong>Team</strong> · RLS sharing model for collaborators</div>
