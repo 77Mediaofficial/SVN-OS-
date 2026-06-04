@@ -1199,3 +1199,88 @@ a:focus-visible {
 @media (hover: none) {
   [data-tooltip]::after, [data-tooltip]::before { display: none; }
 }
+
+/* ── Progressive disclosure ────────────────────────────────────
+   A calm primary view by default; dense data folds away behind an
+   explicit, terminal-style toggle. Keeps the command-centre look
+   while sparing new users from feature overload. */
+.disclosure {
+  margin-top: 32px;
+}
+.disclosure-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 0;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--color-border-subtle);
+  color: var(--color-text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color var(--transition-fast);
+}
+.disclosure-toggle:hover { color: var(--color-text); }
+.disclosure-toggle .disclosure-chevron {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: transform var(--transition-base);
+}
+.disclosure-toggle[aria-expanded="true"] .disclosure-chevron {
+  transform: rotate(90deg);
+}
+.disclosure-toggle .disclosure-meta {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+.disclosure-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--transition-base);
+}
+.disclosure-body > div { overflow: hidden; min-height: 0; }
+.disclosure[data-open="true"] .disclosure-body {
+  grid-template-rows: 1fr;
+}
+.disclosure[data-open="true"] .disclosure-body > div {
+  padding-top: 24px;
+}
+
+/* ── Density & visual hierarchy ────────────────────────────────
+   More breathing room around dense data so the interface never feels
+   like a developer console; secondary readouts recede in ink weight. */
+.data-table th,
+.deals-table th,
+.transactions-table th {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.data-table td,
+.deals-table td,
+.transactions-table td {
+  padding-top: 16px;
+  padding-bottom: 16px;
+}
+/* Secondary / telemetry panels sit a notch quieter than primary cards. */
+.card.is-secondary {
+  background: var(--color-bg);
+  border-color: var(--color-border-subtle);
+}
+.card.is-secondary .card-title { color: var(--color-text-muted); }
+
+/* Primary actions read as the obvious next step. */
+.btn-primary {
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.12) inset;
+}
+.btn-primary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

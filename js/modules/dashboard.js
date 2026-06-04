@@ -35,6 +35,7 @@ export async function init() {
   if (!user) return;
 
   paintDashboardSkeletons();
+  bindTelemetryToggle();
 
   await Promise.all([
     loadRevenueMetrics(),
@@ -55,6 +56,30 @@ export async function init() {
     animationFrames.forEach(id => cancelAnimationFrame(id));
     animationFrames = [];
   };
+}
+
+/** Wire the "System Telemetry" disclosure. Collapsed by default so a
+ *  new user meets a calm dashboard; their preference is remembered. */
+const TELEMETRY_KEY = 'svn-os-telemetry-open';
+function bindTelemetryToggle() {
+  const section = document.getElementById('dash-telemetry');
+  const btn = document.getElementById('dash-telemetry-toggle');
+  if (!section || !btn) return;
+
+  let open = false;
+  try { open = localStorage.getItem(TELEMETRY_KEY) === 'true'; } catch {}
+  applyTelemetry(section, btn, open);
+
+  btn.addEventListener('click', () => {
+    open = section.getAttribute('data-open') !== 'true';
+    applyTelemetry(section, btn, open);
+    try { localStorage.setItem(TELEMETRY_KEY, String(open)); } catch {}
+  });
+}
+
+function applyTelemetry(section, btn, open) {
+  section.setAttribute('data-open', String(open));
+  btn.setAttribute('aria-expanded', String(open));
 }
 
 /** Paint shape-of-content placeholders into every dashboard panel

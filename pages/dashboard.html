@@ -659,14 +659,14 @@
   </button>
 </div>
 
-<!-- Two-column cards grid -->
+<!-- Primary view: the two most actionable panels stay front and centre -->
 <div class="dash-cards">
 
   <!-- Action Items -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title">Action Items</span>
-      <button class="btn btn-ghost" data-route="/content">View All</button>
+      <span class="card-title">What Needs You</span>
+      <button class="btn btn-ghost" data-route="/content">Open Pipeline</button>
     </div>
     <ul id="action-items">
       <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
@@ -675,35 +675,10 @@
     </ul>
   </div>
 
-  <!-- Content Pipeline -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Content Pipeline</span>
-    </div>
-    <div id="pipeline-bars">
-      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
-      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div></div>
-      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
-      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line short"></div></div></div>
-    </div>
-  </div>
-
-  <!-- Content by Platform -->
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Content by Platform</span>
-    </div>
-    <div id="platform-distribution">
-      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
-      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div></div>
-      <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line short"></div></div></div>
-    </div>
-  </div>
-
   <!-- Upcoming Deadlines -->
   <div class="card">
     <div class="card-header">
-      <span class="card-title">Upcoming Deadlines</span>
+      <span class="card-title">Coming Up</span>
       <button class="btn btn-ghost" data-route="/deals">View Deals</button>
     </div>
     <div id="upcoming-deadlines">
@@ -714,30 +689,75 @@
 
 </div>
 
-<!-- Recent Deals — full width -->
-<div class="dash-full-width">
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Recent Deals</span>
-      <button class="btn btn-ghost" data-route="/deals">View All</button>
-    </div>
-    <ul id="recent-deals">
-      <li class="skeleton-row"><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div><div class="skeleton skeleton-block" style="width:60px;height:20px;"></div><div class="skeleton skeleton-block" style="width:80px;height:20px;"></div></li>
-      <li class="skeleton-row"><div style="flex:1"><div class="skeleton skeleton-line long"></div></div><div class="skeleton skeleton-block" style="width:60px;height:20px;"></div><div class="skeleton skeleton-block" style="width:80px;height:20px;"></div></li>
-    </ul>
-  </div>
-</div>
+<!-- System Telemetry: denser analytics fold away by default -->
+<section class="disclosure" id="dash-telemetry" data-open="false">
+  <button type="button" class="disclosure-toggle" id="dash-telemetry-toggle"
+          aria-expanded="false" aria-controls="dash-telemetry-body"
+          data-tooltip="Show or hide the deeper analytics on your business">
+    <svg class="disclosure-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="9 6 15 12 9 18"/>
+    </svg>
+    System Telemetry
+    <span class="disclosure-meta">Pipeline · Platforms · Deals · Activity</span>
+  </button>
+  <div class="disclosure-body" id="dash-telemetry-body" role="region" aria-label="Detailed insights">
+    <div>
 
-<!-- Recent Activity Feed — full width -->
-<div class="dash-full-width">
-  <div class="card">
-    <div class="card-header">
-      <span class="card-title">Recent Activity</span>
+      <div class="dash-cards">
+        <!-- Content Pipeline -->
+        <div class="card is-secondary">
+          <div class="card-header">
+            <span class="card-title">Content Pipeline</span>
+          </div>
+          <div id="pipeline-bars">
+            <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
+            <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div></div>
+            <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
+            <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line short"></div></div></div>
+          </div>
+        </div>
+
+        <!-- Content by Platform -->
+        <div class="card is-secondary">
+          <div class="card-header">
+            <span class="card-title">Content by Platform</span>
+          </div>
+          <div id="platform-distribution">
+            <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div></div></div>
+            <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div></div>
+            <div class="skeleton-row"><div class="skeleton skeleton-line short"></div><div style="flex:1"><div class="skeleton skeleton-line short"></div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Deals — full width -->
+      <div class="dash-full-width">
+        <div class="card is-secondary">
+          <div class="card-header">
+            <span class="card-title">Recent Deals</span>
+            <button class="btn btn-ghost" data-route="/deals">View All</button>
+          </div>
+          <ul id="recent-deals">
+            <li class="skeleton-row"><div style="flex:1"><div class="skeleton skeleton-line medium"></div></div><div class="skeleton skeleton-block" style="width:60px;height:20px;"></div><div class="skeleton skeleton-block" style="width:80px;height:20px;"></div></li>
+            <li class="skeleton-row"><div style="flex:1"><div class="skeleton skeleton-line long"></div></div><div class="skeleton skeleton-block" style="width:60px;height:20px;"></div><div class="skeleton skeleton-block" style="width:80px;height:20px;"></div></li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Recent Activity Feed — full width -->
+      <div class="dash-full-width">
+        <div class="card is-secondary">
+          <div class="card-header">
+            <span class="card-title">Recent Activity</span>
+          </div>
+          <ul class="activity-feed" id="activity-feed">
+            <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
+            <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div><div class="skeleton skeleton-line short"></div></div></li>
+            <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
+          </ul>
+        </div>
+      </div>
+
     </div>
-    <ul class="activity-feed" id="activity-feed">
-      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
-      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line medium"></div><div class="skeleton skeleton-line short"></div></div></li>
-      <li class="skeleton-row"><div class="skeleton skeleton-avatar"></div><div style="flex:1"><div class="skeleton skeleton-line long"></div><div class="skeleton skeleton-line short"></div></div></li>
-    </ul>
   </div>
-</div>
+</section>
