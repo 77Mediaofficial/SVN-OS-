@@ -366,6 +366,16 @@
       grid-template-columns: 1fr;
     }
   }
+  @media (max-width: 480px) {
+    .settings-card { padding: 18px; }
+    .settings-avatar-row { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .settings-data-actions { flex-direction: column; align-items: stretch; }
+    .settings-data-actions .btn { width: 100%; justify-content: center; }
+    .settings-row { flex-direction: column; align-items: stretch; gap: 8px; }
+    .settings-shortcuts { gap: 8px; }
+    .settings-actions { flex-wrap: wrap; }
+    .settings-actions .btn { flex: 1; min-width: 0; }
+  }
 </style>
 
 <div class="page-header">

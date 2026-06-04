@@ -198,6 +198,30 @@
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
   }
 
+  .calendar-cell.drop-target {
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 0 0 1px var(--color-accent);
+  }
+
+  .calendar-pill.dragging {
+    opacity: 0.4;
+  }
+
+  .calendar-tag-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+
+  .calendar-drag-hint {
+    font-size: 0.68rem;
+    color: var(--color-text-muted);
+    margin-bottom: 12px;
+    opacity: 0.7;
+  }
+
   .calendar-cell.today .calendar-day-num {
     color: var(--color-accent);
     font-weight: 600;
@@ -540,6 +564,44 @@
       font-size: 0.6rem;
     }
   }
+
+  @media (max-width: 480px) {
+    .calendar-grid {
+      grid-template-columns: repeat(7, 1fr) !important;
+    }
+    .calendar-grid.has-week-nums .calendar-week-num,
+    .calendar-grid.has-week-nums .calendar-week-header {
+      display: none;
+    }
+    .calendar-cell {
+      min-height: 56px;
+      padding: 3px;
+    }
+    .calendar-day-num { font-size: 0.66rem; margin-bottom: 2px; }
+    .calendar-pill {
+      font-size: 0;
+      padding: 3px;
+      height: 5px;
+      border-radius: 2px;
+      line-height: 1;
+    }
+    .calendar-pill::after {
+      content: '';
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .calendar-overflow { font-size: 0.55rem; }
+    .calendar-platform-filters {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 4px;
+    }
+    .calendar-platform-filters::-webkit-scrollbar { height: 0; }
+    .calendar-drag-hint { display: none; }
+    .day-detail-panel { padding: 20px; }
+  }
 </style>
 
 <section class="page-header">
@@ -576,6 +638,10 @@
   <button class="calendar-chip" data-platform="blog">Blog</button>
   <button class="calendar-chip" data-platform="other">Other</button>
 </div>
+
+<div class="calendar-tag-filters" id="cal-tag-filters" style="display:none;"></div>
+
+<div class="calendar-drag-hint">Tip — drag any pill onto another day to reschedule.</div>
 
 <div class="calendar-grid-wrapper">
   <div class="calendar-empty-overlay" id="cal-empty-overlay" style="display:none;">

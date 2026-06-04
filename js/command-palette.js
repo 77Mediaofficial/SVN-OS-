@@ -21,6 +21,7 @@ const commands = [
   { section: 'Navigate', label: 'Calendar',         action: () => navigate('/calendar'),hint: 'G then A' },
   { section: 'Navigate', label: 'Deals & Ledger',   action: () => navigate('/deals'),   hint: 'G then L' },
   { section: 'Navigate', label: 'Analytics',         action: () => navigate('/analytics'), hint: '' },
+  { section: 'Navigate', label: 'Goals',              action: () => navigate('/goals'),     hint: '' },
   { section: 'Actions',  label: 'New Project',      action: () => { navigate('/content'); }, hint: 'N then P' },
   { section: 'Actions',  label: 'New Deal',         action: () => { navigate('/deals'); },   hint: 'N then D' },
   { section: 'Actions',  label: 'New Transaction',  action: () => { navigate('/deals'); },   hint: 'N then T' },

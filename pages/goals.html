@@ -1,0 +1,230 @@
+<style>
+  .goals-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .goals-month {
+    font-size: 0.85rem;
+    color: var(--color-text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .goals-net {
+    font-size: 1.1rem;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text);
+  }
+  .goals-net.positive { color: var(--color-success); }
+  .goals-net.negative { color: var(--color-danger); }
+
+  .goals-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .goal-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+  }
+  .goal-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .goal-card-title {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-text-muted);
+  }
+  .goal-pct {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--color-text-dim);
+    font-variant-numeric: tabular-nums;
+  }
+  .goal-numbers {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .goal-actual {
+    font-size: 1.8rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    color: var(--color-accent);
+    font-variant-numeric: tabular-nums;
+  }
+  .goal-target {
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .goal-target::before { content: '/ '; opacity: 0.5; }
+
+  .goal-bar {
+    height: 8px;
+    background: var(--color-surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .goal-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--color-accent);
+    border-radius: 999px;
+    transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .goal-fill.complete { background: var(--color-success); }
+  .goal-fill.over { background: var(--color-danger); }
+
+  .goal-config {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 24px;
+  }
+  .goal-config-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+  .goal-config label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .goal-config input {
+    background: var(--color-bg);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 9px 12px;
+    color: var(--color-text);
+    font-size: 0.92rem;
+    font-variant-numeric: tabular-nums;
+    transition: border-color var(--transition-fast);
+  }
+  .goal-config input:focus {
+    outline: none;
+    border-color: #444;
+  }
+  .goal-config-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  @media (max-width: 1024px) {
+    .goals-grid { grid-template-columns: 1fr; }
+    .goal-config-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 480px) {
+    .goal-config-grid { grid-template-columns: 1fr; }
+  }
+</style>
+
+<section class="page-header">
+  <h2>Goals</h2>
+  <p>Monthly targets for content, income, and brand deals</p>
+</section>
+
+<div class="goals-header">
+  <div class="goals-month" id="goals-month-label">—</div>
+  <div>
+    <span style="font-size:0.7rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.08em;margin-right:8px;">Net this month</span>
+    <span class="goals-net" id="goals-net">$0</span>
+  </div>
+</div>
+
+<div class="goals-grid">
+  <div class="goal-card">
+    <div class="goal-card-head">
+      <div class="goal-card-title">Content posted</div>
+      <div class="goal-pct" id="goal-pct-content"></div>
+    </div>
+    <div class="goal-numbers">
+      <span class="goal-actual" id="goal-actual-content">0 posts</span>
+      <span class="goal-target" id="goal-target-content">— not set</span>
+    </div>
+    <div class="goal-bar"><div class="goal-fill" id="goal-fill-content"></div></div>
+  </div>
+
+  <div class="goal-card">
+    <div class="goal-card-head">
+      <div class="goal-card-title">Income</div>
+      <div class="goal-pct" id="goal-pct-income"></div>
+    </div>
+    <div class="goal-numbers">
+      <span class="goal-actual" id="goal-actual-income">$0</span>
+      <span class="goal-target" id="goal-target-income">— not set</span>
+    </div>
+    <div class="goal-bar"><div class="goal-fill" id="goal-fill-income"></div></div>
+  </div>
+
+  <div class="goal-card">
+    <div class="goal-card-head">
+      <div class="goal-card-title">Expense cap</div>
+      <div class="goal-pct" id="goal-pct-expense"></div>
+    </div>
+    <div class="goal-numbers">
+      <span class="goal-actual" id="goal-actual-expense">$0</span>
+      <span class="goal-target" id="goal-target-expense">— not set</span>
+    </div>
+    <div class="goal-bar"><div class="goal-fill" id="goal-fill-expense"></div></div>
+  </div>
+
+  <div class="goal-card">
+    <div class="goal-card-head">
+      <div class="goal-card-title">Deals closed</div>
+      <div class="goal-pct" id="goal-pct-deals"></div>
+    </div>
+    <div class="goal-numbers">
+      <span class="goal-actual" id="goal-actual-deals">0 deals</span>
+      <span class="goal-target" id="goal-target-deals">— not set</span>
+    </div>
+    <div class="goal-bar"><div class="goal-fill" id="goal-fill-deals"></div></div>
+  </div>
+</div>
+
+<div class="goal-config">
+  <div class="card-header" style="margin-bottom:18px;">
+    <div class="card-title">Set Targets</div>
+  </div>
+  <div class="goal-config-grid">
+    <label>
+      Content / month
+      <input id="goal-content-target" type="number" min="0" step="1" placeholder="e.g. 12" inputmode="numeric" />
+    </label>
+    <label>
+      Income / month
+      <input id="goal-income-target" type="number" min="0" step="50" placeholder="e.g. 5000" inputmode="decimal" />
+    </label>
+    <label>
+      Expense cap / month
+      <input id="goal-expense-cap" type="number" min="0" step="50" placeholder="e.g. 1500" inputmode="decimal" />
+    </label>
+    <label>
+      Deals closed / month
+      <input id="goal-deals-target" type="number" min="0" step="1" placeholder="e.g. 3" inputmode="numeric" />
+    </label>
+  </div>
+  <div class="goal-config-actions">
+    <button class="btn btn-primary" id="goal-save">Save targets</button>
+  </div>
+</div>

@@ -19,6 +19,8 @@ let currentYear;
 let currentMonth; // 0-indexed
 let contentByDay = {}; // { "YYYY-MM-DD": [ ...items ] }
 let activePlatformFilter = 'all'; // 'all' or a specific platform key
+let activeTagFilter = null;       // a specific tag string, or null
+let availableTags = [];           // distinct tag strings present in the month
 let cleanupFns = [];
 
 export async function init() {
@@ -26,6 +28,7 @@ export async function init() {
   currentYear = now.getFullYear();
   currentMonth = now.getMonth();
   activePlatformFilter = 'all';
+  activeTagFilter = null;
 
   const prevBtn = document.getElementById('cal-prev');
   const nextBtn = document.getElementById('cal-next');
@@ -70,6 +73,29 @@ export async function init() {
     }
     filterBar.addEventListener('click', onFilterClick);
     cleanupFns.push(() => filterBar.removeEventListener('click', onFilterClick));
+  }
+
+  // Tag filter chip clicks
+  const tagBar = document.getElementById('cal-tag-filters');
+  if (tagBar) {
+    function onTagClick(e) {
+      if (e.target.id === 'cal-tag-clear') {
+        activeTagFilter = null;
+        renderTagFilters();
+        renderPills();
+        updateCountBadge();
+        return;
+      }
+      const chip = e.target.closest('[data-tag]');
+      if (!chip) return;
+      const tag = chip.getAttribute('data-tag');
+      activeTagFilter = activeTagFilter === tag ? null : tag;
+      renderTagFilters();
+      renderPills();
+      updateCountBadge();
+    }
+    tagBar.addEventListener('click', onTagClick);
+    cleanupFns.push(() => tagBar.removeEventListener('click', onTagClick));
   }
 
   // Keyboard navigation: left/right arrow keys to change months
@@ -125,7 +151,7 @@ async function loadContent() {
   try {
     const { data, error } = await db
       .from('content_projects')
-      .select('id, title, description, status, platform, scheduled_at, notes')
+      .select('id, title, description, status, platform, scheduled_at, notes, tags')
       .gte('scheduled_at', startOfMonth.toISOString())
       .lte('scheduled_at', endOfMonth.toISOString())
       .order('scheduled_at', { ascending: true });
@@ -142,18 +168,57 @@ async function loadContent() {
     // Supabase not connected or query failed — grid stays empty
   }
 
+  rebuildAvailableTags();
+  renderTagFilters();
   renderPills();
   updateCountBadge();
 }
 
-/** Get all items for the month, filtered by the active platform filter */
+function rebuildAvailableTags() {
+  const set = new Set();
+  Object.values(contentByDay).forEach(items => {
+    items.forEach(it => {
+      (it.tags || []).forEach(t => { if (t) set.add(t); });
+    });
+  });
+  availableTags = Array.from(set).sort();
+  // If the active tag no longer exists in this month, drop it.
+  if (activeTagFilter && !availableTags.includes(activeTagFilter)) {
+    activeTagFilter = null;
+  }
+}
+
+function renderTagFilters() {
+  const container = document.getElementById('cal-tag-filters');
+  if (!container) return;
+  if (availableTags.length === 0) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+  container.style.display = '';
+  const chips = availableTags.map(tag => {
+    const cls = activeTagFilter === tag ? 'tag-chip tag-chip-clickable active' : 'tag-chip tag-chip-clickable';
+    return `<button class="${cls}" data-tag="${escapeAttr(tag)}">${escapeHtml(tag)}</button>`;
+  }).join('');
+  const clear = activeTagFilter
+    ? `<button class="tag-clear-btn" id="cal-tag-clear" title="Clear tag filter" aria-label="Clear tag filter">×</button>`
+    : '';
+  container.innerHTML = chips + clear;
+}
+
+/** Get all items for the month, filtered by the active platform + tag filters */
 function getFilteredItems() {
   const result = {};
   Object.keys(contentByDay).forEach(dateKey => {
     const items = contentByDay[dateKey];
-    const filtered = activePlatformFilter === 'all'
-      ? items
-      : items.filter(i => (i.platform || 'other') === activePlatformFilter);
+    const filtered = items.filter(i => {
+      const platformOk = activePlatformFilter === 'all'
+        || (i.platform || 'other') === activePlatformFilter;
+      const tagOk = !activeTagFilter
+        || (Array.isArray(i.tags) && i.tags.includes(activeTagFilter));
+      return platformOk && tagOk;
+    });
     if (filtered.length > 0) {
       result[dateKey] = filtered;
     }
@@ -291,6 +356,25 @@ function createCell(dayNum, isOutside, dateKey, isToday) {
     cell.addEventListener('click', () => {
       showDayDetail(dateKey);
     });
+
+    // Drop target for drag-to-reschedule
+    cell.addEventListener('dragover', (e) => {
+      if (!e.dataTransfer?.types?.includes('application/x-svn-content')) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      cell.classList.add('drop-target');
+    });
+    cell.addEventListener('dragleave', (e) => {
+      // Only remove if leaving the cell (not entering a child)
+      if (!cell.contains(e.relatedTarget)) cell.classList.remove('drop-target');
+    });
+    cell.addEventListener('drop', (e) => {
+      cell.classList.remove('drop-target');
+      const id = e.dataTransfer?.getData('application/x-svn-content');
+      if (!id) return;
+      e.preventDefault();
+      rescheduleItem(id, dateKey);
+    });
   }
 
   return cell;
@@ -312,18 +396,31 @@ function renderPills() {
     const showCount = Math.min(items.length, MAX_PILLS);
 
     for (let i = 0; i < showCount; i++) {
+      const item = items[i];
       const pill = document.createElement('span');
       pill.className = 'calendar-pill';
-      pill.setAttribute('data-platform', items[i].platform || 'other');
-      pill.setAttribute('data-content-id', items[i].id);
-      pill.textContent = escapeHtml(items[i].title);
-      pill.title = escapeHtml(items[i].title);
+      pill.setAttribute('data-platform', item.platform || 'other');
+      pill.setAttribute('data-content-id', item.id);
+      pill.setAttribute('draggable', 'true');
+      pill.textContent = item.title;
+      pill.title = `${item.title} — drag to reschedule`;
 
-      // Click pill to navigate to Content Engine
       pill.addEventListener('click', (e) => {
-        e.stopPropagation(); // prevent day detail from opening
+        e.stopPropagation();
         showToast('Opening in Content Engine...', 'info');
         navigate('/content');
+      });
+
+      pill.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        if (!e.dataTransfer) return;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/x-svn-content', item.id);
+        pill.classList.add('dragging');
+      });
+      pill.addEventListener('dragend', () => {
+        pill.classList.remove('dragging');
+        document.querySelectorAll('.calendar-cell.drop-target').forEach(c => c.classList.remove('drop-target'));
       });
 
       container.appendChild(pill);
@@ -450,8 +547,71 @@ function toDateKey(date) {
   return `${y}-${m}-${d}`;
 }
 
+/** Locate an item in `contentByDay` by id, returning [dateKey, index] or null. */
+function findItem(id) {
+  for (const dateKey of Object.keys(contentByDay)) {
+    const idx = contentByDay[dateKey].findIndex(it => String(it.id) === String(id));
+    if (idx !== -1) return [dateKey, idx];
+  }
+  return null;
+}
+
+async function rescheduleItem(id, newDateKey) {
+  const found = findItem(id);
+  if (!found) return;
+  const [oldKey, idx] = found;
+  if (oldKey === newDateKey) return;
+
+  const item = contentByDay[oldKey][idx];
+  const oldScheduled = item.scheduled_at;
+
+  // Preserve the time-of-day from the original scheduled_at, fall back to noon.
+  let hours = 12, minutes = 0;
+  if (oldScheduled) {
+    const od = new Date(oldScheduled);
+    if (!isNaN(od.getTime())) {
+      hours = od.getHours();
+      minutes = od.getMinutes();
+    }
+  }
+  const [y, m, d] = newDateKey.split('-').map(Number);
+  const newDate = new Date(y, m - 1, d, hours, minutes, 0, 0);
+  const newIso = newDate.toISOString();
+
+  // Optimistic move
+  contentByDay[oldKey].splice(idx, 1);
+  if (contentByDay[oldKey].length === 0) delete contentByDay[oldKey];
+  item.scheduled_at = newIso;
+  (contentByDay[newDateKey] ||= []).push(item);
+  renderPills();
+  updateCountBadge();
+
+  try {
+    const { error } = await db
+      .from('content_projects')
+      .update({ scheduled_at: newIso })
+      .eq('id', id);
+    if (error) throw error;
+    showToast(`Moved to ${newDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, 'success');
+  } catch (e) {
+    // Revert
+    const reIdx = contentByDay[newDateKey].findIndex(it => String(it.id) === String(id));
+    if (reIdx !== -1) contentByDay[newDateKey].splice(reIdx, 1);
+    if (contentByDay[newDateKey] && contentByDay[newDateKey].length === 0) delete contentByDay[newDateKey];
+    item.scheduled_at = oldScheduled;
+    (contentByDay[oldKey] ||= []).push(item);
+    renderPills();
+    updateCountBadge();
+    showToast(e.message || 'Failed to reschedule', 'error');
+  }
+}
+
 function escapeHtml(str) {
   const d = document.createElement('div');
   d.textContent = str || '';
   return d.innerHTML;
+}
+
+function escapeAttr(str) {
+  return String(str || '').replace(/"/g, '&quot;').replace(/&/g, '&amp;');
 }

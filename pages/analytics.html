@@ -190,6 +190,16 @@
     .an-kpis { grid-template-columns: 1fr; }
     .an-header { flex-direction: column; align-items: stretch; }
   }
+  @media (max-width: 480px) {
+    .an-card { padding: 16px; }
+    .an-kpi { padding: 16px; }
+    .an-kpi-value { font-size: 1.5rem; }
+    .an-range-bar { display: flex; }
+    .an-range-btn { flex: 1; }
+    .an-chart-wrap { overflow-x: auto; }
+    .an-chart-wrap svg { min-width: 320px; }
+    .an-list-row { font-size: 0.78rem; }
+  }
 </style>
 
 <section class="page-header an-header">

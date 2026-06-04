@@ -2,18 +2,35 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5" />
   <meta name="theme-color" content="#0a0a0a" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SVN OS" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="color-scheme" content="dark" />
   <title>SVN OS — Creator Dashboard</title>
+  <meta name="description" content="SVN OS is a creator dashboard for managing content pipelines, posting schedules, brand deals, and financial tracking — all in one cinematic dark-mode workspace." />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="SVN OS — Creator Dashboard" />
+  <meta property="og:description" content="One workspace for content, calendar, deals, and finances." />
+  <meta property="og:image" content="/icons/icon-512.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="SVN OS — Creator Dashboard" />
+  <meta name="twitter:description" content="One workspace for content, calendar, deals, and finances." />
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
   <link rel="apple-touch-icon" href="/icons/icon.svg" />
   <link rel="manifest" href="/manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
   <link rel="stylesheet" href="/css/main.css" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" defer></script>
 </head>
 <body>
+  <a href="#app-outlet" class="skip-link">Skip to content</a>
   <div class="app-shell">
 
     <button class="mobile-toggle" id="mobile-toggle" aria-label="Toggle navigation">
@@ -78,6 +95,15 @@
           </svg>
           Analytics
         </a>
+
+        <a class="nav-link" data-route="/goals">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="12" r="9"/>
+            <circle cx="12" cy="12" r="5"/>
+            <circle cx="12" cy="12" r="1.5" fill="currentColor"/>
+          </svg>
+          Goals
+        </a>
       </div>
 
       <div class="nav-section">
@@ -120,8 +146,10 @@
     import { initRouter } from '/js/router.js';
     import { onAuthStateChange } from '/js/auth.js';
     import { initCommandPalette } from '/js/command-palette.js';
+    import { initNotifications } from '/js/notifications.js';
 
     initCommandPalette();
+    initNotifications();
 
     document.getElementById('mobile-toggle').addEventListener('click', () => {
       document.getElementById('app-nav').classList.toggle('open');

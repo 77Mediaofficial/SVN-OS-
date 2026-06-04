@@ -595,6 +595,7 @@
 
   .dl-filter-bar {
     gap: 4px;
+    flex-wrap: wrap;
   }
 
   .dl-filter-btn {
@@ -614,6 +615,20 @@
   .dl-header-actions {
     flex-wrap: wrap;
   }
+}
+
+@media (max-width: 480px) {
+  .dl-section { padding: 16px; }
+  .dl-summary-bar { gap: 10px; }
+  .dl-summary-value { font-size: 1.3rem; }
+  .dl-header-actions { width: 100%; }
+  .dl-header-actions .btn,
+  .dl-header-actions .dl-export-btn { flex: 1; justify-content: center; }
+  .dl-modal .modal-card { max-width: 100% !important; margin: 8px; }
+  .deal-slideover-panel { width: 100% !important; }
+  .dl-table th, .dl-table td { padding: 8px 6px; font-size: 0.78rem; }
+  .dl-modal-actions { flex-wrap: wrap; }
+  .dl-modal-actions .btn { flex: 1; }
 }
 </style>
 
