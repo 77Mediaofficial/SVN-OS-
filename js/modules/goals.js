@@ -1,5 +1,6 @@
 import { db } from '../supabase.js';
 import { showToast } from '../toast.js';
+import { skLine } from '../skeleton.js';
 
 /**
  * Goals — set monthly content and income targets, track progress.
@@ -48,9 +49,20 @@ export async function init() {
     monthLabel.textContent = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   }
 
+  paintGoalsSkeleton();
   await loadAndRenderProgress(goals);
 
   return cleanup;
+}
+
+function paintGoalsSkeleton() {
+  const keys = ['content', 'income', 'expense', 'deals'];
+  keys.forEach(k => {
+    const actual = document.getElementById(`goal-actual-${k}`);
+    if (actual) actual.innerHTML = skLine('80px', 24);
+  });
+  const net = document.getElementById('goals-net');
+  if (net) net.innerHTML = skLine('72px', 18);
 }
 
 function cleanup() {

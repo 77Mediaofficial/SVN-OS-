@@ -1,5 +1,6 @@
 import { db, getCurrentUser } from '../supabase.js';
 import { showToast } from '../toast.js';
+import { skLine } from '../skeleton.js';
 
 let currentRange = 6;
 let cachedData = null;
@@ -30,6 +31,7 @@ function bindRange() {
 }
 
 async function loadAll() {
+  paintAnalyticsSkeleton();
   const since = monthsAgo(currentRange);
   try {
     const [txRes, dealRes, contentRes] = await Promise.all([
@@ -62,6 +64,21 @@ async function loadAll() {
   renderExpenseBreakdown();
   renderTopBrands();
   renderContentVelocity();
+}
+
+function paintAnalyticsSkeleton() {
+  ['an-kpi-income', 'an-kpi-expenses', 'an-kpi-net', 'an-kpi-posted'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = skLine('96px', 26);
+  });
+  ['an-expense-breakdown', 'an-top-brands', 'an-content-velocity'].forEach(id => {
+    const host = document.getElementById(id);
+    if (host) host.innerHTML = Array.from({ length: 4 }, () =>
+      `<div style="display:flex;align-items:center;gap:10px;margin:10px 0;">${skLine('72px', 14)}<div style="flex:1;">${skLine('100%', 8)}</div></div>`
+    ).join('');
+  });
+  const chart = document.getElementById('an-revenue-chart');
+  if (chart) chart.innerHTML = `<div style="padding:24px 0;">${skLine('100%', 180)}</div>`;
 }
 
 function renderKpis() {
