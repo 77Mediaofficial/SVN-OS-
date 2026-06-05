@@ -610,7 +610,7 @@
 </section>
 
 <div class="calendar-controls">
-  <button class="calendar-nav-btn" id="cal-prev" aria-label="Previous month">
+  <button class="calendar-nav-btn" id="cal-prev" aria-label="Previous month" data-tooltip="Previous month  ·  ←" data-tip-pos="below">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="10 12 6 8 10 4"/>
     </svg>
@@ -619,12 +619,12 @@
     <span id="cal-month-text"></span>
     <span class="calendar-count-badge" id="cal-count-badge"></span>
   </div>
-  <button class="calendar-nav-btn" id="cal-next" aria-label="Next month">
+  <button class="calendar-nav-btn" id="cal-next" aria-label="Next month" data-tooltip="Next month  ·  →" data-tip-pos="below">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <polyline points="6 4 10 8 6 12"/>
     </svg>
   </button>
-  <button class="btn btn-ghost calendar-today-btn" id="cal-today">Today</button>
+  <button class="btn btn-ghost calendar-today-btn" id="cal-today" data-tooltip="Jump back to today's month" data-tip-pos="below">Today</button>
 </div>
 
 <div class="calendar-platform-filters" id="cal-platform-filters">
