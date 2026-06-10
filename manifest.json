@@ -1,0 +1,16 @@
+{
+  "name": "SVN OS — Creator Operating System",
+  "short_name": "SVN OS",
+  "description": "One place to run a creative business: content pipeline, posting calendar, brand deals, and income ledger.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0a0a09",
+  "theme_color": "#0a0a09",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

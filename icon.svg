@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0a0a09"/>
+  <rect x="40" y="40" width="432" height="432" rx="72" fill="none" stroke="#2a2a27" stroke-width="4"/>
+  <text x="256" y="300" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', serif" font-size="190"
+        font-style="italic" fill="#f4f3ef" letter-spacing="-6">SVN</text>
+  <rect x="196" y="350" width="120" height="6" fill="#d9b380"/>
+</svg>

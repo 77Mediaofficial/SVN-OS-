@@ -1,0 +1,177 @@
+<header class="page-head row-between">
+  <div>
+    <p class="kicker">Business</p>
+    <h1 class="page-title">Deals &amp; Ledger<span class="title-dot">.</span></h1>
+  </div>
+  <div class="row-gap">
+    <button class="btn" id="export-csv" hidden>Export CSV</button>
+    <button class="btn btn-primary" id="dl-new">New deal</button>
+  </div>
+</header>
+
+<div class="tabs" role="tablist" aria-label="Deals and ledger">
+  <button class="tab" role="tab" id="tab-deals" aria-selected="true" aria-controls="deals-section">Deals</button>
+  <button class="tab" role="tab" id="tab-ledger" aria-selected="false" aria-controls="ledger-section">Ledger</button>
+</div>
+
+<!-- ── Deals ── -->
+<section id="deals-section" role="tabpanel" aria-labelledby="tab-deals">
+  <div class="stat-band stat-band-3" id="deal-stats"></div>
+  <div class="panel table-panel">
+    <table class="table" aria-label="Brand deals">
+      <thead>
+        <tr>
+          <th>Brand</th><th>Status</th><th class="num">Value</th><th>Deadline</th>
+          <th class="hide-sm">Contact</th><th class="hide-sm">Tags</th>
+        </tr>
+      </thead>
+      <tbody id="deals-body"></tbody>
+    </table>
+    <div id="deals-empty" class="empty" hidden>
+      <p class="empty-title">No deals yet.</p>
+      <p class="empty-sub">Track a sponsorship from first email to money in the bank.</p>
+      <button class="btn btn-primary" id="deals-empty-cta">Add your first deal</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── Ledger ── -->
+<section id="ledger-section" role="tabpanel" aria-labelledby="tab-ledger" hidden>
+  <div class="stat-band stat-band-3" id="ledger-stats"></div>
+  <div class="panel table-panel">
+    <table class="table" aria-label="Transactions">
+      <thead>
+        <tr>
+          <th>Date</th><th>Description</th><th class="hide-sm">Category</th>
+          <th class="hide-sm">Deal</th><th class="num">Amount</th>
+        </tr>
+      </thead>
+      <tbody id="ledger-body"></tbody>
+    </table>
+    <div id="ledger-empty" class="empty" hidden>
+      <p class="empty-title">Nothing in the ledger.</p>
+      <p class="empty-sub">Log income and expenses to see what the business really makes.</p>
+      <button class="btn btn-primary" id="ledger-empty-cta">Add a transaction</button>
+    </div>
+  </div>
+</section>
+
+<!-- ── Deal modal ── -->
+<dialog class="modal" id="deal-modal">
+  <form id="deal-form" novalidate>
+    <header class="modal-head">
+      <h2 class="modal-title" id="deal-modal-title">New deal</h2>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="field">
+      <label for="df-brand">Brand</label>
+      <input id="df-brand" name="brand_name" required placeholder="Who's paying?" />
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="df-status">Status</label>
+        <select id="df-status" name="status"></select>
+      </div>
+      <div class="field">
+        <label for="df-value">Value (£)</label>
+        <input id="df-value" name="value" type="number" min="0" step="0.01" placeholder="0.00" />
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="df-deadline">Deadline</label>
+        <input id="df-deadline" name="deadline" type="date" />
+      </div>
+      <div class="field">
+        <label for="df-tags">Tags</label>
+        <input id="df-tags" name="tags" placeholder="gear, long-term" />
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="df-contact-name">Contact name</label>
+        <input id="df-contact-name" name="contact_name" placeholder="Jane Doe" />
+      </div>
+      <div class="field">
+        <label for="df-contact-email">Contact email</label>
+        <input id="df-contact-email" name="contact_email" type="email" placeholder="jane@brand.com" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="df-notes">Notes</label>
+      <textarea id="df-notes" name="notes" rows="2" placeholder="Deliverables, usage rights, exclusivity…"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="df-delete" hidden>Delete</button>
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" id="df-save">Save deal</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ── Transaction modal ── -->
+<dialog class="modal" id="txn-modal">
+  <form id="txn-form" novalidate>
+    <header class="modal-head">
+      <h2 class="modal-title" id="txn-modal-title">Add transaction</h2>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="field">
+      <div class="radio-pills" role="radiogroup" aria-label="Type">
+        <label><input type="radio" name="type" value="income" checked />Income</label>
+        <label><input type="radio" name="type" value="expense" />Expense</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="tf-description">Description</label>
+      <input id="tf-description" name="description" required placeholder="What was it?" />
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="tf-amount">Amount (£)</label>
+        <input id="tf-amount" name="amount" type="number" min="0" step="0.01" required placeholder="0.00" />
+      </div>
+      <div class="field">
+        <label for="tf-date">Date</label>
+        <input id="tf-date" name="occurred_at" type="date" required />
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="tf-category">Category</label>
+        <select id="tf-category" name="category"></select>
+      </div>
+      <div class="field">
+        <label for="tf-deal">Linked deal</label>
+        <select id="tf-deal" name="deal_id"></select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="tf-recurrence">Repeats</label>
+        <select id="tf-recurrence" name="recurrence"></select>
+      </div>
+      <div class="field">
+        <label for="tf-rec-end">Until</label>
+        <input id="tf-rec-end" name="recurrence_end" type="date" disabled />
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="tf-delete" hidden>Delete</button>
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" id="tf-save">Save transaction</button>
+    </div>
+  </form>
+</dialog>

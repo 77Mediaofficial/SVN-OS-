@@ -1,0 +1,56 @@
+<header class="page-head row-between">
+  <div>
+    <p class="kicker">Schedule</p>
+    <h1 class="page-title" id="cal-title">—</h1>
+  </div>
+  <div class="seg">
+    <button class="btn" id="cal-prev" aria-label="Previous month">←</button>
+    <button class="btn" id="cal-today-btn">Today</button>
+    <button class="btn" id="cal-next" aria-label="Next month">→</button>
+  </div>
+</header>
+
+<div class="panel cal-wrap">
+  <div class="cal-weekdays" aria-hidden="true">
+    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+</div>
+
+<p class="cal-hint">Drag a card to another day to reschedule · click a day to plan something for it</p>
+
+<dialog class="modal" id="cal-modal">
+  <form id="cal-form" novalidate>
+    <header class="modal-head">
+      <h2 class="modal-title" id="cal-modal-title">Plan content</h2>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="field">
+      <label for="cf-title">Title</label>
+      <input id="cf-title" name="title" required placeholder="What goes out that day?" />
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="cf-platform">Platform</label>
+        <select id="cf-platform" name="platform"></select>
+      </div>
+      <div class="field">
+        <label for="cf-status">Stage</label>
+        <select id="cf-status" name="status"></select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="cf-scheduled">Scheduled for</label>
+      <input id="cf-scheduled" name="scheduled_at" type="datetime-local" required />
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="cf-delete" hidden>Delete</button>
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" id="cf-save">Save</button>
+    </div>
+  </form>
+</dialog>

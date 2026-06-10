@@ -1,0 +1,84 @@
+<header class="page-head row-between">
+  <div>
+    <p class="kicker">Pipeline</p>
+    <h1 class="page-title">Content Engine<span class="title-dot">.</span></h1>
+  </div>
+  <button class="btn btn-primary" id="new-project-btn">New project</button>
+</header>
+
+<div class="board" id="board" aria-label="Content pipeline board">
+  <section class="kcol" data-status="idea">
+    <header class="kcol-head"><h2>Idea</h2><span class="count">0</span></header>
+    <div class="klist" data-status="idea"></div>
+  </section>
+  <section class="kcol" data-status="scripting">
+    <header class="kcol-head"><h2>Scripting</h2><span class="count">0</span></header>
+    <div class="klist" data-status="scripting"></div>
+  </section>
+  <section class="kcol" data-status="production">
+    <header class="kcol-head"><h2>Production</h2><span class="count">0</span></header>
+    <div class="klist" data-status="production"></div>
+  </section>
+  <section class="kcol" data-status="ready">
+    <header class="kcol-head"><h2>Ready</h2><span class="count">0</span></header>
+    <div class="klist" data-status="ready"></div>
+  </section>
+  <section class="kcol" data-status="published">
+    <header class="kcol-head"><h2>Published</h2><span class="count">0</span></header>
+    <div class="klist" data-status="published"></div>
+  </section>
+</div>
+
+<p class="cal-hint">Drag cards between stages · click a card to edit</p>
+
+<dialog class="modal" id="project-modal">
+  <form id="project-form" novalidate>
+    <header class="modal-head">
+      <h2 class="modal-title" id="project-modal-title">New project</h2>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="field">
+      <label for="pf-title">Title</label>
+      <input id="pf-title" name="title" required placeholder="What are you making?" />
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="pf-platform">Platform</label>
+        <select id="pf-platform" name="platform"></select>
+      </div>
+      <div class="field">
+        <label for="pf-status">Stage</label>
+        <select id="pf-status" name="status"></select>
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="pf-scheduled">Scheduled for</label>
+        <input id="pf-scheduled" name="scheduled_at" type="datetime-local" />
+      </div>
+      <div class="field">
+        <label for="pf-tags">Tags <span style="text-transform:none;letter-spacing:0">(comma separated)</span></label>
+        <input id="pf-tags" name="tags" placeholder="tutorial, gear" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="pf-description">Description</label>
+      <textarea id="pf-description" name="description" rows="2" placeholder="The angle, the hook, the promise."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="pf-notes">Notes</label>
+      <textarea id="pf-notes" name="notes" rows="2" placeholder="Shot list, references, links…"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn btn-danger" id="pf-delete" hidden>Delete</button>
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary" id="pf-save">Save project</button>
+    </div>
+  </form>
+</dialog>
