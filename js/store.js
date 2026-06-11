@@ -108,7 +108,19 @@ function seedDemo() {
 
   return {
     profile: { id: 'demo-user', username: 'demo', full_name: 'Demo Creator' },
+    prefs: seedPrefs(),
     projects, deals, transactions,
+  };
+}
+
+function seedPrefs() {
+  return {
+    business_name: 'Demo Creator Studio',
+    business_type: 'Video production',
+    invoice_details: 'Studio 7, 100 Example Street\nLondon, United Kingdom\nPayments: Starling •• 1234 · sort 00-00-00\nTerms: Net 14',
+    invoice_seq: 6,
+    goal_monthly_revenue: 4000,
+    goal_monthly_posts: 6,
   };
 }
 
@@ -177,6 +189,40 @@ export async function getProfile() {
   if (DEMO_MODE) return { ...demo().profile };
   const { data, error } = await supabase
     .from('profiles').select('*').eq('id', userId).single();
+  if (error) throw error;
+  return data;
+}
+
+/* ── User preferences (business identity, goals, invoicing) ── */
+
+const DEFAULT_PREFS = {
+  business_name: '', business_type: '', invoice_details: '',
+  invoice_seq: 0, goal_monthly_revenue: null, goal_monthly_posts: null,
+};
+
+export async function getPrefs() {
+  if (DEMO_MODE) {
+    const db = demo();
+    if (!db.prefs) { db.prefs = seedPrefs(); persistDemo(); } // older demo datasets
+    return { ...DEFAULT_PREFS, ...db.prefs };
+  }
+  const { data, error } = await supabase
+    .from('user_preferences').select('*').eq('user_id', userId).maybeSingle();
+  if (error) throw error;
+  return { ...DEFAULT_PREFS, ...(data || {}) };
+}
+
+export async function savePrefs(patch) {
+  if (DEMO_MODE) {
+    const db = demo();
+    db.prefs = { ...(db.prefs || seedPrefs()), ...patch };
+    persistDemo();
+    return { ...db.prefs };
+  }
+  const { data, error } = await supabase
+    .from('user_preferences')
+    .upsert({ user_id: userId, ...patch })
+    .select().single();
   if (error) throw error;
   return data;
 }

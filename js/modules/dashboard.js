@@ -1,7 +1,7 @@
 /* Dashboard Home — the morning briefing.
    Immediate action items, monthly revenue, pipeline snapshot, what's next. */
 
-import { projects, deals, transactions } from '../store.js';
+import { projects, deals, transactions, getPrefs } from '../store.js';
 import {
   money, esc, fmtTime, relDay, dayKey, todayKey,
   statMoney, statInt, runCountUps,
@@ -16,11 +16,12 @@ const OPEN_DEAL_STATUSES = new Set(['lead', 'negotiating', 'signed', 'delivered'
 export async function init() {
   renderSlate();
 
-  const [projs, dls, txns] = await Promise.all([
+  const [projs, dls, txns, prefs] = await Promise.all([
     projects.list(), deals.list(), transactions.list(),
+    getPrefs().catch(() => null),
   ]);
 
-  renderStats(projs, dls, txns);
+  renderStats(projs, dls, txns, prefs);
   renderActions(projs, dls);
   renderPipeline(projs);
   renderLedgerMini(txns);
@@ -58,7 +59,7 @@ function statHtml(label, num, foot, numClass = '') {
     </div>`;
 }
 
-function renderStats(projs, dls, txns) {
+function renderStats(projs, dls, txns, prefs) {
   const month = todayKey().slice(0, 7);
   const inMonth = txns.filter((t) => String(t.occurred_at).startsWith(month));
   const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
@@ -79,10 +80,15 @@ function renderStats(projs, dls, txns) {
   const dueDeals = open.filter((d) =>
     d.deadline && d.deadline >= today && d.deadline <= horizon);
 
+  const goal = Number(prefs?.goal_monthly_revenue) || 0;
+  const goalFoot = goal > 0
+    ? ` · ${Math.round((income / goal) * 100)}% of ${money(goal)} target`
+    : '';
+
   const statsEl = document.getElementById('dash-stats');
   statsEl.innerHTML =
     statHtml('Revenue this month', statMoney(income),
-      `net ${money(net)} after ${money(costs)} costs`) +
+      `net ${money(net)} after ${money(costs)} costs${goalFoot}`) +
     statHtml('Pipeline value', statMoney(pipelineValue),
       `${open.length} open deal${open.length === 1 ? '' : 's'}`) +
     statHtml('Active projects', statInt(active.length),

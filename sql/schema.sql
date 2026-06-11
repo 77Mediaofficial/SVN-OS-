@@ -98,6 +98,46 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- ── user_preferences ──────────────────────────────────────────
+-- One row per user: business identity (for invoices), monthly
+-- goals, and workspace customisation (label overrides, presets).
+
+create table public.user_preferences (
+  user_id               uuid primary key references public.profiles (id) on delete cascade,
+  business_name         text,
+  business_type         text,
+  invoice_details       text,
+  invoice_seq           int not null default 0,
+  goal_monthly_revenue  numeric(12,2),
+  goal_monthly_posts    int,
+  pipeline_overrides    jsonb not null default '{}'::jsonb,
+  deal_status_overrides jsonb not null default '{}'::jsonb,
+  content_tag_presets   text[] not null default '{}',
+  deal_tag_presets      text[] not null default '{}',
+  created_at            timestamptz not null default now(),
+  updated_at            timestamptz not null default now(),
+  constraint prefs_business_name_length check (business_name is null or char_length(business_name) <= 120),
+  constraint prefs_business_type_length check (business_type is null or char_length(business_type) <= 120),
+  constraint prefs_invoice_details_length check (invoice_details is null or char_length(invoice_details) <= 2000),
+  constraint prefs_goal_revenue_range check (goal_monthly_revenue is null or goal_monthly_revenue >= 0),
+  constraint prefs_goal_posts_range check (goal_monthly_posts is null or goal_monthly_posts between 0 and 1000)
+);
+
+create trigger user_preferences_touch
+  before update on public.user_preferences
+  for each row execute function public.touch_updated_at();
+
+alter table public.user_preferences enable row level security;
+
+create policy "prefs: owner select" on public.user_preferences
+  for select using (auth.uid() = user_id);
+create policy "prefs: owner insert" on public.user_preferences
+  for insert with check (auth.uid() = user_id);
+create policy "prefs: owner update" on public.user_preferences
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "prefs: owner delete" on public.user_preferences
+  for delete using (auth.uid() = user_id);
+
 -- ── content_projects ──────────────────────────────────────────
 -- A piece of content moving through the pipeline.
 

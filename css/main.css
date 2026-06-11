@@ -960,6 +960,146 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
 .auth-error { font-size: 0.78rem; color: var(--tone-red); margin-bottom: 14px; }
 .auth-toggle-line { margin-top: 18px; font-size: 0.78rem; color: var(--muted); }
 
+/* ── Analytics ────────────────────────────────────────────── */
+
+.legend { display: flex; gap: 14px; font-size: 0.7rem; color: var(--dim); }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+
+.chart {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 10px;
+  align-items: end;
+  min-height: 168px;
+  padding-top: 8px;
+  overflow-x: auto;
+}
+.chart-col {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  min-width: 26px;
+}
+.chart-bars {
+  display: flex; align-items: flex-end; justify-content: center; gap: 3px;
+  height: 128px; width: 100%;
+}
+.cbar {
+  width: min(16px, 42%);
+  border-radius: 3px 3px 0 0;
+  min-height: 2px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition: height 0.5s var(--ease);
+}
+.cbar-in  { background: linear-gradient(180deg, var(--tone-green), color-mix(in srgb, var(--tone-green) 45%, #0a0a09)); }
+.cbar-out { background: linear-gradient(180deg, var(--tone-red), color-mix(in srgb, var(--tone-red) 40%, #0a0a09)); }
+.cbar-posts { width: min(22px, 60%); background: linear-gradient(180deg, var(--ivory), #8e8b80); }
+.chart-label {
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.chart-mini { min-height: 104px; }
+.chart-mini .chart-bars { height: 66px; }
+
+.stat-unit { font-size: 0.58em; color: var(--dim); margin-left: 2px; }
+
+.goal-row { padding: 10px 0; }
+.goal-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; gap: 12px; }
+.goal-meta { font-family: var(--font-mono); font-size: 0.7rem; color: var(--dim); white-space: nowrap; }
+.goal-track { height: 6px; }
+.bar-fill.goal-done { background: linear-gradient(90deg, var(--brass), var(--brass-bright)); }
+
+.seg .btn.is-active {
+  border-color: var(--brass-faint);
+  color: var(--brass-bright);
+  background: var(--surface-2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ── Invoice modal ────────────────────────────────────────── */
+
+.inv-line {
+  display: grid;
+  grid-template-columns: 1fr 110px 32px;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+#inv-add-line { margin-top: 2px; }
+.inv-total-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  border-top: 1px solid var(--hairline);
+  margin: 6px 0 16px;
+  padding-top: 14px;
+}
+.inv-total-row .value { font-family: var(--font-display); font-size: 1.45rem; }
+
+#invoice-print { display: none; }
+
+@media print {
+  body.printing > *:not(#invoice-print) { display: none !important; }
+  body.printing { background: #fff !important; }
+
+  #invoice-print {
+    display: block !important;
+    color: #16140f;
+    background: #fff;
+    font-family: "Archivo", system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 1.55;
+    padding: 12px 4px;
+  }
+  #invoice-print .ip-head {
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 24px;
+    border-bottom: 2px solid #16140f;
+    padding-bottom: 14px; margin-bottom: 20px;
+  }
+  #invoice-print .ip-title {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-size: 32px; line-height: 1;
+  }
+  #invoice-print .ip-from-name { margin-top: 6px; font-weight: 600; }
+  #invoice-print .ip-num { text-align: right; font-size: 11px; color: #4d493f; }
+  #invoice-print .ip-cols {
+    display: flex; justify-content: space-between; gap: 32px;
+    margin-bottom: 24px;
+  }
+  #invoice-print .ip-col { white-space: pre-line; max-width: 46%; }
+  #invoice-print .ip-label {
+    font-size: 8.5px; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: #807b6e; margin-bottom: 4px;
+    white-space: normal;
+  }
+  #invoice-print .ip-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+  #invoice-print .ip-table th {
+    text-align: left;
+    font-size: 8.5px; font-weight: 600;
+    letter-spacing: 0.16em; text-transform: uppercase;
+    color: #807b6e;
+    border-bottom: 1px solid #16140f;
+    padding: 6px 0;
+  }
+  #invoice-print .ip-table td {
+    padding: 9px 0;
+    border-bottom: 1px solid #e2ddd0;
+    vertical-align: top;
+  }
+  #invoice-print .num { text-align: right; white-space: nowrap; }
+  #invoice-print .ip-total {
+    display: flex; justify-content: flex-end; gap: 48px;
+    font-size: 15px; font-weight: 600;
+    padding-top: 10px;
+  }
+  #invoice-print .ip-foot {
+    margin-top: 30px; padding-top: 12px;
+    border-top: 1px solid #e2ddd0;
+    font-size: 10.5px; color: #55514a;
+    white-space: pre-line;
+  }
+}
+
 /* ── App Lock & privacy shield ────────────────────────────── */
 
 body.locked .app, body.locked .auth-gate,

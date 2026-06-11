@@ -1,0 +1,256 @@
+/* Analytics — the business review.
+   Revenue vs costs by month, income by category, content output,
+   deal win rate, and this-month progress against targets. */
+
+import { transactions, projects, deals, getPrefs, savePrefs } from '../store.js';
+import {
+  esc, money, todayKey, formData, bindDialog,
+  statMoney, statInt, runCountUps,
+} from '../ui.js';
+import { CATEGORY_BY_KEY } from '../domain.js';
+import { toast } from '../toast.js';
+
+let txns = [];
+let projs = [];
+let dls = [];
+let prefs = {};
+let range = 6;
+
+export async function init() {
+  [txns, projs, dls, prefs] = await Promise.all([
+    transactions.list(), projects.list(), deals.list(), getPrefs(),
+  ]);
+
+  bindDialog(document.getElementById('goals-modal'));
+  document.querySelectorAll('[data-range]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      range = Number(btn.dataset.range);
+      syncRange();
+      renderAll();
+    });
+  });
+  document.getElementById('goals-edit-btn').addEventListener('click', openGoals);
+  document.getElementById('goals-form').addEventListener('submit', onGoalsSave);
+  document.getElementById('ana-goals').addEventListener('click', (e) => {
+    if (e.target.closest('[data-set-targets]')) openGoals();
+  });
+
+  syncRange();
+  renderAll();
+}
+
+/* ── Helpers ─────────────────────────────────────────────── */
+
+function syncRange() {
+  document.querySelectorAll('[data-range]').forEach((btn) => {
+    btn.classList.toggle('is-active', Number(btn.dataset.range) === range);
+  });
+}
+
+function monthsBack(n) {
+  const now = new Date();
+  const out = [];
+  for (let i = n - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    out.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleDateString('en-GB', { month: 'short' }),
+      year: d.getFullYear(),
+    });
+  }
+  return out;
+}
+
+const monthSum = (key, type) => txns
+  .filter((t) => t.type === type && String(t.occurred_at).startsWith(key))
+  .reduce((s, t) => s + Number(t.amount), 0);
+
+const inRange = (months) => {
+  const keys = new Set(months.map((m) => m.key));
+  return txns.filter((t) => keys.has(String(t.occurred_at).slice(0, 7)));
+};
+
+function renderAll() {
+  const months = monthsBack(range);
+  renderStats(months);
+  renderChart(months);
+  renderCats(months);
+  renderGoals();
+  renderOutput(months);
+}
+
+/* ── Stat band ───────────────────────────────────────────── */
+
+function renderStats(months) {
+  const rows = inRange(months);
+  const income = rows.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
+  const costs = rows.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+  const net = income - costs;
+  const avg = income / months.length;
+
+  const paid = dls.filter((d) => d.status === 'paid').length;
+  const lost = dls.filter((d) => d.status === 'lost').length;
+  const closed = paid + lost;
+  const winRate = closed ? Math.round((paid / closed) * 100) : null;
+
+  const el = document.getElementById('ana-stats');
+  el.innerHTML = `
+    <div class="stat">
+      <div class="stat-label">Revenue · ${range}M</div>
+      <div class="stat-num">${statMoney(income)}</div>
+      <div class="stat-foot">${money(costs)} in costs</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Net profit · ${range}M</div>
+      <div class="stat-num ${net >= 0 ? 'is-pos' : 'is-neg'}">${statMoney(net)}</div>
+      <div class="stat-foot">${income > 0 ? Math.round((net / income) * 100) + '% margin' : 'no income yet'}</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Avg per month</div>
+      <div class="stat-num">${statMoney(avg)}</div>
+      <div class="stat-foot">income across ${range} months</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Deal win rate</div>
+      <div class="stat-num">${winRate === null ? '—' : `${statInt(winRate)}<span class="stat-unit">%</span>`}</div>
+      <div class="stat-foot">${closed ? `${paid} won · ${lost} lost` : 'no closed deals yet'}</div>
+    </div>`;
+  runCountUps(el);
+}
+
+/* ── Monthly chart ───────────────────────────────────────── */
+
+function renderChart(months) {
+  const data = months.map((m) => ({
+    ...m,
+    income: monthSum(m.key, 'income'),
+    costs: monthSum(m.key, 'expense'),
+  }));
+  const max = Math.max(1, ...data.flatMap((d) => [d.income, d.costs]));
+
+  document.getElementById('ana-chart').innerHTML = data.map((d) => `
+    <div class="chart-col" title="${d.label} ${d.year} — in ${money(d.income)} · out ${money(d.costs)}">
+      <div class="chart-bars">
+        <span class="cbar cbar-in" style="height:${(d.income / max) * 100}%"></span>
+        <span class="cbar cbar-out" style="height:${(d.costs / max) * 100}%"></span>
+      </div>
+      <span class="chart-label">${d.label}</span>
+    </div>`).join('');
+}
+
+/* ── Income by category ──────────────────────────────────── */
+
+function renderCats(months) {
+  const rows = inRange(months).filter((t) => t.type === 'income');
+  const byCat = new Map();
+  for (const t of rows) {
+    byCat.set(t.category, (byCat.get(t.category) || 0) + Number(t.amount));
+  }
+  const total = [...byCat.values()].reduce((s, v) => s + v, 0);
+  const sorted = [...byCat.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+
+  document.getElementById('ana-cats-count').textContent =
+    total ? money(total) : '';
+
+  document.getElementById('ana-cats').innerHTML = sorted.length
+    ? sorted.map(([cat, sum]) => `
+        <div class="bar-row">
+          <span class="bar-label">${esc(CATEGORY_BY_KEY[cat]?.label ?? cat)}</span>
+          <span class="bar-track"><span class="bar-fill" style="width:${(sum / total) * 100}%"></span></span>
+          <span class="bar-count">${money(sum)} · ${Math.round((sum / total) * 100)}%</span>
+        </div>`).join('')
+    : `<div class="empty">
+         <p class="empty-title">No income in this range.</p>
+         <p class="empty-sub">Log payments in the ledger and the mix shows up here.</p>
+       </div>`;
+}
+
+/* ── Goals ───────────────────────────────────────────────── */
+
+function goalRow(label, value, target, fmt) {
+  const pct = target > 0 ? Math.round((value / target) * 100) : 0;
+  return `
+    <div class="goal-row">
+      <div class="goal-head">
+        <span class="bar-label">${label}</span>
+        <span class="goal-meta">${fmt(value)} / ${fmt(target)} · ${pct}%</span>
+      </div>
+      <div class="bar-track goal-track">
+        <span class="bar-fill ${pct >= 100 ? 'goal-done' : ''}" style="width:${Math.min(100, pct)}%"></span>
+      </div>
+    </div>`;
+}
+
+function renderGoals() {
+  const monthKey = todayKey().slice(0, 7);
+  const incomeThisMonth = monthSum(monthKey, 'income');
+  const publishedThisMonth = projs.filter((p) =>
+    p.published_at && String(p.published_at).slice(0, 7) === monthKey).length;
+
+  const hasTargets = prefs.goal_monthly_revenue > 0 || prefs.goal_monthly_posts > 0;
+
+  document.getElementById('ana-goals').innerHTML = hasTargets
+    ? [
+        prefs.goal_monthly_revenue > 0
+          ? goalRow('Revenue', incomeThisMonth, Number(prefs.goal_monthly_revenue), (v) => money(v))
+          : '',
+        prefs.goal_monthly_posts > 0
+          ? goalRow('Posts published', publishedThisMonth, Number(prefs.goal_monthly_posts), (v) => String(Math.round(v)))
+          : '',
+      ].join('')
+    : `<div class="empty">
+         <p class="empty-title">No targets set.</p>
+         <p class="empty-sub">Give the month a number to beat.</p>
+         <button class="btn btn-primary" data-set-targets type="button">Set targets</button>
+       </div>`;
+}
+
+function openGoals() {
+  const form = document.getElementById('goals-form');
+  form.business_name.value = prefs.business_name || '';
+  form.invoice_details.value = prefs.invoice_details || '';
+  form.goal_monthly_revenue.value = prefs.goal_monthly_revenue ?? '';
+  form.goal_monthly_posts.value = prefs.goal_monthly_posts ?? '';
+  document.getElementById('goals-modal').showModal();
+}
+
+async function onGoalsSave(e) {
+  e.preventDefault();
+  const raw = formData(e.currentTarget);
+  try {
+    prefs = await savePrefs({
+      business_name: raw.business_name || '',
+      invoice_details: raw.invoice_details || '',
+      goal_monthly_revenue: raw.goal_monthly_revenue === '' ? null : Number(raw.goal_monthly_revenue),
+      goal_monthly_posts: raw.goal_monthly_posts === '' ? null : Math.round(Number(raw.goal_monthly_posts)),
+    });
+    document.getElementById('goals-modal').close();
+    renderGoals();
+    toast('Settings saved.', 'success');
+  } catch (err) {
+    console.error(err);
+    toast('Could not save settings.', 'error');
+  }
+}
+
+/* ── Content output ──────────────────────────────────────── */
+
+function renderOutput(months) {
+  const counts = months.map((m) => ({
+    ...m,
+    n: projs.filter((p) => p.published_at && String(p.published_at).slice(0, 7) === m.key).length,
+  }));
+  const total = counts.reduce((s, c) => s + c.n, 0);
+  const max = Math.max(1, ...counts.map((c) => c.n));
+
+  document.getElementById('ana-output-count').textContent =
+    total ? `${total} published` : '';
+
+  document.getElementById('ana-output').innerHTML = counts.map((c) => `
+    <div class="chart-col" title="${c.label} ${c.year} — ${c.n} published">
+      <div class="chart-bars">
+        <span class="cbar cbar-posts" style="height:${(c.n / max) * 100}%"></span>
+      </div>
+      <span class="chart-label">${c.label}</span>
+    </div>`).join('');
+}

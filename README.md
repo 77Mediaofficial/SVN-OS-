@@ -102,13 +102,17 @@ vercel.json             SPA rewrites + cache headers
 
 ## What's here vs. the full build-progress vision
 
-Recreated in this pass: the four core modules (Dashboard, Content Engine kanban
-with drag, Calendar with drag-to-reschedule, Deals & Ledger with recurring
-transactions and CSV export), auth + RLS schema, PWA shell, demo seeder,
-empty states, skeletons, responsive layout.
+Recreated so far: the four core modules (Dashboard, Content Engine kanban with
+drag, Calendar with drag-to-reschedule, Deals & Ledger with recurring
+transactions and CSV export), **Analytics** (monthly money chart, category mix,
+content output, win rate, 3/6/12-month ranges), **goals & business settings**
+(monthly targets with progress, feeding the dashboard), **client invoicing**
+(print-ready PDF from any deal, auto-numbered, editable line items), the
+**paid-deal → ledger automation**, auth + RLS schema with `user_preferences`,
+App Lock + privacy sheet, PWA shell, demo seeder, responsive layout.
 
 Phase 2 parity candidates from the original progress report: command palette
 (Cmd+K), notifications centre, offline write queue, public profiles
-(`/u/:username`), goals & analytics pages, settings with custom stage labels,
-invoicing (PDF), content templates, AI idea generator + deadline-reminder edge
-functions, Capacitor native build, unit tests.
+(`/u/:username`), custom stage labels, invoice history, content templates,
+AI idea generator + deadline-reminder edge functions, Capacitor native build,
+unit tests.

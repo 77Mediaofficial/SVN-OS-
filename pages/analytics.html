@@ -1,0 +1,92 @@
+<header class="page-head row-between">
+  <div>
+    <p class="kicker">Insight</p>
+    <h1 class="page-title">Analytics<span class="title-dot">.</span></h1>
+  </div>
+  <div class="seg" role="group" aria-label="Time range">
+    <button class="btn" data-range="3">3M</button>
+    <button class="btn is-active" data-range="6">6M</button>
+    <button class="btn" data-range="12">12M</button>
+  </div>
+</header>
+
+<section class="stat-band" id="ana-stats" aria-label="Key numbers">
+  <div class="stat"><div class="stat-label">Revenue</div><div class="stat-num skel skel-num">—</div><div class="stat-foot">&nbsp;</div></div>
+  <div class="stat"><div class="stat-label">Net profit</div><div class="stat-num skel skel-num">—</div><div class="stat-foot">&nbsp;</div></div>
+  <div class="stat"><div class="stat-label">Avg per month</div><div class="stat-num skel skel-num">—</div><div class="stat-foot">&nbsp;</div></div>
+  <div class="stat"><div class="stat-label">Deal win rate</div><div class="stat-num skel skel-num">—</div><div class="stat-foot">&nbsp;</div></div>
+</section>
+
+<section class="panel" aria-labelledby="chart-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="chart-label">Money in vs out</h2>
+    <span class="legend">
+      <span class="legend-item"><span class="dot tone-green"></span>Income</span>
+      <span class="legend-item"><span class="dot tone-red"></span>Expenses</span>
+    </span>
+  </div>
+  <div id="ana-chart" class="chart"></div>
+</section>
+
+<div class="grid-main">
+  <section class="panel" aria-labelledby="cats-label">
+    <div class="panel-head">
+      <h2 class="section-label" id="cats-label">Income by category</h2>
+      <span class="count" id="ana-cats-count"></span>
+    </div>
+    <div id="ana-cats"></div>
+  </section>
+
+  <div class="col-stack">
+    <section class="panel" aria-labelledby="goals-label">
+      <div class="panel-head">
+        <h2 class="section-label" id="goals-label">This month vs targets</h2>
+        <button class="linklike" id="goals-edit-btn" type="button">Edit targets</button>
+      </div>
+      <div id="ana-goals"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="output-label">
+      <div class="panel-head">
+        <h2 class="section-label" id="output-label">Content output</h2>
+        <span class="count" id="ana-output-count"></span>
+      </div>
+      <div id="ana-output" class="chart chart-mini"></div>
+    </section>
+  </div>
+</div>
+
+<dialog class="modal" id="goals-modal">
+  <form id="goals-form" novalidate>
+    <header class="modal-head">
+      <h2 class="modal-title">Business settings<span class="title-dot">.</span></h2>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="field">
+      <label for="gf-name">Business name</label>
+      <input id="gf-name" name="business_name" maxlength="120" placeholder="Your studio" />
+    </div>
+
+    <div class="field">
+      <label for="gf-details">Invoice details <span style="text-transform:none;letter-spacing:0">(address · payment info, shown on invoices)</span></label>
+      <textarea id="gf-details" name="invoice_details" rows="3" placeholder="Street, City&#10;Bank · account&#10;Terms: Net 14"></textarea>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="gf-revenue">Monthly revenue target (£)</label>
+        <input id="gf-revenue" name="goal_monthly_revenue" type="number" min="0" step="50" placeholder="4000" />
+      </div>
+      <div class="field">
+        <label for="gf-posts">Monthly posts target</label>
+        <input id="gf-posts" name="goal_monthly_posts" type="number" min="0" step="1" placeholder="6" />
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Save settings</button>
+    </div>
+  </form>
+</dialog>

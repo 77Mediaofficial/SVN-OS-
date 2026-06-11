@@ -3,6 +3,7 @@
    Ledger: income/expense rows, recurring support, CSV export. */
 
 import { deals, transactions } from '../store.js';
+import { initInvoice, openInvoice } from './invoice.js';
 import { toast } from '../toast.js';
 import {
   esc, money, fmtDate, relDay, todayKey, formData, parseTags,
@@ -29,6 +30,7 @@ export async function init() {
   document.getElementById('tf-recurrence').innerHTML = optionsHtml(RECURRENCE, 'none');
   bindDialog(document.getElementById('deal-modal'));
   bindDialog(document.getElementById('txn-modal'));
+  initInvoice();
 
   [dealRows, txnRows] = await Promise.all([deals.list(), transactions.list()]);
   renderDeals();
@@ -57,6 +59,12 @@ export async function init() {
 
   document.getElementById('deal-form').addEventListener('submit', onDealSubmit);
   document.getElementById('df-delete').addEventListener('click', onDealDelete);
+  document.getElementById('df-invoice').addEventListener('click', () => {
+    const row = dealRows.find((r) => r.id === editingDealId);
+    if (!row) return;
+    document.getElementById('deal-modal').close();
+    openInvoice(row).catch((err) => { console.error(err); toast('Could not open the invoice.', 'error'); });
+  });
   document.getElementById('txn-form').addEventListener('submit', onTxnSubmit);
   document.getElementById('tf-delete').addEventListener('click', onTxnDelete);
 
@@ -150,6 +158,7 @@ function openDealModal(id) {
   document.getElementById('deal-modal-title').textContent = row ? 'Edit deal' : 'New deal';
   document.getElementById('df-save').textContent = row ? 'Save changes' : 'Add deal';
   document.getElementById('df-delete').hidden = !row;
+  document.getElementById('df-invoice').hidden = !row;
 
   if (row) {
     form.brand_name.value = row.brand_name;
@@ -170,6 +179,9 @@ async function onDealSubmit(e) {
   const form = e.currentTarget;
   if (!form.brand_name.value.trim()) { form.brand_name.focus(); return; }
 
+  const prevStatus = editingDealId
+    ? dealRows.find((r) => r.id === editingDealId)?.status
+    : null;
   const raw = formData(form);
   const values = {
     brand_name: raw.brand_name,
@@ -183,19 +195,52 @@ async function onDealSubmit(e) {
   };
 
   try {
+    let saved;
     if (editingDealId) {
-      const updated = await deals.update(editingDealId, values);
-      dealRows = dealRows.map((r) => (r.id === editingDealId ? updated : r));
+      saved = await deals.update(editingDealId, values);
+      dealRows = dealRows.map((r) => (r.id === editingDealId ? saved : r));
       toast('Deal updated.', 'success');
     } else {
-      dealRows.unshift(await deals.create(values));
+      saved = await deals.create(values);
+      dealRows.unshift(saved);
       toast('Deal added.', 'success');
     }
     document.getElementById('deal-modal').close();
     renderDeals();
+    if (saved.status === 'paid' && prevStatus !== 'paid') await offerPaymentLog(saved);
   } catch (err) {
     console.error(err);
     toast('Could not save the deal.', 'error');
+  }
+}
+
+/* When a deal lands on "paid", keep the ledger honest:
+   offer to log the income transaction right away. */
+async function offerPaymentLog(deal) {
+  const amount = Number(deal.value) || 0;
+  if (amount <= 0) return;
+  const ok = await confirmAction(
+    `Log ${money(amount)} from ${deal.brand_name} as income in the ledger?`,
+    { confirmLabel: 'Log income' });
+  if (!ok) return;
+  try {
+    const txn = await transactions.create({
+      type: 'income',
+      category: 'sponsorship',
+      description: `${deal.brand_name} — sponsorship payment`,
+      amount,
+      occurred_at: todayKey(),
+      recurrence: 'none',
+      recurrence_end: null,
+      parent_transaction_id: null,
+      deal_id: deal.id,
+    });
+    txnRows.unshift(txn);
+    renderLedger();
+    toast('Payment logged in the ledger.', 'success');
+  } catch (err) {
+    console.error(err);
+    toast('Could not log the payment.', 'error');
   }
 }
 

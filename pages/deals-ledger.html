@@ -108,9 +108,73 @@
     </div>
 
     <div class="modal-actions">
+      <button type="button" class="btn" id="df-invoice" hidden>Invoice</button>
       <button type="button" class="btn btn-danger" id="df-delete" hidden>Delete</button>
       <button type="button" class="btn" data-close>Cancel</button>
       <button type="submit" class="btn btn-primary" id="df-save">Save deal</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ── Invoice modal ── -->
+<dialog class="modal" id="invoice-modal">
+  <form id="invoice-form" novalidate>
+    <header class="modal-head">
+      <h2 class="modal-title">Invoice<span class="title-dot">.</span></h2>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="inv-number">Invoice no.</label>
+        <input id="inv-number" name="number" required maxlength="40" />
+      </div>
+      <div class="field">
+        <label for="inv-issued">Issued</label>
+        <input id="inv-issued" name="issued" type="date" required />
+      </div>
+    </div>
+
+    <div class="grid2">
+      <div class="field">
+        <label for="inv-due">Due</label>
+        <input id="inv-due" name="due" type="date" />
+      </div>
+      <div class="field">
+        <label for="inv-from-name">From</label>
+        <input id="inv-from-name" name="from_name" maxlength="120" placeholder="Your business name" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="inv-from-details">Your details <span style="text-transform:none;letter-spacing:0">(address · payment info)</span></label>
+      <textarea id="inv-from-details" name="from_details" rows="3"></textarea>
+    </div>
+
+    <div class="field">
+      <label for="inv-to">Bill to</label>
+      <textarea id="inv-to" name="to" rows="2"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Line items</label>
+      <div id="inv-lines"></div>
+      <button type="button" class="btn" id="inv-add-line">Add line</button>
+    </div>
+
+    <div class="inv-total-row">
+      <span class="section-label">Total due</span>
+      <span class="value" id="inv-total">£0.00</span>
+    </div>
+
+    <div class="field">
+      <label for="inv-notes">Notes</label>
+      <textarea id="inv-notes" name="notes" rows="2" placeholder="Payment terms, references…"></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="submit" class="btn btn-primary">Print / Save PDF</button>
     </div>
   </form>
 </dialog>

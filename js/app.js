@@ -13,6 +13,7 @@ const routes = [
   { path: '/content',  nav: 'content',   title: 'Content Engine', page: 'pages/content-engine.html', module: () => import('./modules/content-engine.js') },
   { path: '/calendar', nav: 'calendar',  title: 'Calendar',       page: 'pages/calendar.html',       module: () => import('./modules/calendar.js') },
   { path: '/deals',    nav: 'deals',     title: 'Deals & Ledger', page: 'pages/deals-ledger.html',   module: () => import('./modules/deals-ledger.js') },
+  { path: '/analytics', nav: 'analytics', title: 'Analytics',     page: 'pages/analytics.html',      module: () => import('./modules/analytics.js') },
 ];
 
 const gate = document.getElementById('auth-gate');
