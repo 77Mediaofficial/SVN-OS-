@@ -6,7 +6,7 @@ import { deals, transactions } from '../store.js';
 import { toast } from '../toast.js';
 import {
   esc, money, fmtDate, relDay, todayKey, formData, parseTags,
-  bindDialog, confirmAction,
+  bindDialog, confirmAction, statMoney, runCountUps,
 } from '../ui.js';
 import {
   DEAL_STATUSES, DEAL_STATUS_BY_KEY, dealTone,
@@ -99,10 +99,12 @@ function renderDeals() {
 
   const sum = (list) => list.reduce((s, d) => s + Number(d.value), 0);
 
-  document.getElementById('deal-stats').innerHTML =
-    statHtml('In conversation', money(sum(open)), `${open.length} lead${open.length === 1 ? '' : 's'} & negotiations`) +
-    statHtml('Committed', money(sum(working)), `${working.length} signed or delivered`) +
-    statHtml('Paid this year', money(sum(paidThisYear)), `${paidThisYear.length} deal${paidThisYear.length === 1 ? '' : 's'} closed`);
+  const dealStatsEl = document.getElementById('deal-stats');
+  dealStatsEl.innerHTML =
+    statHtml('In conversation', statMoney(sum(open)), `${open.length} lead${open.length === 1 ? '' : 's'} & negotiations`) +
+    statHtml('Committed', statMoney(sum(working)), `${working.length} signed or delivered`) +
+    statHtml('Paid this year', statMoney(sum(paidThisYear)), `${paidThisYear.length} deal${paidThisYear.length === 1 ? '' : 's'} closed`);
+  runCountUps(dealStatsEl);
 
   const sorted = [...dealRows].sort((a, b) => {
     const rank = STATUS_RANK[a.status] - STATUS_RANK[b.status];
@@ -225,14 +227,16 @@ function renderLedger() {
   const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
   const net = income - costs;
 
-  document.getElementById('ledger-stats').innerHTML =
-    statHtml('Income this month', money(income), `${inMonth.filter((t) => t.type === 'income').length} payments in`) +
-    statHtml('Expenses this month', money(costs), `${inMonth.filter((t) => t.type === 'expense').length} payments out`) +
+  const ledgerStatsEl = document.getElementById('ledger-stats');
+  ledgerStatsEl.innerHTML =
+    statHtml('Income this month', statMoney(income), `${inMonth.filter((t) => t.type === 'income').length} payments in`) +
+    statHtml('Expenses this month', statMoney(costs), `${inMonth.filter((t) => t.type === 'expense').length} payments out`) +
     `<div class="stat">
        <div class="stat-label">Net</div>
-       <div class="stat-num ${net >= 0 ? 'is-pos' : 'is-neg'}">${money(net)}</div>
+       <div class="stat-num ${net >= 0 ? 'is-pos' : 'is-neg'}">${statMoney(net)}</div>
        <div class="stat-foot">${net >= 0 ? 'in the black' : 'spending exceeds income'}</div>
      </div>`;
+  runCountUps(ledgerStatsEl);
 
   const dealName = (id) => dealRows.find((d) => d.id === id)?.brand_name;
 

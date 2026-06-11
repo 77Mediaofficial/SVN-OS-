@@ -84,6 +84,40 @@ export function initials(name) {
   return parts.slice(0, 2).map((p) => p[0].toUpperCase()).join('');
 }
 
+/* ── Stat numerals (luxury count-up on load) ─────────────── */
+
+const NUM_GB = new Intl.NumberFormat('en-GB');
+
+export function statMoney(value) {
+  const n = Math.round(Math.abs(Number(value) || 0));
+  const sign = Number(value) < 0 ? '−' : '';
+  return `${sign}<span class="cur">£</span><span data-count-to="${n}">${NUM_GB.format(n)}</span>`;
+}
+
+export function statInt(value) {
+  const n = Math.round(Number(value) || 0);
+  return `<span data-count-to="${n}" data-count-fmt="int">${NUM_GB.format(n)}</span>`;
+}
+
+/* Animate every [data-count-to] inside scope from 0 → target.
+   Markup ships with the final value, so no-JS and reduced-motion
+   users simply see the number. */
+export function runCountUps(scope) {
+  if (!scope || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  scope.querySelectorAll('[data-count-to]').forEach((el) => {
+    const to = Number(el.dataset.countTo);
+    if (!to) return;
+    const t0 = performance.now();
+    const DURATION = 650;
+    const tick = (t) => {
+      const p = Math.min(1, (t - t0) / DURATION);
+      el.textContent = NUM_GB.format(Math.round(to * (1 - Math.pow(1 - p, 3))));
+      if (p < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+}
+
 /* ── Dialogs ─────────────────────────────────────────────── */
 
 export function bindDialog(dialog) {

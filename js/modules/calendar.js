@@ -95,8 +95,9 @@ function chipHtml(p) {
 }
 
 function renderMonth() {
-  document.getElementById('cal-title').textContent =
-    cursor.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  const monthName = cursor.toLocaleDateString('en-GB', { month: 'long' });
+  document.getElementById('cal-title').innerHTML =
+    `${monthName} <span class="title-dim">${cursor.getFullYear()}</span>`;
 
   const byDay = new Map();
   for (const p of rows) {

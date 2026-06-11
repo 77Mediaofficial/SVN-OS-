@@ -2,7 +2,10 @@
    Immediate action items, monthly revenue, pipeline snapshot, what's next. */
 
 import { projects, deals, transactions } from '../store.js';
-import { money, esc, fmtTime, relDay, dayKey, todayKey } from '../ui.js';
+import {
+  money, esc, fmtTime, relDay, dayKey, todayKey,
+  statMoney, statInt, runCountUps,
+} from '../ui.js';
 import {
   CONTENT_STAGES, STAGE_BY_KEY, PLATFORM_BY_KEY, DEAL_STATUS_BY_KEY,
   stageTone,
@@ -76,15 +79,17 @@ function renderStats(projs, dls, txns) {
   const dueDeals = open.filter((d) =>
     d.deadline && d.deadline >= today && d.deadline <= horizon);
 
-  document.getElementById('dash-stats').innerHTML =
-    statHtml('Revenue this month', money(income),
+  const statsEl = document.getElementById('dash-stats');
+  statsEl.innerHTML =
+    statHtml('Revenue this month', statMoney(income),
       `net ${money(net)} after ${money(costs)} costs`) +
-    statHtml('Pipeline value', money(pipelineValue),
+    statHtml('Pipeline value', statMoney(pipelineValue),
       `${open.length} open deal${open.length === 1 ? '' : 's'}`) +
-    statHtml('Active projects', String(active.length),
+    statHtml('Active projects', statInt(active.length),
       `${inProduction} in production`) +
-    statHtml('Due in 7 days', String(dueContent.length + dueDeals.length),
+    statHtml('Due in 7 days', statInt(dueContent.length + dueDeals.length),
       `${dueContent.length} post${dueContent.length === 1 ? '' : 's'} · ${dueDeals.length} deal deadline${dueDeals.length === 1 ? '' : 's'}`);
+  runCountUps(statsEl);
 }
 
 /* ── Action items ────────────────────────────────────────── */
