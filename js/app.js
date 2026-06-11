@@ -3,6 +3,7 @@
 import { DEMO_MODE } from './supabase.js';
 import { defineRoutes, startRouter, render } from './router.js';
 import { initAuth, bindAuthForm, signOut } from './auth.js';
+import { initAppLock, openPrivacySheet } from './applock.js';
 import { expandRecurring, resetDemo } from './store.js';
 import { initials } from './ui.js';
 import { toast } from './toast.js';
@@ -38,6 +39,7 @@ function showApp(user) {
   if (!routerStarted) {
     routerStarted = true;
     startRouter();
+    initAppLock();
     expandRecurring()
       .then((created) => {
         if (created.length) toast(`${created.length} recurring transaction${created.length > 1 ? 's' : ''} added to the ledger.`);
@@ -58,6 +60,7 @@ initAuth((user) => (user ? showApp(user) : showGate()));
 bindAuthForm();
 
 document.getElementById('signout-btn').addEventListener('click', signOut);
+document.getElementById('privacy-btn').addEventListener('click', openPrivacySheet);
 
 if (DEMO_MODE) {
   const pill = document.getElementById('demo-pill');

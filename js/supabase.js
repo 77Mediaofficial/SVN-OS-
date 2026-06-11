@@ -12,7 +12,8 @@ export const DEMO_MODE =
 
 let client = null;
 if (!DEMO_MODE) {
-  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+  // Pinned exact version — bump deliberately, never auto-upgrade a CDN dep.
+  const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.45.4');
   client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: true, autoRefreshToken: true },
   });

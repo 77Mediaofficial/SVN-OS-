@@ -51,6 +51,33 @@ non-localhost hosts, so local development never fights a stale cache.
 | 4 | Create a GitHub repo and push (source control) | ☐ |
 | 5 | Sign up in the deployed app, confirm RLS by checking another account sees nothing | ☐ |
 
+## Security & privacy
+
+The data boundary is **Supabase auth + Postgres row-level security**: every
+table enforces `auth.uid() = user_id` for read and write, length-checked
+columns resist junk-data abuse, and the only public surface is profiles that
+have explicitly set a username. On top of that:
+
+- **App Lock** — gate the UI behind the device's screen lock (Face ID /
+  fingerprint / Windows Hello via WebAuthn platform authenticators) or a PIN
+  stored only as PBKDF2-SHA-256 (210k iterations, per-device salt). Auto-locks
+  after 5 minutes idle or 30 seconds backgrounded; the app blurs instantly in
+  the app switcher, iOS-style. It's a per-device privacy screen — forgetting
+  the PIN never loses data (erase the device, sign back in).
+- **Privacy sheet** (shield icon, sidebar) — one place to enable the lock,
+  **export everything as JSON**, or **erase this device** (local data, drafts,
+  caches, session).
+- **No third parties** — fonts are self-hosted, the single CDN dependency
+  (supabase-js) is version-pinned, and there are no analytics or trackers.
+  In demo mode the app makes zero network requests beyond its own files.
+- **Hard headers** (`vercel.json`, mirrored by the dev server): a strict
+  Content-Security-Policy, `frame-ancestors 'none'`, `nosniff`,
+  `Referrer-Policy: no-referrer`, HSTS, COOP, and a deny-by-default
+  Permissions-Policy.
+- **XSS hygiene** — all user content rendered through one escaper; toasts are
+  text-only; the service worker caches same-origin GETs only (API responses
+  are never cached).
+
 ## Project structure
 
 ```
@@ -62,6 +89,7 @@ js/
   supabase.js           connection utility + DEMO_MODE switch
   store.js              data layer: Supabase repos / localStorage demo seed
   auth.js               email+password auth, auth gate form
+  applock.js            App Lock (WebAuthn/PIN) + privacy sheet
   domain.js             stages, platforms, statuses, categories
   drag.js               pointer drag & drop (kanban + calendar)
   toast.js, ui.js       notifications, formatting, dialogs

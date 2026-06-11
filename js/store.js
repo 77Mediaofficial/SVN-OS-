@@ -173,6 +173,14 @@ export const projects = makeRepo('content_projects', 'projects');
 export const deals = makeRepo('brand_deals', 'deals');
 export const transactions = makeRepo('transactions', 'transactions', { orderBy: 'occurred_at' });
 
+export async function getProfile() {
+  if (DEMO_MODE) return { ...demo().profile };
+  const { data, error } = await supabase
+    .from('profiles').select('*').eq('id', userId).single();
+  if (error) throw error;
+  return data;
+}
+
 /* ── Recurring transactions ──────────────────────────────────
    Parents carry recurrence ≠ 'none'; due occurrences are
    materialised as child rows whenever the app boots. */

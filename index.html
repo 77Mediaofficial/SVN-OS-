@@ -6,6 +6,7 @@
   <title>SVN OS — Creator Operating System</title>
   <meta name="description" content="One quiet place to run a creative business: content pipeline, posting calendar, brand deals, and income ledger." />
   <meta name="theme-color" content="#0a0a09" />
+  <meta name="referrer" content="no-referrer" />
 
   <meta property="og:title" content="SVN OS — Creator Operating System" />
   <meta property="og:description" content="Content pipeline, posting calendar, brand deals, and ledger — one place." />
@@ -19,10 +20,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="SVN OS" />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Spline+Sans+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
+  <link rel="stylesheet" href="/css/fonts.css" />
   <link rel="stylesheet" href="/css/main.css" />
 </head>
 <body>
@@ -90,6 +88,9 @@
         <div class="user-chip">
           <span class="avatar" id="user-avatar">—</span>
           <span class="user-name" id="user-name">—</span>
+          <button class="iconbtn" id="privacy-btn" title="Privacy &amp; security" aria-label="Privacy and security">
+            <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M9 1.8 15 4v4.6c0 3.8-2.6 6.4-6 7.6-3.4-1.2-6-3.8-6-7.6V4Z"/><path d="M6.4 9.1l1.8 1.8 3.4-3.6"/></svg>
+          </button>
           <button class="iconbtn" id="signout-btn" title="Sign out" aria-label="Sign out">
             <svg viewBox="0 0 18 18" aria-hidden="true"><path d="M11.5 6V3.5a1 1 0 0 0-1-1h-7a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h7a1 1 0 0 0 1-1V12"/><path d="M7 9h9.5M13.5 6l3 3-3 3"/></svg>
           </button>
@@ -101,6 +102,88 @@
       <div id="outlet" class="view" tabindex="-1"></div>
     </main>
   </div>
+
+  <!-- ── App Lock screen ── -->
+  <div id="lock-screen" class="lock-screen" hidden role="dialog" aria-modal="true" aria-label="App locked">
+    <div class="lock-panel">
+      <div class="lock-glyph" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><rect x="4.5" y="10" width="15" height="10" rx="2.4"/><path d="M8 10V7.2A4 4 0 0 1 16 7.2V10"/><circle cx="12" cy="15" r="1.4"/></svg>
+      </div>
+      <p class="kicker lock-kicker">SVN OS</p>
+      <h2 class="lock-title">Locked<span class="title-dot">.</span></h2>
+      <p class="lock-sub" id="lock-sub">Unlock with your device screen lock.</p>
+
+      <button class="btn btn-primary btn-block" id="lock-bio-btn">Unlock</button>
+      <form id="lock-pin-form" class="lock-pin-form" hidden>
+        <input id="lock-pin" type="password" inputmode="numeric" autocomplete="off"
+               maxlength="8" placeholder="••••" aria-label="PIN" />
+        <button class="btn btn-primary btn-block" type="submit">Unlock</button>
+      </form>
+      <p class="auth-error" id="lock-error" hidden></p>
+      <button class="linklike lock-escape" id="lock-escape">Forgot? Erase this device's local data</button>
+    </div>
+  </div>
+
+  <!-- ── Privacy & Security sheet ── -->
+  <dialog class="modal" id="privacy-modal">
+    <header class="modal-head">
+      <h2 class="modal-title">Privacy &amp; Security<span class="title-dot">.</span></h2>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+    </header>
+
+    <div class="priv-row">
+      <div class="priv-body">
+        <p class="priv-title">App Lock</p>
+        <p class="priv-sub" id="priv-lock-sub">Gate the app behind your device's screen lock or a PIN. Auto-locks after 5 minutes idle or 30 seconds in the background.</p>
+      </div>
+      <button class="btn" id="priv-lock-btn">Enable</button>
+    </div>
+
+    <div class="priv-row">
+      <div class="priv-body">
+        <p class="priv-title">Export my data</p>
+        <p class="priv-sub">Download everything this account stores — projects, deals, transactions, profile — as JSON.</p>
+      </div>
+      <button class="btn" id="priv-export-btn">Export</button>
+    </div>
+
+    <div class="priv-row">
+      <div class="priv-body">
+        <p class="priv-title">Erase local data</p>
+        <p class="priv-sub">Wipe this device: cached data, drafts, app-lock settings, and session. Signs you out.</p>
+      </div>
+      <button class="btn btn-danger" id="priv-erase-btn">Erase</button>
+    </div>
+
+    <p class="priv-foot">Every row in the database is isolated to your account by Postgres row-level security. No analytics, no trackers, no third-party requests — fonts and code are served first-party.</p>
+  </dialog>
+
+  <!-- ── App Lock setup ── -->
+  <dialog class="modal modal-confirm" id="lock-setup-modal">
+    <header class="modal-head">
+      <h2 class="modal-title">Enable App Lock<span class="title-dot">.</span></h2>
+      <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
+    </header>
+    <p class="confirm-msg" id="lock-setup-sub">Use your device's screen lock — Face ID, fingerprint, Windows Hello — or set a PIN.</p>
+
+    <div id="lock-pin-fields" hidden>
+      <div class="field">
+        <label for="setup-pin">Choose a 4–8 digit PIN</label>
+        <input id="setup-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" />
+      </div>
+      <div class="field">
+        <label for="setup-pin2">Repeat PIN</label>
+        <input id="setup-pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="8" />
+      </div>
+    </div>
+    <p class="auth-error" id="lock-setup-error" hidden></p>
+
+    <div class="modal-actions">
+      <button type="button" class="btn" data-close>Cancel</button>
+      <button type="button" class="btn" id="lock-use-pin">Use a PIN</button>
+      <button type="button" class="btn btn-primary" id="lock-use-bio">Use device lock</button>
+    </div>
+  </dialog>
 
   <div id="toast-root" class="toast-root" aria-live="polite"></div>
 

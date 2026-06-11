@@ -88,7 +88,7 @@ function shift(months) {
 
 function chipHtml(p) {
   return `
-    <button type="button" class="cal-chip ${p.status === 'published' ? 'is-published' : ''}" data-id="${p.id}">
+    <button type="button" class="cal-chip ${p.status === 'published' ? 'is-published' : ''}" data-id="${esc(p.id)}">
       <span class="dot tone-${stageTone(p.status)}"></span>
       <span class="chip-title">${esc(p.title)}</span>
     </button>`;

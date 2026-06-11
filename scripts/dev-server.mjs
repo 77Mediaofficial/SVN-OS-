@@ -14,6 +14,23 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const port = Number(process.argv[2]) || 4173;
 
+/* Same security headers as vercel.json (minus HSTS/upgrade-insecure-requests,
+   which don't apply over plain-http localhost) so CSP breakage shows up in dev. */
+const SECURITY_HEADERS = {
+  'Content-Security-Policy':
+    "default-src 'self'; script-src 'self' https://esm.sh; style-src 'self' 'unsafe-inline'; " +
+    "font-src 'self'; img-src 'self' data: blob:; " +
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://esm.sh; " +
+    "worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; " +
+    "form-action 'self'; frame-ancestors 'none'",
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'no-referrer',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Permissions-Policy':
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()',
+};
+
 const MIME = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -28,6 +45,7 @@ const MIME = {
   '.csv': 'text/csv; charset=utf-8',
   '.map': 'application/json',
   '.woff2': 'font/woff2',
+  '.sql': 'text/plain; charset=utf-8',
 };
 
 createServer(async (req, res) => {
@@ -44,6 +62,7 @@ createServer(async (req, res) => {
     res.writeHead(200, {
       'Content-Type': MIME[extname(filePath).toLowerCase()] ?? 'application/octet-stream',
       'Cache-Control': 'no-store',
+      ...SECURITY_HEADERS,
     });
     res.end(body);
   } catch (err) {

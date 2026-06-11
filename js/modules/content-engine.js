@@ -85,7 +85,7 @@ function cardHtml(p) {
     .map((t) => `<span class="tagchip">${esc(t)}</span>`).join('');
 
   return `
-    <button type="button" class="kcard" data-id="${p.id}">
+    <button type="button" class="kcard" data-id="${esc(p.id)}">
       <span class="kcard-title">${esc(p.title)}</span>
       <span class="kcard-meta">
         <span class="badge">${platform?.badge ?? '—'}</span>

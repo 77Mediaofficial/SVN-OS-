@@ -2,9 +2,21 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": false,
   "rewrites": [
-    { "source": "/((?!js/|css/|pages/|sql/|docs/|sw\\.js|manifest\\.json|icon\\.svg|favicon\\.ico).*)", "destination": "/index.html" }
+    { "source": "/((?!js/|css/|fonts/|pages/|sql/|docs/|scripts/|sw\\.js|manifest\\.json|icon\\.svg|icon-192\\.png|icon-512\\.png|favicon\\.ico).*)", "destination": "/index.html" }
   ],
   "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' https://esm.sh; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://esm.sh; worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests" },
+        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=(), interest-cohort=()" }
+      ]
+    },
     {
       "source": "/sw.js",
       "headers": [
@@ -12,7 +24,7 @@
       ]
     },
     {
-      "source": "/(css|js)/(.*)",
+      "source": "/(css|js|fonts)/(.*)",
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=3600, stale-while-revalidate=86400" }
       ]

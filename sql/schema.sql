@@ -113,7 +113,11 @@ create table public.content_projects (
   published_at  timestamptz,
   tags          text[] not null default '{}',
   created_at    timestamptz not null default now(),
-  updated_at    timestamptz not null default now()
+  updated_at    timestamptz not null default now(),
+  constraint content_title_length check (char_length(title) between 1 and 200),
+  constraint content_description_length check (description is null or char_length(description) <= 5000),
+  constraint content_notes_length check (notes is null or char_length(notes) <= 5000),
+  constraint content_tags_count check (cardinality(tags) <= 24)
 );
 
 create index content_projects_user_idx      on public.content_projects (user_id);
@@ -151,7 +155,13 @@ create table public.brand_deals (
   notes          text,
   tags           text[] not null default '{}',
   created_at     timestamptz not null default now(),
-  updated_at     timestamptz not null default now()
+  updated_at     timestamptz not null default now(),
+  constraint deal_brand_length check (char_length(brand_name) between 1 and 120),
+  constraint deal_contact_name_length check (contact_name is null or char_length(contact_name) <= 120),
+  constraint deal_contact_email_length check (contact_email is null or char_length(contact_email) <= 254),
+  constraint deal_notes_length check (notes is null or char_length(notes) <= 5000),
+  constraint deal_tags_count check (cardinality(tags) <= 24),
+  constraint deal_value_positive check (value >= 0)
 );
 
 create index brand_deals_user_idx     on public.brand_deals (user_id);
@@ -191,7 +201,8 @@ create table public.transactions (
   parent_transaction_id  uuid references public.transactions (id) on delete set null,
   deal_id                uuid references public.brand_deals (id) on delete set null,
   created_at             timestamptz not null default now(),
-  updated_at             timestamptz not null default now()
+  updated_at             timestamptz not null default now(),
+  constraint txn_description_length check (char_length(description) between 1 and 300)
 );
 
 create index transactions_user_idx     on public.transactions (user_id);
