@@ -748,19 +748,31 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
 .cal-wrap { padding: 18px; }
 
 .cal-weekdays {
-  display: grid; grid-template-columns: repeat(7, 1fr);
+  display: grid; grid-template-columns: 34px repeat(7, 1fr);
   padding: 0 0 10px;
   font-size: 0.6rem;
   text-transform: uppercase; letter-spacing: 0.2em;
   color: var(--muted);
 }
 .cal-weekdays span { padding-left: 10px; }
+.cal-wk-head { padding-left: 0 !important; text-align: center; color: var(--hairline-strong); }
 
 .cal-grid {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
+  grid-template-columns: 34px repeat(7, 1fr);
   border-top: 1px solid var(--hairline);
   border-left: 1px solid var(--hairline);
+}
+
+.cal-week {
+  border-right: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  background: var(--bg-deep);
+  display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 9px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  color: var(--muted);
 }
 
 .cal-cell {
@@ -1099,6 +1111,140 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
     white-space: pre-line;
   }
 }
+
+/* ── Filter chips & search ────────────────────────────────── */
+
+.filterbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  margin-bottom: 18px;
+}
+.chip {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  color: var(--dim);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 999px;
+  padding: 6px 13px;
+  white-space: nowrap;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.chip:hover { color: var(--text); border-color: var(--dim); }
+.chip.is-active {
+  color: var(--brass-bright);
+  border-color: var(--brass-faint);
+  background: var(--brass-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+.chips-inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.chip .chip-n { color: var(--muted); margin-left: 5px; }
+.chip.is-active .chip-n { color: var(--brass); }
+
+.filter-search {
+  flex: 1; min-width: 150px; max-width: 280px;
+  margin-left: auto;
+}
+.filter-search input {
+  font-size: 0.82rem;
+  padding: 7px 12px 7px 30px;
+  background:
+    var(--bg-deep)
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='13' height='13' fill='none' stroke='%23615e55' stroke-width='1.5'%3E%3Ccircle cx='5.5' cy='5.5' r='4'/%3E%3Cpath d='m9 9 3 3' stroke-linecap='round'/%3E%3C/svg%3E")
+    no-repeat 10px center;
+}
+
+/* ── Conversion funnel ────────────────────────────────────── */
+
+.funnel { display: flex; flex-direction: column; gap: 9px; }
+.funnel-row { display: grid; grid-template-columns: 96px 1fr 80px; gap: 12px; align-items: center; }
+.funnel-label { font-size: 0.74rem; color: var(--dim); white-space: nowrap; }
+.funnel-bar-wrap {
+  background: var(--surface-3);
+  border-radius: var(--r-sm);
+  height: 26px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.funnel-bar {
+  height: 100%;
+  border-radius: var(--r-sm);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--brass) 48%, #241f18), var(--brass));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition: width 0.6s var(--ease);
+  min-width: 3px;
+}
+.funnel-num {
+  font-family: var(--font-mono); font-size: 0.72rem;
+  color: var(--dim); text-align: right; white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Goal rings ───────────────────────────────────────────── */
+
+.rings { display: flex; gap: 18px; flex-wrap: wrap; }
+.ring-card {
+  flex: 1; min-width: 130px;
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 6px 0;
+}
+.ring { width: 96px; height: 96px; position: relative; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-bg { fill: none; stroke: var(--surface-3); stroke-width: 7; }
+/* Rendered at the final offset directly — a progress ring must read
+   correctly in any frame, so no entrance animation here. */
+.ring-fill {
+  fill: none;
+  stroke: url(#ringbrass);
+  stroke-width: 7;
+  stroke-linecap: round;
+}
+.ring-fill.is-done { stroke: var(--tone-green); }
+.ring-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.ring-pct { font-family: var(--font-display); font-size: 1.5rem; line-height: 1; }
+.ring-cap { font-size: 0.64rem; color: var(--muted); margin-top: 2px; }
+.ring-label { font-size: 0.78rem; color: var(--dim); text-align: center; }
+.ring-val { font-family: var(--font-mono); font-size: 0.68rem; color: var(--muted); }
+
+/* ── Settings ─────────────────────────────────────────────── */
+
+.form-actions { display: flex; justify-content: flex-end; margin-top: 4px; }
+
+.setting-row {
+  display: flex; align-items: center; gap: 18px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-body { flex: 1; min-width: 0; }
+.setting-title { font-size: 0.9rem; font-weight: 500; }
+.setting-sub { font-size: 0.74rem; color: var(--muted); margin-top: 2px; line-height: 1.5; }
+.setting-row .radio-pills { flex: none; width: 240px; }
+.setting-row .btn { flex: none; min-width: 92px; }
+
+@media (max-width: 640px) {
+  .setting-row { flex-direction: column; align-items: stretch; }
+  .setting-row .radio-pills, .setting-row .btn { width: 100%; }
+}
+
+/* ── Appearance modes ─────────────────────────────────────── */
+
+html.text-lg { font-size: 16.5px; }
+
+html.compact .view { padding-top: 30px; padding-bottom: 80px; }
+html.compact .page-head { margin-bottom: 22px; }
+html.compact .panel { padding: 18px; margin-bottom: 12px; }
+html.compact .grid-main { gap: 12px; }
+html.compact .stat { padding: 16px 18px 14px; }
+html.compact .stat-label { margin-bottom: 7px; }
+html.compact .stat-band { margin-bottom: 12px; }
+html.compact .table td { padding: 9px 26px; }
+html.compact .table th { padding: 8px 26px; }
+html.compact .row-item { padding: 9px 6px; }
+html.compact .kcard { padding: 11px 12px 10px; }
+html.compact .cal-cell { min-height: 92px; }
 
 /* ── App Lock & privacy shield ────────────────────────────── */
 

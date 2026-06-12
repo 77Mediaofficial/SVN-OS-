@@ -26,6 +26,17 @@ export function dayKey(value) {
 
 export const todayKey = () => dayKey(new Date());
 
+/* ISO-8601 week number (weeks start Monday; week 1 contains the year's
+   first Thursday). Shared by the dashboard slate and the calendar. */
+export function isoWeek(value) {
+  const src = value instanceof Date ? value : new Date(value);
+  const d = new Date(Date.UTC(src.getFullYear(), src.getMonth(), src.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+}
+
 export function fmtDate(value, { withYear = false } = {}) {
   if (!value) return '—';
   const d = value instanceof Date ? value : new Date(value);

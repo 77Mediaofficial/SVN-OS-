@@ -6,7 +6,7 @@ import { projects } from '../store.js';
 import { toast } from '../toast.js';
 import { enableDrag } from '../drag.js';
 import {
-  esc, dayKey, todayKey, toLocalInput, formData, bindDialog, confirmAction,
+  esc, dayKey, todayKey, toLocalInput, formData, bindDialog, confirmAction, isoWeek,
 } from '../ui.js';
 import { CONTENT_STAGES, PLATFORMS, stageTone, optionsHtml } from '../domain.js';
 
@@ -15,6 +15,10 @@ const MAX_CHIPS = 3;
 let rows = [];
 let cursor = startOfMonth(new Date());
 let editingId = null;
+let platformFilter = 'all';
+
+const visibleRows = () =>
+  platformFilter === 'all' ? rows : rows.filter((p) => p.platform === platformFilter);
 
 function startOfMonth(d) { return new Date(d.getFullYear(), d.getMonth(), 1); }
 
@@ -30,6 +34,13 @@ export async function init() {
   rows = await projects.list();
   cursor = startOfMonth(new Date());
   renderMonth();
+
+  document.getElementById('cal-filters').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-platform]');
+    if (!chip) return;
+    platformFilter = chip.dataset.platform;
+    renderMonth();
+  });
 
   document.getElementById('cal-prev').addEventListener('click', () => shift(-1));
   document.getElementById('cal-next').addEventListener('click', () => shift(1));
@@ -94,13 +105,25 @@ function chipHtml(p) {
     </button>`;
 }
 
+function renderFilters() {
+  const present = new Set(rows.filter((p) => p.scheduled_at).map((p) => p.platform));
+  if (platformFilter !== 'all' && !present.has(platformFilter)) platformFilter = 'all';
+
+  const chips = [{ key: 'all', label: 'All' }, ...PLATFORMS.filter((p) => present.has(p.key))];
+  document.getElementById('cal-filters').innerHTML = chips.map((c) =>
+    `<button type="button" class="chip ${c.key === platformFilter ? 'is-active' : ''}" data-platform="${c.key}">${c.label}</button>`
+  ).join('');
+}
+
 function renderMonth() {
+  renderFilters();
+
   const monthName = cursor.toLocaleDateString('en-GB', { month: 'long' });
   document.getElementById('cal-title').innerHTML =
     `${monthName} <span class="title-dim">${cursor.getFullYear()}</span>`;
 
   const byDay = new Map();
-  for (const p of rows) {
+  for (const p of visibleRows()) {
     if (!p.scheduled_at) continue;
     const key = dayKey(p.scheduled_at);
     if (!byDay.has(key)) byDay.set(key, []);
@@ -123,6 +146,7 @@ function renderMonth() {
   for (let i = 0; i < 42; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
+    if (i % 7 === 0) cells.push(`<div class="cal-week"><span>${isoWeek(d)}</span></div>`);
     const key = dayKey(d);
     const items = byDay.get(key) ?? [];
     const shown = items.slice(0, MAX_CHIPS);

@@ -7,7 +7,7 @@ import {
   esc, money, todayKey, formData, bindDialog,
   statMoney, statInt, runCountUps,
 } from '../ui.js';
-import { CATEGORY_BY_KEY } from '../domain.js';
+import { CATEGORY_BY_KEY, DEAL_STATUS_BY_KEY } from '../domain.js';
 import { toast } from '../toast.js';
 
 let txns = [];
@@ -74,9 +74,44 @@ function renderAll() {
   const months = monthsBack(range);
   renderStats(months);
   renderChart(months);
+  renderFunnel();
   renderCats(months);
   renderGoals();
   renderOutput(months);
+}
+
+/* ── Deal conversion funnel ──────────────────────────────── */
+
+const FUNNEL_STAGES = ['lead', 'negotiating', 'signed', 'delivered', 'paid'];
+
+function renderFunnel() {
+  const active = dls.filter((d) => d.status !== 'lost');
+  const lost = dls.length - active.length;
+  const reached = FUNNEL_STAGES.map((_, i) =>
+    active.filter((d) => FUNNEL_STAGES.indexOf(d.status) >= i).length);
+  const top = Math.max(1, reached[0]);
+
+  document.getElementById('ana-funnel-count').textContent =
+    dls.length ? `${active.length} active${lost ? ` · ${lost} lost` : ''}` : '';
+
+  const el = document.getElementById('ana-funnel');
+  if (!dls.length) {
+    el.innerHTML = `<div class="empty">
+      <p class="empty-title">No deals yet.</p>
+      <p class="empty-sub">Track sponsorships in Deals &amp; Ledger.</p></div>`;
+    return;
+  }
+
+  el.innerHTML = FUNNEL_STAGES.map((stage, i) => {
+    const n = reached[i];
+    const pct = Math.round((n / top) * 100);
+    return `
+      <div class="funnel-row">
+        <span class="funnel-label">${DEAL_STATUS_BY_KEY[stage].label}</span>
+        <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${Math.max(3, (n / top) * 100)}%"></div></div>
+        <span class="funnel-num">${n} · ${pct}%</span>
+      </div>`;
+  }).join('');
 }
 
 /* ── Stat band ───────────────────────────────────────────── */
@@ -167,17 +202,23 @@ function renderCats(months) {
 
 /* ── Goals ───────────────────────────────────────────────── */
 
-function goalRow(label, value, target, fmt) {
+const RING_C = 2 * Math.PI * 34; // circle radius 34
+
+function ringHtml(label, value, target, fmt) {
   const pct = target > 0 ? Math.round((value / target) * 100) : 0;
+  const off = RING_C * (1 - Math.min(1, pct / 100));
   return `
-    <div class="goal-row">
-      <div class="goal-head">
-        <span class="bar-label">${label}</span>
-        <span class="goal-meta">${fmt(value)} / ${fmt(target)} · ${pct}%</span>
+    <div class="ring-card">
+      <div class="ring">
+        <svg viewBox="0 0 80 80" aria-hidden="true">
+          <circle class="ring-bg" cx="40" cy="40" r="34"></circle>
+          <circle class="ring-fill ${pct >= 100 ? 'is-done' : ''}" cx="40" cy="40" r="34"
+                  style="stroke-dasharray:${RING_C.toFixed(1)};stroke-dashoffset:${off.toFixed(1)}"></circle>
+        </svg>
+        <div class="ring-center"><span class="ring-pct">${pct}%</span></div>
       </div>
-      <div class="bar-track goal-track">
-        <span class="bar-fill ${pct >= 100 ? 'goal-done' : ''}" style="width:${Math.min(100, pct)}%"></span>
-      </div>
+      <div class="ring-label">${label}</div>
+      <div class="ring-val">${fmt(value)} / ${fmt(target)}</div>
     </div>`;
 }
 
@@ -187,22 +228,35 @@ function renderGoals() {
   const publishedThisMonth = projs.filter((p) =>
     p.published_at && String(p.published_at).slice(0, 7) === monthKey).length;
 
+  const el = document.getElementById('ana-goals');
   const hasTargets = prefs.goal_monthly_revenue > 0 || prefs.goal_monthly_posts > 0;
 
-  document.getElementById('ana-goals').innerHTML = hasTargets
-    ? [
-        prefs.goal_monthly_revenue > 0
-          ? goalRow('Revenue', incomeThisMonth, Number(prefs.goal_monthly_revenue), (v) => money(v))
-          : '',
-        prefs.goal_monthly_posts > 0
-          ? goalRow('Posts published', publishedThisMonth, Number(prefs.goal_monthly_posts), (v) => String(Math.round(v)))
-          : '',
-      ].join('')
-    : `<div class="empty">
+  if (!hasTargets) {
+    el.innerHTML = `<div class="empty">
          <p class="empty-title">No targets set.</p>
          <p class="empty-sub">Give the month a number to beat.</p>
          <button class="btn btn-primary" data-set-targets type="button">Set targets</button>
        </div>`;
+    return;
+  }
+
+  const rings = [
+    prefs.goal_monthly_revenue > 0
+      ? ringHtml('Revenue', incomeThisMonth, Number(prefs.goal_monthly_revenue), (v) => money(v))
+      : '',
+    prefs.goal_monthly_posts > 0
+      ? ringHtml('Posts', publishedThisMonth, Number(prefs.goal_monthly_posts), (v) => String(Math.round(v)))
+      : '',
+  ].join('');
+
+  el.innerHTML =
+    `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+       <linearGradient id="ringbrass" x1="0" y1="0" x2="1" y2="1">
+         <stop offset="0" stop-color="#e9cb98"></stop>
+         <stop offset="1" stop-color="#a8895d"></stop>
+       </linearGradient>
+     </defs></svg>
+     <div class="rings">${rings}</div>`;
 }
 
 function openGoals() {

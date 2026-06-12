@@ -23,6 +23,7 @@ let txnRows = [];
 let activeTab = 'deals';
 let editingDealId = null;
 let editingTxnId = null;
+let statusFilter = 'all';
 
 export async function init() {
   document.getElementById('df-status').innerHTML = optionsHtml(DEAL_STATUSES, 'lead');
@@ -48,6 +49,12 @@ export async function init() {
   document.getElementById('ledger-empty-cta').addEventListener('click', () => openTxnModal(null));
   document.getElementById('export-csv').addEventListener('click', exportCsv);
 
+  document.getElementById('deal-filters').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-status]');
+    if (!chip) return;
+    statusFilter = chip.dataset.status;
+    renderDeals();
+  });
   document.getElementById('deals-body').addEventListener('click', (e) => {
     const tr = e.target.closest('tr[data-id]');
     if (tr) openDealModal(tr.dataset.id);
@@ -114,6 +121,8 @@ function renderDeals() {
     statHtml('Paid this year', statMoney(sum(paidThisYear)), `${paidThisYear.length} deal${paidThisYear.length === 1 ? '' : 's'} closed`);
   runCountUps(dealStatsEl);
 
+  renderDealFilters();
+
   const sorted = [...dealRows].sort((a, b) => {
     const rank = STATUS_RANK[a.status] - STATUS_RANK[b.status];
     if (rank !== 0) return rank;
@@ -122,9 +131,17 @@ function renderDeals() {
     if (b.deadline) return 1;
     return 0;
   });
+  const display = statusFilter === 'all'
+    ? sorted
+    : sorted.filter((d) => d.status === statusFilter);
 
   const body = document.getElementById('deals-body');
-  body.innerHTML = sorted.map((d) => {
+  if (dealRows.length && !display.length) {
+    body.innerHTML = `<tr><td colspan="6" class="tone-dim" style="text-align:center;padding:28px">No ${DEAL_STATUS_BY_KEY[statusFilter]?.label.toLowerCase() ?? ''} deals.</td></tr>`;
+    document.getElementById('deals-empty').hidden = true;
+    return;
+  }
+  body.innerHTML = display.map((d) => {
     const status = DEAL_STATUS_BY_KEY[d.status];
     const isClosed = d.status === 'paid' || d.status === 'lost';
     const rel = isClosed
@@ -146,6 +163,18 @@ function renderDeals() {
   }).join('');
 
   document.getElementById('deals-empty').hidden = dealRows.length > 0;
+}
+
+function renderDealFilters() {
+  const counts = dealRows.reduce((acc, d) => { acc[d.status] = (acc[d.status] || 0) + 1; return acc; }, {});
+  if (statusFilter !== 'all' && !counts[statusFilter]) statusFilter = 'all';
+  const chips = [
+    { key: 'all', label: 'All', n: dealRows.length },
+    ...DEAL_STATUSES.filter((s) => counts[s.key]).map((s) => ({ key: s.key, label: s.label, n: counts[s.key] })),
+  ];
+  document.getElementById('deal-filters').innerHTML = chips.map((c) =>
+    `<button type="button" class="chip ${c.key === statusFilter ? 'is-active' : ''}" data-status="${c.key}">${c.label}<span class="chip-n">${c.n}</span></button>`
+  ).join('');
 }
 
 function openDealModal(id) {

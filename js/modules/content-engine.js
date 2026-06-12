@@ -15,6 +15,17 @@ import {
 
 let rows = [];
 let editingId = null;
+let platformFilter = 'all';
+let search = '';
+
+function visibleRows() {
+  const q = search.trim().toLowerCase();
+  return rows.filter((p) => {
+    if (platformFilter !== 'all' && p.platform !== platformFilter) return false;
+    if (q && !`${p.title} ${(p.tags || []).join(' ')}`.toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
 
 export async function init() {
   const board = document.getElementById('board');
@@ -29,6 +40,17 @@ export async function init() {
   renderBoard();
 
   document.getElementById('new-project-btn').addEventListener('click', () => openModal(null));
+
+  document.getElementById('ce-chips').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-platform]');
+    if (!chip) return;
+    platformFilter = chip.dataset.platform;
+    renderBoard();
+  });
+  document.getElementById('ce-search').addEventListener('input', (e) => {
+    search = e.target.value;
+    renderBoard();
+  });
 
   board.addEventListener('click', (e) => {
     const card = e.target.closest('.kcard');
@@ -95,13 +117,25 @@ function cardHtml(p) {
     </button>`;
 }
 
+function renderChips() {
+  const present = new Set(rows.map((p) => p.platform));
+  if (platformFilter !== 'all' && !present.has(platformFilter)) platformFilter = 'all';
+  const chips = [{ key: 'all', label: 'All' }, ...PLATFORMS.filter((p) => present.has(p.key))];
+  document.getElementById('ce-chips').innerHTML = chips.map((c) =>
+    `<button type="button" class="chip ${c.key === platformFilter ? 'is-active' : ''}" data-platform="${c.key}">${c.label}</button>`
+  ).join('');
+}
+
 function renderBoard() {
+  renderChips();
+  const visible = visibleRows();
+
   for (const stage of CONTENT_STAGES) {
     const list = document.querySelector(`.klist[data-status="${stage.key}"]`);
     const col = document.querySelector(`.kcol[data-status="${stage.key}"] .count`);
     if (!list) continue;
 
-    const inStage = rows
+    const inStage = visible
       .filter((p) => p.status === stage.key)
       .sort((a, b) => {
         if (a.scheduled_at && b.scheduled_at) return new Date(a.scheduled_at) - new Date(b.scheduled_at);

@@ -1,6 +1,6 @@
 /* SVN OS service worker — app-shell precache + runtime cache.
    Bump VERSION on every deploy to invalidate old caches. */
-const VERSION = 'svn-os-v3';
+const VERSION = 'svn-os-v4';
 const SHELL = [
   '/',
   '/index.html',
@@ -19,6 +19,7 @@ const SHELL = [
   '/js/router.js',
   '/js/domain.js',
   '/js/applock.js',
+  '/js/appearance.js',
   '/js/supabase.js',
   '/js/store.js',
   '/js/auth.js',
@@ -31,11 +32,13 @@ const SHELL = [
   '/js/modules/deals-ledger.js',
   '/js/modules/invoice.js',
   '/js/modules/analytics.js',
+  '/js/modules/settings.js',
   '/pages/dashboard.html',
   '/pages/content-engine.html',
   '/pages/calendar.html',
   '/pages/deals-ledger.html',
-  '/pages/analytics.html'
+  '/pages/analytics.html',
+  '/pages/settings.html'
 ];
 
 self.addEventListener('install', (event) => {

@@ -1,0 +1,84 @@
+<header class="page-head">
+  <p class="kicker">Workspace</p>
+  <h1 class="page-title">Settings<span class="title-dot">.</span></h1>
+</header>
+
+<section class="panel" aria-labelledby="profile-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="profile-label">Profile</h2>
+  </div>
+  <form id="profile-form" novalidate>
+    <div class="grid2">
+      <div class="field">
+        <label for="sf-name">Name</label>
+        <input id="sf-name" name="full_name" maxlength="120" autocomplete="name" placeholder="Your name" />
+      </div>
+      <div class="field">
+        <label for="sf-username">Username <span style="text-transform:none;letter-spacing:0">(for your public profile)</span></label>
+        <input id="sf-username" name="username" maxlength="30" autocomplete="off" placeholder="yourhandle" />
+      </div>
+    </div>
+    <div class="field">
+      <label for="sf-bio">Bio</label>
+      <textarea id="sf-bio" name="bio" rows="2" maxlength="280" placeholder="What you make, who you make it for."></textarea>
+    </div>
+    <div class="field">
+      <label for="sf-website">Website</label>
+      <input id="sf-website" name="website" type="url" maxlength="200" placeholder="https://yourstudio.com" />
+    </div>
+    <p class="auth-error" id="profile-error" hidden></p>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" id="profile-save">Save profile</button>
+    </div>
+  </form>
+</section>
+
+<section class="panel" aria-labelledby="appearance-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="appearance-label">Appearance</h2>
+  </div>
+
+  <div class="setting-row">
+    <div class="setting-body">
+      <p class="setting-title">Text size</p>
+      <p class="setting-sub">Comfortable reading at any distance.</p>
+    </div>
+    <div class="radio-pills" role="radiogroup" aria-label="Text size">
+      <label><input type="radio" name="textSize" value="normal" />Normal</label>
+      <label><input type="radio" name="textSize" value="large" />Large</label>
+    </div>
+  </div>
+
+  <div class="setting-row">
+    <div class="setting-body">
+      <p class="setting-title">Density</p>
+      <p class="setting-sub">Compact fits more on screen; comfortable gives it room to breathe.</p>
+    </div>
+    <div class="radio-pills" role="radiogroup" aria-label="Density">
+      <label><input type="radio" name="density" value="comfortable" />Comfortable</label>
+      <label><input type="radio" name="density" value="compact" />Compact</label>
+    </div>
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="account-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="account-label">Privacy &amp; account</h2>
+  </div>
+
+  <div class="setting-row">
+    <div class="setting-body">
+      <p class="setting-title">Privacy &amp; security</p>
+      <p class="setting-sub">App Lock, export your data, erase this device.</p>
+    </div>
+    <button class="btn" id="settings-privacy-btn" type="button">Open</button>
+  </div>
+
+  <div class="setting-row">
+    <div class="setting-body">
+      <p class="setting-title">Sign out</p>
+      <p class="setting-sub" id="settings-account-sub">End this session on this device.</p>
+    </div>
+    <button class="btn btn-danger" id="settings-signout-btn" type="button">Sign out</button>
+  </div>
+</section>

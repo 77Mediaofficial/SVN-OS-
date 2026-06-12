@@ -193,6 +193,19 @@ export async function getProfile() {
   return data;
 }
 
+export async function updateProfile(patch) {
+  if (DEMO_MODE) {
+    Object.assign(demo().profile, patch);
+    persistDemo();
+    return { ...demo().profile };
+  }
+  const { data, error } = await supabase
+    .from('profiles').update(patch).eq('id', userId)
+    .select().single();
+  if (error) throw error;
+  return data;
+}
+
 /* ── User preferences (business identity, goals, invoicing) ── */
 
 const DEFAULT_PREFS = {

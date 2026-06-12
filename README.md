@@ -90,6 +90,7 @@ js/
   store.js              data layer: Supabase repos / localStorage demo seed
   auth.js               email+password auth, auth gate form
   applock.js            App Lock (WebAuthn/PIN) + privacy sheet
+  appearance.js         device display prefs (text size, density)
   domain.js             stages, platforms, statuses, categories
   drag.js               pointer drag & drop (kanban + calendar)
   toast.js, ui.js       notifications, formatting, dialogs
@@ -103,10 +104,13 @@ vercel.json             SPA rewrites + cache headers
 ## What's here vs. the full build-progress vision
 
 Recreated so far: the four core modules (Dashboard, Content Engine kanban with
-drag, Calendar with drag-to-reschedule, Deals & Ledger with recurring
-transactions and CSV export), **Analytics** (monthly money chart, category mix,
-content output, win rate, 3/6/12-month ranges), **goals & business settings**
-(monthly targets with progress, feeding the dashboard), **client invoicing**
+drag, platform filter chips + search, Calendar with drag-to-reschedule, ISO
+week numbers and platform filters, Deals & Ledger with status filter chips,
+recurring transactions and CSV export), **Analytics** (monthly money chart,
+deal conversion funnel, category mix, content output, win rate, 3/6/12-month
+ranges, goal progress rings), **Settings** (profile editing, text-size +
+compact-density appearance modes, privacy & account), **goals & business
+settings** (monthly targets feeding the dashboard), **client invoicing**
 (print-ready PDF from any deal, auto-numbered, editable line items), the
 **paid-deal → ledger automation**, auth + RLS schema with `user_preferences`,
 App Lock + privacy sheet, PWA shell, demo seeder, responsive layout.
