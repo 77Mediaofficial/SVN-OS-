@@ -1,11 +1,12 @@
 /* SVN OS service worker — app-shell precache + runtime cache.
    Bump VERSION on every deploy to invalidate old caches. */
-const VERSION = 'svn-os-v4';
+const VERSION = 'svn-os-v5';
 const SHELL = [
   '/',
   '/index.html',
   '/manifest.json',
   '/icon.svg',
+  '/js/theme-boot.js',
   '/css/fonts.css',
   '/css/main.css',
   '/fonts/archivo-400.woff2',

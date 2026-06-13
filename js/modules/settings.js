@@ -25,6 +25,7 @@ export async function init() {
 
   // Reflect current appearance into the radio pills.
   const appearance = getAppearance();
+  selectPill('theme', appearance.theme);
   selectPill('textSize', appearance.textSize);
   selectPill('density', appearance.density);
 
@@ -66,7 +67,7 @@ export async function init() {
   });
 
   // Appearance pills apply immediately, no save button.
-  document.querySelectorAll('[name="textSize"], [name="density"]').forEach((input) => {
+  document.querySelectorAll('[name="theme"], [name="textSize"], [name="density"]').forEach((input) => {
     input.addEventListener('change', () => {
       setAppearance({ [input.name]: input.value });
     });
