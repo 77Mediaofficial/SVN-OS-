@@ -8,8 +8,10 @@ import { applyAppearance } from './appearance.js';
 import { expandRecurring, resetDemo } from './store.js';
 import { initials } from './ui.js';
 import { toast } from './toast.js';
+import { initSpotlight } from './spotlight.js';
 
 applyAppearance(); // before anything becomes visible — no flash
+initSpotlight();   // desktop-only cursor glow on cards (no-op on touch)
 
 const routes = [
   { path: '/',         nav: 'dashboard', title: 'Today',          page: 'pages/dashboard.html',      module: () => import('./modules/dashboard.js') },

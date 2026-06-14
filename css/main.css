@@ -66,6 +66,8 @@
   --veil: rgba(251, 251, 253, 0.72);
   --backdrop: rgba(20, 20, 28, 0.26);
   --input-shadow: inset 0 1px 1px rgba(17, 17, 26, 0.03);
+  --spot-sheen: rgba(28, 28, 30, 0.05);
+  --spot-edge: rgba(28, 28, 30, 0.16);
 
   --r-sm: 9px;
   --r-md: 13px;
@@ -125,6 +127,8 @@ html.theme-dark {
   --veil: rgba(8, 8, 7, 0.86);
   --backdrop: rgba(5, 5, 4, 0.72);
   --input-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  --spot-sheen: rgba(212, 175, 128, 0.14);
+  --spot-edge: rgba(212, 175, 128, 0.42);
 }
 
 /* ── Reset & base ─────────────────────────────────────────── */
@@ -1617,6 +1621,55 @@ body.drawer-open { overflow: hidden; }
 .cal-cell.cal-selected { background: var(--surface-2); }
 .cal-cell.cal-selected .cal-daynum { box-shadow: 0 0 0 2px var(--brass); color: var(--text); }
 .cal-cell.cal-today.cal-selected .cal-daynum { color: var(--bg); }
+
+/* ── Pointer spotlight — desktop fine-pointer only ─────────────
+   A soft glow that tracks the cursor across cards and panels.
+   js/spotlight.js feeds --mx/--my to the hovered card; the glow is
+   pure CSS. Hidden on touch and under reduced motion so phones and
+   the iOS build render none of it. */
+@media (hover: hover) and (pointer: fine) {
+  .panel, .kcard, .stat { position: relative; }
+
+  /* Interior sheen */
+  .panel::after, .kcard::after, .stat::after {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(240px circle at var(--mx, -200px) var(--my, -200px),
+                var(--spot-sheen), transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s var(--ease);
+    pointer-events: none;
+  }
+  .panel:hover::after, .kcard:hover::after, .stat:hover::after { opacity: 1; }
+
+  /* Pointer-lit hairline border (mask leaves only the 1px edge) */
+  .panel::before, .kcard::before {
+    content: "";
+    position: absolute; inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: radial-gradient(200px circle at var(--mx, -200px) var(--my, -200px),
+                var(--spot-edge), transparent 60%);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+            mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+    opacity: 0;
+    transition: opacity 0.4s var(--ease);
+    pointer-events: none;
+  }
+  .panel:hover::before, .kcard:hover::before { opacity: 1; }
+
+  /* The sheen must never sit above modal/drawer content. */
+  .modal .panel::after, .drawer .panel::after { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel::before, .panel::after,
+  .kcard::before, .kcard::after,
+  .stat::after { display: none; }
+}
 
 /* ── Responsive ───────────────────────────────────────────── */
 
