@@ -315,7 +315,7 @@ html.theme-dark .brand-os {
   color: var(--muted);
 }
 
-.nav { display: flex; flex-direction: column; gap: 2px; }
+.nav { display: flex; flex-direction: column; gap: 2px; position: relative; }
 
 .nav-link {
   display: flex; align-items: center; gap: 12px;
@@ -325,7 +325,7 @@ html.theme-dark .brand-os {
   font-size: 0.86rem;
   font-weight: 500;
   letter-spacing: 0.01em;
-  position: relative;
+  position: relative; z-index: 1;
   transition: color 0.15s var(--ease), background 0.15s var(--ease);
 }
 .nav-link svg {
@@ -335,12 +335,27 @@ html.theme-dark .brand-os {
   opacity: 0.85;
 }
 .nav-link:hover { color: var(--text); background: var(--surface); }
-.nav-link[aria-current="page"] {
-  color: var(--text);
+.nav-link[aria-current="page"] { color: var(--text); }
+
+/* Sliding active indicator — one pill glides between links instead of the
+   highlight snapping. Hand-ported Aceternity "moving highlight": the pill is
+   FLIP-translated to the active link's box via offset vars set in JS, so it
+   works for both the vertical rail and the horizontal mobile bar. */
+.nav-pill {
+  position: absolute; top: 0; left: 0; z-index: 0;
+  width: var(--pill-w, 0); height: var(--pill-h, 0);
+  transform: translate(var(--pill-x, 0), var(--pill-y, 0));
   background: var(--nav-active-bg);
   box-shadow: var(--panel-edge);
+  border-radius: var(--r-sm);
+  opacity: 0;
+  pointer-events: none;
+  transition: transform 0.36s cubic-bezier(0.34, 1.16, 0.42, 1),
+              width 0.3s var(--ease), height 0.3s var(--ease),
+              opacity 0.25s var(--ease);
 }
-.nav-link[aria-current="page"]::before {
+.nav-pill.is-ready { opacity: 1; }
+.nav-pill::before {
   content: "";
   position: absolute; left: -22px; top: 50%;
   width: 14px; height: 2px;
@@ -443,6 +458,21 @@ html.theme-dark .brand-os {
 .btn-danger:hover { background: rgba(238, 144, 137, 0.08); border-color: var(--tone-red); box-shadow: none; }
 
 .btn-block { width: 100%; }
+
+/* Primary-button shine — a single light sweep crosses the button on hover.
+   Hand-ported from 21st.dev "shiny button": pure CSS, hover/fine pointers
+   only, and removed entirely under reduced motion. */
+@media (hover: hover) and (pointer: fine) {
+  .btn-primary { position: relative; overflow: hidden; }
+  .btn-primary::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(105deg, transparent 36%,
+                rgba(255, 255, 255, 0.30) 50%, transparent 64%);
+    transform: translateX(-130%);
+    pointer-events: none;
+  }
+  .btn-primary:hover::after { transform: translateX(130%); transition: transform 0.6s var(--ease); }
+}
 
 .seg { display: inline-flex; gap: 6px; }
 
@@ -1669,6 +1699,8 @@ body.drawer-open { overflow: hidden; }
   .panel::before, .panel::after,
   .kcard::before, .kcard::after,
   .stat::after { display: none; }
+  .nav-pill { transition: opacity 0.2s var(--ease); }
+  .btn-primary::after { display: none; }
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
@@ -1699,7 +1731,7 @@ body.drawer-open { overflow: hidden; }
   }
   .nav::-webkit-scrollbar { display: none; }
   .nav-link { padding: 8px 10px; flex: none; font-size: 0.78rem; }
-  .nav-link[aria-current="page"]::before {
+  .nav-pill::before {
     left: 10px; right: 10px; top: auto; bottom: -1px;
     width: auto; height: 2px; transform: none;
   }

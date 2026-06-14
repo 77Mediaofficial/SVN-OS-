@@ -9,9 +9,11 @@ import { expandRecurring, resetDemo } from './store.js';
 import { initials } from './ui.js';
 import { toast } from './toast.js';
 import { initSpotlight } from './spotlight.js';
+import { initNavIndicator, moveNavPill } from './nav-indicator.js';
 
 applyAppearance(); // before anything becomes visible — no flash
 initSpotlight();   // desktop-only cursor glow on cards (no-op on touch)
+initNavIndicator(); // sliding active-link pill in the sidebar
 
 const routes = [
   { path: '/',         nav: 'dashboard', title: 'Today',          page: 'pages/dashboard.html',      module: () => import('./modules/dashboard.js') },
@@ -33,6 +35,7 @@ defineRoutes(routes, {
       if (a.dataset.nav === route.nav) a.setAttribute('aria-current', 'page');
       else a.removeAttribute('aria-current');
     });
+    moveNavPill(); // glide the active-link indicator to the new route
   },
 });
 
