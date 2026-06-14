@@ -782,6 +782,24 @@ button.row-item:hover, a.row-item:hover {
   border-bottom: 2px solid var(--brass);
 }
 
+/* Animated tab underline — one bar slides under the selected tab. Hand-ported
+   from the Aceternity / 21st "animated tabs": once JS wires it up (.has-underline)
+   the static per-tab border yields to the sliding bar. */
+.tabs.has-underline { position: relative; }
+.tabs.has-underline .tab[aria-selected="true"] {
+  border-image: none;
+  border-bottom-color: transparent;
+}
+.tab-underline {
+  position: absolute; left: 0; bottom: -1px;
+  height: 2px; width: var(--ul-w, 0);
+  transform: translateX(var(--ul-x, 0));
+  background: linear-gradient(90deg, var(--brass), var(--brass-deep));
+  pointer-events: none;
+  transition: transform 0.32s cubic-bezier(0.34, 1.16, 0.42, 1),
+              width 0.32s var(--ease);
+}
+
 /* ── Kanban board ─────────────────────────────────────────── */
 
 .board {
@@ -1700,6 +1718,7 @@ body.drawer-open { overflow: hidden; }
   .kcard::before, .kcard::after,
   .stat::after { display: none; }
   .nav-pill { transition: opacity 0.2s var(--ease); }
+  .tab-underline { transition: none; }
   .btn-primary::after { display: none; }
 }
 

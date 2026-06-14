@@ -6,6 +6,7 @@ import { deals, transactions } from '../store.js';
 import { initInvoice, openInvoice } from './invoice.js';
 import { toast } from '../toast.js';
 import { openDrawer, closeDrawer } from '../drawer.js';
+import { initTabUnderline } from '../tabs.js';
 import {
   esc, money, fmtDate, relDay, todayKey, formData, parseTags,
   bindDialog, confirmAction, statMoney, runCountUps,
@@ -38,6 +39,7 @@ export async function init() {
   renderDeals();
   renderLedger();
   syncTab();
+  initTabUnderline(); // sliding underline follows the Deals/Ledger selection
 
   document.getElementById('tab-deals').addEventListener('click', () => { activeTab = 'deals'; syncTab(); });
   document.getElementById('tab-ledger').addEventListener('click', () => { activeTab = 'ledger'; syncTab(); });
