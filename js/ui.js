@@ -129,6 +129,40 @@ export function runCountUps(scope) {
   });
 }
 
+/* ── Sparklines ──────────────────────────────────────────────
+   Compact monochrome trend line for a short numeric series
+   (e.g. six months of revenue). Ships at a fixed viewBox and is
+   themed entirely through CSS — .spark-area fills, .spark-line
+   strokes (non-scaling so it stays crisp at any width), and
+   .spark-dot marks the latest point — so one helper reads
+   correctly on white or warm-black. Returns '' for a series too
+   short to imply a trend. */
+export function sparkline(values, { width = 150, height = 36, pad = 5 } = {}) {
+  const nums = (values || []).map(Number).filter(Number.isFinite);
+  if (nums.length < 2) return '';
+
+  const min = Math.min(...nums);
+  const max = Math.max(...nums);
+  const span = max - min;
+  const floor = height - pad;
+  const stepX = (width - pad * 2) / (nums.length - 1);
+  // A flat series rests on the mid-line rather than the floor.
+  const y = (v) => (span === 0 ? height / 2 : floor - ((v - min) / span) * (height - pad * 2));
+
+  const pts = nums.map((v, i) => [pad + i * stepX, y(v)]);
+  const line = pts
+    .map(([x, py], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${py.toFixed(1)}`)
+    .join(' ');
+  const last = pts[pts.length - 1];
+  const area = `${line} L${last[0].toFixed(1)} ${floor} L${pad} ${floor} Z`;
+
+  return `<svg class="spark" viewBox="0 0 ${width} ${height}" aria-hidden="true" focusable="false">`
+    + `<path class="spark-area" d="${area}"></path>`
+    + `<path class="spark-line" d="${line}"></path>`
+    + `<circle class="spark-dot" cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="2.6"></circle>`
+    + `</svg>`;
+}
+
 /* ── Dialogs ─────────────────────────────────────────────── */
 
 export function bindDialog(dialog) {

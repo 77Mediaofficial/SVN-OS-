@@ -5,6 +5,7 @@
 import { deals, transactions } from '../store.js';
 import { initInvoice, openInvoice } from './invoice.js';
 import { toast } from '../toast.js';
+import { openDrawer, closeDrawer } from '../drawer.js';
 import {
   esc, money, fmtDate, relDay, todayKey, formData, parseTags,
   bindDialog, confirmAction, statMoney, runCountUps,
@@ -55,9 +56,15 @@ export async function init() {
     statusFilter = chip.dataset.status;
     renderDeals();
   });
-  document.getElementById('deals-body').addEventListener('click', (e) => {
+  const dealsBody = document.getElementById('deals-body');
+  dealsBody.addEventListener('click', (e) => {
     const tr = e.target.closest('tr[data-id]');
-    if (tr) openDealModal(tr.dataset.id);
+    if (tr) openDealDrawer(tr.dataset.id);
+  });
+  dealsBody.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const tr = e.target.closest('tr[data-id]');
+    if (tr) { e.preventDefault(); openDealDrawer(tr.dataset.id); }
   });
   document.getElementById('ledger-body').addEventListener('click', (e) => {
     const tr = e.target.closest('tr[data-id]');
@@ -175,6 +182,90 @@ function renderDealFilters() {
   document.getElementById('deal-filters').innerHTML = chips.map((c) =>
     `<button type="button" class="chip ${c.key === statusFilter ? 'is-active' : ''}" data-status="${c.key}">${c.label}<span class="chip-n">${c.n}</span></button>`
   ).join('');
+}
+
+/* Read-first detail: a slide-over that frames the deal before any
+   editing, with its linked ledger payments and what's outstanding.
+   Edit / Invoice / Delete delegate to the existing handlers. */
+function openDealDrawer(id) {
+  const d = dealRows.find((r) => r.id === id);
+  if (!d) return;
+  editingDealId = d.id;
+
+  const status = DEAL_STATUS_BY_KEY[d.status];
+  const isClosed = d.status === 'paid' || d.status === 'lost';
+  const rel = isClosed
+    ? { label: d.deadline ? fmtDate(d.deadline) : '—', tone: 'dim' }
+    : relDay(d.deadline);
+
+  const value = Number(d.value) || 0;
+  const linked = txnRows
+    .filter((t) => t.deal_id === d.id)
+    .sort((a, b) => (a.occurred_at < b.occurred_at ? 1 : -1));
+  const received = linked
+    .filter((t) => t.type === 'income')
+    .reduce((s, t) => s + Number(t.amount), 0);
+  const outstanding = Math.max(0, value - received);
+
+  const row = (k, v) => `<div class="detail-row"><span class="k">${k}</span><span class="v">${v}</span></div>`;
+  const contact = d.contact_name || d.contact_email
+    ? `${d.contact_name ? esc(d.contact_name) : ''}${d.contact_email ? `<span class="detail-sub">${esc(d.contact_email)}</span>` : ''}`
+    : '<span class="tone-dim">—</span>';
+  const tags = (d.tags || []).length
+    ? (d.tags).map((t) => `<span class="tagchip">${esc(t)}</span>`).join(' ')
+    : '<span class="tone-dim">—</span>';
+
+  const payments = linked.length
+    ? `<div class="drawer-list">${linked.map((t) => `
+        <div class="drawer-list-row">
+          <span class="dll-date">${fmtDate(t.occurred_at)}</span>
+          <span class="dll-desc">${esc(t.description)}</span>
+          <span class="dll-amt ${t.type === 'income' ? 'amount-pos' : 'amount-neg'}">${t.type === 'income' ? '+' : '−'}${money(t.amount, { exact: true })}</span>
+        </div>`).join('')}</div>`
+    : '<p class="drawer-empty">No ledger entries linked to this deal yet.</p>';
+
+  const body = `
+    <div class="detail-grid">
+      ${row('Status', `<span class="pill tone-${dealTone(d.status)}">${status.label}</span>`)}
+      ${row('Value', `<span class="detail-money">${money(value)}</span>`)}
+      ${row('Deadline', `<span class="tone-${rel.tone}">${rel.label}</span>`)}
+      ${row('Contact', contact)}
+      ${row('Tags', tags)}
+    </div>
+    ${d.notes ? `<div class="drawer-section">
+      <p class="drawer-section-label">Notes</p>
+      <p class="drawer-notes">${esc(d.notes)}</p>
+    </div>` : ''}
+    <div class="drawer-section">
+      <div class="drawer-section-head">
+        <p class="drawer-section-label">Payments</p>
+        <span class="count">${received > 0 ? `${money(received)} of ${money(value)}` : ''}</span>
+      </div>
+      ${payments}
+      ${value > 0 && outstanding > 0 && d.status !== 'lost'
+        ? `<div class="drawer-outstanding"><span>Outstanding</span><span class="detail-money">${money(outstanding)}</span></div>`
+        : ''}
+    </div>`;
+
+  openDrawer({
+    eyebrow: 'Brand deal',
+    title: d.brand_name,
+    body,
+    actions: [
+      { key: 'delete', label: 'Delete', variant: 'danger' },
+      { key: 'invoice', label: 'Invoice' },
+      { key: 'edit', label: 'Edit', variant: 'primary' },
+    ],
+    onAction: (key) => {
+      if (key === 'edit') { closeDrawer(); openDealModal(d.id); return; }
+      if (key === 'invoice') {
+        closeDrawer();
+        openInvoice(d).catch((err) => { console.error(err); toast('Could not open the invoice.', 'error'); });
+        return;
+      }
+      if (key === 'delete') { closeDrawer(); onDealDelete(); }
+    },
+  });
 }
 
 function openDealModal(id) {

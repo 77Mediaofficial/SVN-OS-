@@ -5,7 +5,7 @@
 import { transactions, projects, deals, getPrefs, savePrefs } from '../store.js';
 import {
   esc, money, todayKey, formData, bindDialog,
-  statMoney, statInt, runCountUps,
+  statMoney, statInt, runCountUps, sparkline,
 } from '../ui.js';
 import { CATEGORY_BY_KEY, DEAL_STATUS_BY_KEY } from '../domain.js';
 import { toast } from '../toast.js';
@@ -73,11 +73,64 @@ const inRange = (months) => {
 function renderAll() {
   const months = monthsBack(range);
   renderStats(months);
+  renderAudience();
   renderChart(months);
   renderFunnel();
   renderCats(months);
   renderGoals();
   renderOutput(months);
+}
+
+/* ── Audience ────────────────────────────────────────────────
+   Followers over time, captured by the creator in Business
+   settings. Hidden until at least one reading exists. */
+
+const nf = new Intl.NumberFormat('en-GB');
+
+const sortedHistory = () =>
+  (Array.isArray(prefs.follower_history) ? prefs.follower_history : [])
+    .filter((h) => h && Number.isFinite(Number(h.count)))
+    .map((h) => ({ month: String(h.month), count: Number(h.count) }))
+    .sort((a, b) => (a.month < b.month ? -1 : 1));
+
+function renderAudience() {
+  const panel = document.getElementById('ana-audience');
+  if (!panel) return;
+  const hist = sortedHistory();
+  if (!hist.length) { panel.hidden = true; return; }
+  panel.hidden = false;
+
+  const counts = hist.map((h) => h.count);
+  const current = counts[counts.length - 1];
+  const prev = counts.length > 1 ? counts[counts.length - 2] : null;
+  const delta = prev === null ? null : current - prev;
+  const pct = prev ? (delta / prev) * 100 : null;
+
+  const numEl = document.getElementById('aud-num');
+  numEl.innerHTML = statInt(current);
+
+  let deltaHtml;
+  if (delta === null) {
+    deltaHtml = '<span class="aud-delta">First reading</span>';
+  } else {
+    const dir = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat';
+    const arrow = delta > 0 ? '▲' : delta < 0 ? '▼' : '→';
+    const pctText = pct === null ? '' : ` · ${Math.abs(pct).toFixed(1)}%`;
+    deltaHtml = `<span class="aud-delta ${dir}">${arrow} ${nf.format(Math.abs(delta))}${pctText}</span>`
+      + '<span class="aud-foot-label">vs last month</span>';
+  }
+  document.getElementById('aud-delta').innerHTML = deltaHtml;
+  document.getElementById('aud-spark').innerHTML = sparkline(counts, { width: 260, height: 64 });
+  runCountUps(numEl);
+}
+
+/* Replace this month's reading (or append it) and keep the series
+   trimmed and ordered. */
+function upsertFollowerCount(history, count) {
+  const month = todayKey().slice(0, 7);
+  const list = (Array.isArray(history) ? history : []).filter((h) => h && h.month !== month);
+  list.push({ month, count: Math.round(count) });
+  return list.sort((a, b) => (a.month < b.month ? -1 : 1)).slice(-24);
 }
 
 /* ── Deal conversion funnel ──────────────────────────────── */
@@ -123,6 +176,10 @@ function renderStats(months) {
   const net = income - costs;
   const avg = income / months.length;
 
+  // Per-month series feed the trend lines under the headline figures.
+  const incomeSeries = months.map((m) => monthSum(m.key, 'income'));
+  const netSeries = months.map((m) => monthSum(m.key, 'income') - monthSum(m.key, 'expense'));
+
   const paid = dls.filter((d) => d.status === 'paid').length;
   const lost = dls.filter((d) => d.status === 'lost').length;
   const closed = paid + lost;
@@ -134,11 +191,13 @@ function renderStats(months) {
       <div class="stat-label">Revenue · ${range}M</div>
       <div class="stat-num">${statMoney(income)}</div>
       <div class="stat-foot">${money(costs)} in costs</div>
+      <div class="stat-spark">${sparkline(incomeSeries)}</div>
     </div>
     <div class="stat">
       <div class="stat-label">Net profit · ${range}M</div>
       <div class="stat-num ${net >= 0 ? 'is-pos' : 'is-neg'}">${statMoney(net)}</div>
       <div class="stat-foot">${income > 0 ? Math.round((net / income) * 100) + '% margin' : 'no income yet'}</div>
+      <div class="stat-spark">${sparkline(netSeries)}</div>
     </div>
     <div class="stat">
       <div class="stat-label">Avg per month</div>
@@ -265,21 +324,28 @@ function openGoals() {
   form.invoice_details.value = prefs.invoice_details || '';
   form.goal_monthly_revenue.value = prefs.goal_monthly_revenue ?? '';
   form.goal_monthly_posts.value = prefs.goal_monthly_posts ?? '';
+  const hist = sortedHistory();
+  form.followers.value = hist.length ? hist[hist.length - 1].count : '';
   document.getElementById('goals-modal').showModal();
 }
 
 async function onGoalsSave(e) {
   e.preventDefault();
   const raw = formData(e.currentTarget);
+  const patch = {
+    business_name: raw.business_name || '',
+    invoice_details: raw.invoice_details || '',
+    goal_monthly_revenue: raw.goal_monthly_revenue === '' ? null : Number(raw.goal_monthly_revenue),
+    goal_monthly_posts: raw.goal_monthly_posts === '' ? null : Math.round(Number(raw.goal_monthly_posts)),
+  };
+  if (raw.followers !== '' && Number.isFinite(Number(raw.followers))) {
+    patch.follower_history = upsertFollowerCount(prefs.follower_history, Number(raw.followers));
+  }
   try {
-    prefs = await savePrefs({
-      business_name: raw.business_name || '',
-      invoice_details: raw.invoice_details || '',
-      goal_monthly_revenue: raw.goal_monthly_revenue === '' ? null : Number(raw.goal_monthly_revenue),
-      goal_monthly_posts: raw.goal_monthly_posts === '' ? null : Math.round(Number(raw.goal_monthly_posts)),
-    });
+    prefs = await savePrefs(patch);
     document.getElementById('goals-modal').close();
     renderGoals();
+    renderAudience();
     toast('Settings saved.', 'success');
   } catch (err) {
     console.error(err);

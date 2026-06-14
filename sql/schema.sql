@@ -114,6 +114,7 @@ create table public.user_preferences (
   deal_status_overrides jsonb not null default '{}'::jsonb,
   content_tag_presets   text[] not null default '{}',
   deal_tag_presets      text[] not null default '{}',
+  follower_history      jsonb not null default '[]'::jsonb,
   created_at            timestamptz not null default now(),
   updated_at            timestamptz not null default now(),
   constraint prefs_business_name_length check (business_name is null or char_length(business_name) <= 120),

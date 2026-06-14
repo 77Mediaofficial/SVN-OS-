@@ -121,7 +121,20 @@ function seedPrefs() {
     invoice_seq: 6,
     goal_monthly_revenue: 4000,
     goal_monthly_posts: 6,
+    follower_history: seedFollowerHistory(),
   };
+}
+
+/* Six months of audience growth, anchored to the current month so
+   the demo always reads as "now". Steady climb, not a straight line. */
+function seedFollowerHistory() {
+  const base = 8200;
+  const growth = [0, 520, 980, 1500, 2180, 2820];
+  const now = new Date();
+  return growth.map((g, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (growth.length - 1 - i), 1);
+    return { month: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, count: base + g };
+  });
 }
 
 /* ── Repositories ────────────────────────────────────────── */
@@ -211,12 +224,18 @@ export async function updateProfile(patch) {
 const DEFAULT_PREFS = {
   business_name: '', business_type: '', invoice_details: '',
   invoice_seq: 0, goal_monthly_revenue: null, goal_monthly_posts: null,
+  follower_history: [],
 };
 
 export async function getPrefs() {
   if (DEMO_MODE) {
     const db = demo();
     if (!db.prefs) { db.prefs = seedPrefs(); persistDemo(); } // older demo datasets
+    // Backfill audience history for datasets seeded before it existed.
+    if (!Array.isArray(db.prefs.follower_history) || !db.prefs.follower_history.length) {
+      db.prefs.follower_history = seedFollowerHistory();
+      persistDemo();
+    }
     return { ...DEFAULT_PREFS, ...db.prefs };
   }
   const { data, error } = await supabase

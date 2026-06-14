@@ -17,6 +17,17 @@
   <div class="stat"><div class="stat-label">Deal win rate</div><div class="stat-num skel skel-num">—</div><div class="stat-foot">&nbsp;</div></div>
 </section>
 
+<section class="panel panel-audience" id="ana-audience" aria-labelledby="aud-label" hidden>
+  <div class="aud-grid">
+    <div class="aud-lead">
+      <p class="section-label" id="aud-label">Audience</p>
+      <div class="aud-num" id="aud-num">—</div>
+      <p class="aud-foot" id="aud-delta"></p>
+    </div>
+    <div class="aud-spark" id="aud-spark" aria-hidden="true"></div>
+  </div>
+</section>
+
 <section class="panel" aria-labelledby="chart-label">
   <div class="panel-head">
     <h2 class="section-label" id="chart-label">Money in vs out</h2>
@@ -90,6 +101,11 @@
         <label for="gf-posts">Monthly posts target</label>
         <input id="gf-posts" name="goal_monthly_posts" type="number" min="0" step="1" placeholder="6" />
       </div>
+    </div>
+
+    <div class="field">
+      <label for="gf-followers">Current followers <span style="text-transform:none;letter-spacing:0">(optional · charts audience growth month to month)</span></label>
+      <input id="gf-followers" name="followers" type="number" min="0" step="1" inputmode="numeric" placeholder="11000" />
     </div>
 
     <div class="modal-actions">

@@ -1,6 +1,6 @@
 /* SVN OS service worker — app-shell precache + runtime cache.
    Bump VERSION on every deploy to invalidate old caches. */
-const VERSION = 'svn-os-v5';
+const VERSION = 'svn-os-v6';
 const SHELL = [
   '/',
   '/index.html',
@@ -27,6 +27,7 @@ const SHELL = [
   '/js/toast.js',
   '/js/ui.js',
   '/js/drag.js',
+  '/js/drawer.js',
   '/js/modules/dashboard.js',
   '/js/modules/content-engine.js',
   '/js/modules/calendar.js',
