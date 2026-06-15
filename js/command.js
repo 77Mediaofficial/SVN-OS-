@@ -42,6 +42,7 @@ function navCommands() {
   return [
     go('Today', '/'),
     go('Content Engine', '/content'),
+    go('Resizer', '/resizer'),
     go('Calendar', '/calendar'),
     go('Deals & Ledger', '/deals'),
     go('Analytics', '/analytics'),

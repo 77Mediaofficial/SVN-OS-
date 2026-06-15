@@ -1,0 +1,46 @@
+<header class="page-head">
+  <p class="kicker">One master · every format</p>
+  <h1 class="page-title">Resize<span class="title-dot">.</span></h1>
+  <p class="page-sub">Drop one asset and export every platform size in a click — crop or pad, PNG or JPG, zipped. Nothing ever leaves this device.</p>
+</header>
+
+<div id="rz-empty" class="rz-drop" tabindex="0" role="button" aria-label="Choose or drop an image">
+  <input type="file" id="rz-file" accept="image/*" hidden />
+  <div class="rz-drop-inner">
+    <svg class="rz-drop-ico" viewBox="0 0 32 32" aria-hidden="true">
+      <path d="M16 21V7M10.5 12.5 16 7l5.5 5.5"/>
+      <path d="M6 21v3a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-3"/>
+    </svg>
+    <p class="rz-drop-title">Drop an image here</p>
+    <p class="rz-drop-sub">or click to choose — PNG, JPG, WebP</p>
+    <button type="button" class="btn" id="rz-sample">Use a sample image</button>
+  </div>
+</div>
+
+<div id="rz-studio" hidden>
+  <div class="panel rz-toolbar">
+    <div class="rz-meta">
+      <span class="rz-name" id="rz-name">image</span>
+      <span class="rz-source-dims" id="rz-dims">—</span>
+      <span class="rz-count" id="rz-count"></span>
+    </div>
+    <div class="rz-controls">
+      <div class="seg" id="rz-fit" role="group" aria-label="Fit mode">
+        <button type="button" class="seg-btn is-on" data-fit="cover">Crop</button>
+        <button type="button" class="seg-btn" data-fit="contain">Pad</button>
+      </div>
+      <label class="rz-bg" id="rz-bg-wrap" hidden>
+        <span>Pad</span>
+        <input type="color" id="rz-bg" value="#0a0a09" aria-label="Pad colour" />
+      </label>
+      <div class="seg" id="rz-format" role="group" aria-label="File format">
+        <button type="button" class="seg-btn is-on" data-fmt="png">PNG</button>
+        <button type="button" class="seg-btn" data-fmt="jpeg">JPG</button>
+      </div>
+      <button type="button" class="btn" id="rz-replace">Replace</button>
+      <button type="button" class="btn btn-primary" id="rz-export">Download all (.zip)</button>
+    </div>
+  </div>
+
+  <div class="rz-grid" id="rz-grid"></div>
+</div>
