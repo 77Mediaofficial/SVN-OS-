@@ -6,7 +6,7 @@ import { initAuth, bindAuthForm, signOut } from './auth.js';
 import { initAppLock, openPrivacySheet } from './applock.js';
 import { applyAppearance } from './appearance.js';
 import { expandRecurring, resetDemo, team as teamRepo, getPrefs } from './store.js';
-import { initials } from './ui.js';
+import { initials, esc } from './ui.js';
 import { toast } from './toast.js';
 import { initSpotlight } from './spotlight.js';
 import { initNavIndicator, moveNavPill } from './nav-indicator.js';
@@ -103,7 +103,7 @@ async function renderWorkspace() {
     document.getElementById('ws-sub').textContent =
       `${planLabel ? planLabel + ' · ' : ''}${members.length} ${members.length === 1 ? 'person' : 'people'}`;
     document.getElementById('ws-avatars').innerHTML =
-      members.slice(0, 4).map((m) => `<span class="ws-av">${initials(m.name)}</span>`).join('') +
+      members.slice(0, 4).map((m) => `<span class="ws-av">${esc(initials(m.name))}</span>`).join('') +
       (members.length > 4 ? `<span class="ws-av ws-av-more">+${members.length - 4}</span>` : '');
     strip.hidden = false;
   } catch { /* leave the strip hidden if the workspace can't load */ }

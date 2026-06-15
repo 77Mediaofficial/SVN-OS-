@@ -226,10 +226,10 @@ function personRow(m) {
   const role = ROLE_BY_KEY[m.role];
   return (
     '<div class="person">' +
-      `<span class="person-av">${initials(m.name)}</span>` +
-      `<span class="person-id"><span class="person-name">${m.name}</span>` +
-      `<span class="person-sub">${m.email || ''}</span></span>` +
-      `<span class="pill tone-${role?.tone || 'dim'}">${role?.label || m.role}</span>` +
+      `<span class="person-av">${esc(initials(m.name))}</span>` +
+      `<span class="person-id"><span class="person-name">${esc(m.name)}</span>` +
+      `<span class="person-sub">${esc(m.email || '')}</span></span>` +
+      `<span class="pill tone-${role?.tone || 'dim'}">${esc(role?.label || m.role)}</span>` +
     '</div>'
   );
 }
@@ -238,10 +238,10 @@ function clientRow(c) {
   const st = CLIENT_STATUS_BY_KEY[c.status];
   return (
     '<div class="person">' +
-      `<span class="person-av person-av-sq">${initials(c.name)}</span>` +
-      `<span class="person-id"><span class="person-name">${c.name}</span>` +
-      `<span class="person-sub">${c.contact || 'No contact yet'}</span></span>` +
-      `<span class="pill tone-${st?.tone || 'dim'}">${st?.label || c.status}</span>` +
+      `<span class="person-av person-av-sq">${esc(initials(c.name))}</span>` +
+      `<span class="person-id"><span class="person-name">${esc(c.name)}</span>` +
+      `<span class="person-sub">${esc(c.contact || 'No contact yet')}</span></span>` +
+      `<span class="pill tone-${st?.tone || 'dim'}">${esc(st?.label || c.status)}</span>` +
     '</div>'
   );
 }

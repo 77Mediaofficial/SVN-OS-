@@ -320,11 +320,12 @@ export async function openCommand() {
   root.classList.add('is-open');
   input.focus();
 
-  // Refresh search caches in the background; re-render if still open + empty query.
+  // Refresh search caches in the background; re-render if the palette is still
+  // open and not in a form, so results reflect the freshly loaded data.
   Promise.all([projects.list(), deals.list(), clients.list()])
     .then(([p, d, c]) => {
       cache = { projects: p, deals: d, clients: c };
-      if (!root.hidden && !root.classList.contains('is-form') && input.value === input.value) renderList(input.value);
+      if (!root.hidden && !root.classList.contains('is-form')) renderList(input.value);
     })
     .catch(() => {});
 }

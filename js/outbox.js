@@ -24,6 +24,7 @@ export function enqueue(op) {
 }
 
 export function flush() {
+  if (!isOnline()) return;   // never replay while offline (incl. simulated offline)
   if (!queue.length) return;
   const n = queue.length;
   // Scaffold: real mode replays each queued op against its repo here, then

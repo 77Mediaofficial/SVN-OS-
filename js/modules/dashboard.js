@@ -224,7 +224,7 @@ async function handleDeal(id, act) {
     const prev = { status: d.status };
     await deals.update(id, { status: next });
     await load();
-    toast(`${esc(d.brand_name)} moved to ${DEAL_STATUS_BY_KEY[next].label}.`, 'success',
+    toast(`${d.brand_name} moved to ${DEAL_STATUS_BY_KEY[next].label}.`, 'success',
       undo(() => deals.update(id, prev)));
   } else {
     const prev = { deadline: d.deadline };
