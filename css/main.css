@@ -351,7 +351,7 @@ html.theme-dark .brand-os {
   border-radius: var(--r-sm);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.36s cubic-bezier(0.34, 1.16, 0.42, 1),
+  transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1),
               width 0.3s var(--ease), height 0.3s var(--ease),
               opacity 0.25s var(--ease);
 }
@@ -797,7 +797,7 @@ button.row-item:hover, a.row-item:hover {
   transform: translateX(var(--ul-x, 0));
   background: linear-gradient(90deg, var(--brass), var(--brass-deep));
   pointer-events: none;
-  transition: transform 0.32s cubic-bezier(0.34, 1.16, 0.42, 1),
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
               width 0.32s var(--ease);
 }
 
@@ -1359,7 +1359,7 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
     padding-bottom: 14px; margin-bottom: 20px;
   }
   #invoice-print .ip-title {
-    font-family: "Instrument Serif", Georgia, serif;
+    font-family: var(--font-display), Georgia, serif;
     font-size: 32px; line-height: 1;
   }
   #invoice-print .ip-from-name { margin-top: 6px; font-weight: 600; }
