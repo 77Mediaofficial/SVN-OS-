@@ -1,6 +1,6 @@
 /* SVN OS service worker — app-shell precache + runtime cache.
    Bump VERSION on every deploy to invalidate old caches. */
-const VERSION = 'svn-os-v16';
+const VERSION = 'svn-os-v17';
 const SHELL = [
   '/',
   '/index.html',
@@ -39,6 +39,8 @@ const SHELL = [
   '/js/tabs.js',
   '/js/modules/dashboard.js',
   '/js/modules/content-engine.js',
+  '/js/modules/resizer.js',
+  '/js/modules/studio.js',
   '/js/modules/calendar.js',
   '/js/modules/deals-ledger.js',
   '/js/modules/invoice.js',
@@ -46,6 +48,8 @@ const SHELL = [
   '/js/modules/settings.js',
   '/pages/dashboard.html',
   '/pages/content-engine.html',
+  '/pages/resizer.html',
+  '/pages/studio.html',
   '/pages/calendar.html',
   '/pages/deals-ledger.html',
   '/pages/analytics.html',

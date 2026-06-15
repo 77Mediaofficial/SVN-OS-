@@ -45,6 +45,7 @@ function navCommands() {
     go('Resizer', '/resizer'),
     go('Calendar', '/calendar'),
     go('Deals & Ledger', '/deals'),
+    go('Studio', '/studio'),
     go('Analytics', '/analytics'),
     go('Settings', '/settings'),
   ];

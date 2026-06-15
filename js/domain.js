@@ -76,6 +76,35 @@ export const CLIENT_STATUSES = [
 ];
 export const CLIENT_STATUS_BY_KEY = byKey(CLIENT_STATUSES);
 
+/* ── Studio: client-delivery pillars ─────────────────────────
+   Milestones gate delivery: files release once a milestone is paid. */
+export const MILESTONE_STATUSES = [
+  { key: 'pending',  label: 'Pending',  tone: 'amber' },
+  { key: 'invoiced', label: 'Invoiced', tone: 'blue'  },
+  { key: 'paid',     label: 'Paid',     tone: 'green' },
+];
+export const MILESTONE_STATUS_BY_KEY = byKey(MILESTONE_STATUSES);
+
+/* Gear & liability register. */
+export const GEAR_STATUSES = [
+  { key: 'available',   label: 'Available',   tone: 'green' },
+  { key: 'out',         label: 'Checked out', tone: 'amber' },
+  { key: 'maintenance', label: 'Maintenance', tone: 'red'   },
+];
+export const GEAR_STATUS_BY_KEY = byKey(GEAR_STATUSES);
+export const GEAR_NEXT_STATUS = { available: 'out', out: 'maintenance', maintenance: 'available' };
+
+export const GEAR_CATEGORIES = [
+  { key: 'camera',   label: 'Camera'   },
+  { key: 'lens',     label: 'Lens'     },
+  { key: 'lighting', label: 'Lighting' },
+  { key: 'audio',    label: 'Audio'    },
+  { key: 'grip',     label: 'Grip'     },
+  { key: 'computer', label: 'Computer' },
+  { key: 'other',    label: 'Other'    },
+];
+export const GEAR_CATEGORY_BY_KEY = byKey(GEAR_CATEGORIES);
+
 export const stageTone = (key) => STAGE_BY_KEY[key]?.tone ?? 'dim';
 export const dealTone = (key) => DEAL_STATUS_BY_KEY[key]?.tone ?? 'dim';
 

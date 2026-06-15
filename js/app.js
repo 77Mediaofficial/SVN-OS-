@@ -27,6 +27,7 @@ const routes = [
   { path: '/resizer',  nav: 'resizer',   title: 'Resizer',        page: 'pages/resizer.html',         module: () => import('./modules/resizer.js') },
   { path: '/calendar', nav: 'calendar',  title: 'Calendar',       page: 'pages/calendar.html',       module: () => import('./modules/calendar.js') },
   { path: '/deals',    nav: 'deals',     title: 'Deals & Ledger', page: 'pages/deals-ledger.html',   module: () => import('./modules/deals-ledger.js') },
+  { path: '/studio',   nav: 'studio',    title: 'Studio',         page: 'pages/studio.html',          module: () => import('./modules/studio.js') },
   { path: '/analytics', nav: 'analytics', title: 'Analytics',     page: 'pages/analytics.html',      module: () => import('./modules/analytics.js') },
   { path: '/settings', nav: 'settings',   title: 'Settings',       page: 'pages/settings.html',       module: () => import('./modules/settings.js') },
 ];

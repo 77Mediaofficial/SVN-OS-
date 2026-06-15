@@ -27,6 +27,14 @@ function demo() {
   let patched = false;
   if (!demoDb.team) { demoDb.team = seedTeam(); patched = true; }
   if (!demoDb.clients) { demoDb.clients = seedClients(); patched = true; }
+  if (!demoDb.gear) { demoDb.gear = seedGear(); patched = true; }
+  if (!demoDb.sow_items || !demoDb.milestones || !demoDb.reviews) {
+    const studio = seedStudio(demoDb.clients || []);
+    if (!demoDb.sow_items) demoDb.sow_items = studio.sow_items;
+    if (!demoDb.milestones) demoDb.milestones = studio.milestones;
+    if (!demoDb.reviews) demoDb.reviews = studio.reviews;
+    patched = true;
+  }
   if (patched) persistDemo();
   return demoDb;
 }
@@ -111,11 +119,15 @@ function seedDemo() {
     T(-2,  { type: 'expense', category: 'marketing', description: 'Instagram boost — reel', amount: 40 }),
   ];
 
+  const clients = seedClients();
+  const studio = seedStudio(clients);
   return {
     profile: { id: 'demo-user', username: 'demo', full_name: 'Demo Creator' },
     prefs: seedPrefs(),
     projects, deals, transactions,
-    team: seedTeam(), clients: seedClients(),
+    team: seedTeam(), clients,
+    sow_items: studio.sow_items, milestones: studio.milestones,
+    gear: seedGear(), reviews: studio.reviews,
   };
 }
 
@@ -160,6 +172,64 @@ function seedClients() {
     C('Atlas Travel Gear',  'active',   'Priya Nair', 60),
     C('Kestrel Coffee',     'retainer', 'Sam Reid',   50),
     C('Northbound Apparel', 'prospect', null,         10),
+  ];
+}
+
+/* ── Studio: SOW / change orders, milestones, review room ─────
+   The Studio & Agency pillars. Scope and milestones hang off a client;
+   milestones gate delivery (files release on payment). Review comments
+   pin to a timecode on a demo asset. Real mode → sow_items / milestones /
+   review_comments tables. */
+
+function seedStudio(clients) {
+  const at = (d) => new Date(Date.now() - d * 86400000).toISOString();
+  const due = (d) => dayKey(new Date(Date.now() + d * 86400000));
+  const cid = (i) => clients[i]?.id || 'demo-client';
+
+  const S = (client_id, kind, label, qty, rate, d) =>
+    ({ id: uuid(), user_id: 'demo-user', client_id, kind, label, qty, rate, created_at: at(d) });
+  const sow_items = [
+    S(cid(0), 'scope',  'Pre-production & creative direction', 1, 1200, 30),
+    S(cid(0), 'scope',  'Principal photography (day rate)',    2, 1800, 30),
+    S(cid(0), 'scope',  'Edit, grade & sound — 2 review rounds', 1, 2400, 30),
+    S(cid(0), 'change', 'Added 30s cut-down for paid social',  1, 450, 8),
+    S(cid(1), 'scope',  'Brand photo set — 20 finished images', 1, 1600, 22),
+    S(cid(1), 'scope',  'Studio hire & lighting package',      1, 600, 22),
+  ];
+
+  const M = (client_id, label, amount, d, status) =>
+    ({ id: uuid(), user_id: 'demo-user', client_id, label, amount, due: due(d), status, created_at: at(40) });
+  const milestones = [
+    M(cid(0), '50% production deposit',     3000, -12, 'paid'),
+    M(cid(0), 'Rough-cut delivery',         1500, 3,   'invoiced'),
+    M(cid(0), 'Final delivery & handover',  1500, 14,  'pending'),
+    M(cid(1), 'Shoot deposit',              1100, -4,  'paid'),
+    M(cid(1), 'Final gallery delivery',     1100, 9,   'pending'),
+  ];
+
+  const RC = (t, author, body, d, resolved = false) =>
+    ({ id: uuid(), user_id: 'demo-user', asset: 'Aurora Audio — brand film', duration_sec: 78, t_sec: t, author, body, resolved, created_at: at(d) });
+  const reviews = [
+    RC(4,  'Mara Voss',   'Logo hold runs a beat long — trim ~10 frames.', 2),
+    RC(22, 'Priya Raman', 'Lower-third reads “Aurura” — should be “Aurora”.', 2),
+    RC(48, 'Theo Lane',   'Land the music swell on the hero shot here.', 1, true),
+    RC(70, 'Mara Voss',   'CTA card needs the new web address.', 1),
+  ];
+
+  return { sow_items, milestones, reviews };
+}
+
+function seedGear() {
+  const at = (d) => new Date(Date.now() - d * 86400000).toISOString();
+  const G = (name, category, value, status, insured, assignee, d) =>
+    ({ id: uuid(), user_id: 'demo-user', name, category, value, status, insured, assignee: assignee || null, created_at: at(d) });
+  return [
+    G('Sony FX6',           'camera',   6200, 'out',         true,  'Theo Lane', 120),
+    G('Sigma 24-70 f2.8',   'lens',      949, 'available',   true,  null, 110),
+    G('Aputure 600d Pro',   'lighting', 1100, 'out',         true,  'Mara Voss', 90),
+    G('Sennheiser MKH-416', 'audio',     820, 'available',   true,  null, 70),
+    G('DJI RS 4 gimbal',    'grip',      480, 'maintenance', false, null, 40),
+    G('MacBook Pro M3 Max', 'computer', 3500, 'available',   true,  null, 30),
   ];
 }
 
@@ -237,6 +307,10 @@ export const deals = makeRepo('brand_deals', 'deals');
 export const transactions = makeRepo('transactions', 'transactions', { orderBy: 'occurred_at' });
 export const team = makeRepo('team_members', 'team', { orderBy: 'created_at', ascending: true });
 export const clients = makeRepo('clients', 'clients', { orderBy: 'created_at', ascending: true });
+export const sowItems = makeRepo('sow_items', 'sow_items', { orderBy: 'created_at', ascending: true });
+export const milestones = makeRepo('milestones', 'milestones', { orderBy: 'created_at', ascending: true });
+export const gear = makeRepo('gear', 'gear', { orderBy: 'created_at', ascending: true });
+export const reviews = makeRepo('review_comments', 'reviews', { orderBy: 'created_at', ascending: true });
 
 export async function getProfile() {
   if (DEMO_MODE) return { ...demo().profile };
