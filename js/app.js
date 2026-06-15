@@ -11,12 +11,15 @@ import { toast } from './toast.js';
 import { initSpotlight } from './spotlight.js';
 import { initNavIndicator, moveNavPill } from './nav-indicator.js';
 import { initCommand } from './command.js';
+import { initShortcuts } from './shortcuts.js';
+import { maybeOnboard } from './onboarding.js';
 import { PLAN_BY_ID } from './domain.js';
 
 applyAppearance(); // before anything becomes visible — no flash
 initSpotlight();   // desktop-only cursor glow on cards (no-op on touch)
 initNavIndicator(); // sliding active-link pill in the sidebar
 initCommand();      // ⌘K command palette + global quick-create
+initShortcuts();    // g-then-key navigation + ? cheat sheet
 
 const routes = [
   { path: '/',         nav: 'dashboard', title: 'Today',          page: 'pages/dashboard.html',      module: () => import('./modules/dashboard.js') },
@@ -54,6 +57,7 @@ function showApp(user) {
     routerStarted = true;
     startRouter();
     initAppLock();
+    maybeOnboard(); // first-run welcome (shows once)
     expandRecurring()
       .then((created) => {
         if (created.length) toast(`${created.length} recurring transaction${created.length > 1 ? 's' : ''} added to the ledger.`);
@@ -92,6 +96,9 @@ async function renderWorkspace() {
 window.addEventListener('svnos:identity', (e) => {
   if (e.detail?.name) setIdentity(e.detail.name);
 });
+
+// Onboarding / workspace changes → refresh the sidebar workspace strip.
+window.addEventListener('svnos:workspace', () => renderWorkspace());
 
 function showGate() {
   shell.hidden = true;

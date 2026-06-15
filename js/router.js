@@ -65,11 +65,33 @@ export async function render() {
   window.scrollTo(0, 0);
   if (onChange) onChange(route);
 
-  const mod = await route.module();
+  let mod;
+  try {
+    mod = await route.module();
+  } catch (err) {
+    console.error('view module failed to load', err);
+    if (seq === renderSeq) outlet.innerHTML = viewError();
+    return;
+  }
   if (seq !== renderSeq) return;
 
-  const cleanup = await mod.init(params);
-  if (seq === renderSeq && typeof cleanup === 'function') currentCleanup = cleanup;
+  try {
+    const cleanup = await mod.init(params);
+    if (seq === renderSeq && typeof cleanup === 'function') currentCleanup = cleanup;
+  } catch (err) {
+    console.error('view failed to render', err);
+    if (seq === renderSeq) outlet.innerHTML = viewError();
+  }
+}
+
+/* Shown in the outlet when a view can't load — no blank screen, ever. */
+function viewError() {
+  return `
+    <div class="view-error empty">
+      <p class="empty-title">Something went sideways.</p>
+      <p class="empty-sub">This view didn’t load. Your data is safe — try again.</p>
+      <button type="button" class="btn" data-view-retry>Try again</button>
+    </div>`;
 }
 
 export function navigate(path, { replace = false } = {}) {
@@ -81,6 +103,7 @@ export function navigate(path, { replace = false } = {}) {
 export function startRouter() {
   window.addEventListener('popstate', render);
   document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-view-retry]')) { e.preventDefault(); render(); return; }
     const link = e.target.closest('a[data-link]');
     if (!link) return;
     if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
