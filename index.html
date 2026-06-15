@@ -31,28 +31,45 @@
 
   <!-- ── Auth gate (shown signed-out when Supabase is wired) ── -->
   <div id="auth-gate" class="auth-gate" hidden>
-    <div class="auth-panel">
-      <p class="kicker">SVN OS</p>
-      <h1 class="auth-title">Run the entire<br /><em>media operation.</em></h1>
-      <p class="auth-sub">Content pipeline, posting calendar, brand deals, and ledger — one calm command center for your whole team.</p>
+    <div class="landing">
+      <section class="landing-pitch">
+        <p class="kicker">SVN OS</p>
+        <h2 class="landing-h1">Run the entire<br /><em>media operation.</em></h2>
+        <p class="landing-lead">Content pipeline, posting calendar, brand deals, milestone billing, frame-accurate review rooms, and a white-label client portal. One calm command center for your whole studio.</p>
+        <ul class="landing-points">
+          <li><b>Ship in every format.</b> One master asset to every platform size, in a click.</li>
+          <li><b>Bill on milestones.</b> Scope, change orders, and payment-gated delivery.</li>
+          <li><b>Review frame-accurate.</b> Timecoded notes your clients can actually act on.</li>
+          <li><b>Run as a team.</b> Roles, a client portal, and an audit trail built in.</li>
+        </ul>
+        <div class="landing-pricing" id="landing-pricing"></div>
+        <p class="landing-trust">No trackers, no third-party requests. Every row isolated to your account by row-level security.</p>
+      </section>
 
-      <form id="auth-form" class="auth-form" novalidate>
-        <div class="field" id="auth-name-field" hidden>
-          <label for="auth-name">Name</label>
-          <input id="auth-name" name="full_name" autocomplete="name" placeholder="Your name" />
-        </div>
-        <div class="field">
-          <label for="auth-email">Email</label>
-          <input id="auth-email" name="email" type="email" required autocomplete="email" placeholder="you@studio.com" />
-        </div>
-        <div class="field">
-          <label for="auth-password">Password</label>
-          <input id="auth-password" name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="••••••••" />
-        </div>
-        <p class="auth-error" id="auth-error" hidden></p>
-        <button class="btn btn-primary btn-block" type="submit" id="auth-submit">Sign in</button>
-      </form>
-      <p class="auth-toggle-line" id="auth-toggle-line">No account? <button type="button" class="linklike" id="auth-toggle">Create one</button></p>
+      <div class="auth-panel">
+        <p class="kicker">Get started</p>
+        <h1 class="auth-title">Sign in<span class="title-dot">.</span></h1>
+        <p class="auth-sub">Your studio, one login.</p>
+
+        <form id="auth-form" class="auth-form" novalidate>
+          <div class="field" id="auth-name-field" hidden>
+            <label for="auth-name">Name</label>
+            <input id="auth-name" name="full_name" autocomplete="name" placeholder="Your name" />
+          </div>
+          <div class="field">
+            <label for="auth-email">Email</label>
+            <input id="auth-email" name="email" type="email" required autocomplete="email" placeholder="you@studio.com" />
+          </div>
+          <div class="field">
+            <label for="auth-password">Password</label>
+            <input id="auth-password" name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="••••••••" />
+          </div>
+          <p class="auth-error" id="auth-error" hidden></p>
+          <button class="btn btn-primary btn-block" type="submit" id="auth-submit">Sign in</button>
+        </form>
+        <p class="auth-toggle-line" id="auth-toggle-line">No account? <button type="button" class="linklike" id="auth-toggle">Create one</button></p>
+        <button type="button" class="linklike landing-back" id="landing-back" hidden>← Back to the app</button>
+      </div>
     </div>
   </div>
 

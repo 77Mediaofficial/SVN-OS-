@@ -87,6 +87,11 @@ function toolCommands() {
       keywords: 'keyboard shortcuts help cheat sheet keys',
       run: () => { close(); window.dispatchEvent(new CustomEvent('svnos:shortcuts')); },
     },
+    {
+      group: 'Workspace', icon: ICON.tool, label: 'View landing page',
+      keywords: 'landing marketing pricing front door signed out welcome',
+      run: () => { close(); window.dispatchEvent(new CustomEvent('svnos:landing')); },
+    },
   ];
 }
 

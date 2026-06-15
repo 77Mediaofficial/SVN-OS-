@@ -13,13 +13,27 @@ import { initNavIndicator, moveNavPill } from './nav-indicator.js';
 import { initCommand } from './command.js';
 import { initShortcuts } from './shortcuts.js';
 import { maybeOnboard } from './onboarding.js';
-import { PLAN_BY_ID } from './domain.js';
+import { PLAN_BY_ID, PLANS } from './domain.js';
 
 applyAppearance(); // before anything becomes visible — no flash
 initSpotlight();   // desktop-only cursor glow on cards (no-op on touch)
 initNavIndicator(); // sliding active-link pill in the sidebar
 initCommand();      // ⌘K command palette + global quick-create
 initShortcuts();    // g-then-key navigation + ? cheat sheet
+renderLandingPricing(); // pricing strip on the signed-out front door
+
+// The signed-out landing is a real marketing front door: pitch + pricing
+// + sign-in. Rendered from the PLANS catalog so it never drifts.
+function renderLandingPricing() {
+  const el = document.getElementById('landing-pricing');
+  if (!el) return;
+  el.innerHTML = PLANS.map((p) => `
+    <div class="lp-tier${p.featured ? ' is-featured' : ''}">
+      <span class="lp-name">${p.name}</span>
+      <span class="lp-price"><span class="lp-cur">£</span>${p.monthly}<span class="lp-per">/mo</span></span>
+      <span class="lp-seats">${p.seats}</span>
+    </div>`).join('');
+}
 
 const routes = [
   { path: '/',         nav: 'dashboard', title: 'Today',          page: 'pages/dashboard.html',      module: () => import('./modules/dashboard.js') },
@@ -112,6 +126,17 @@ bindAuthForm();
 
 document.getElementById('signout-btn').addEventListener('click', signOut);
 document.getElementById('privacy-btn').addEventListener('click', openPrivacySheet);
+
+// Preview the signed-out front door from inside the app (palette command).
+const landingBack = document.getElementById('landing-back');
+window.addEventListener('svnos:landing', () => {
+  gate.hidden = false;
+  if (landingBack) landingBack.hidden = false;
+});
+landingBack?.addEventListener('click', () => {
+  gate.hidden = true;
+  if (landingBack) landingBack.hidden = true;
+});
 
 if (DEMO_MODE) {
   const pill = document.getElementById('demo-pill');
