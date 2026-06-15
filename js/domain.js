@@ -57,6 +57,25 @@ export const PLATFORM_BY_KEY = byKey(PLATFORMS);
 export const DEAL_STATUS_BY_KEY = byKey(DEAL_STATUSES);
 export const CATEGORY_BY_KEY = byKey(TXN_CATEGORIES);
 
+/* Workspace roles — who's who on the team. Tone drives the role pill. */
+export const ROLES = [
+  { key: 'owner',    label: 'Owner',    tone: 'brass'  },
+  { key: 'producer', label: 'Producer', tone: 'violet' },
+  { key: 'editor',   label: 'Editor',   tone: 'blue'   },
+  { key: 'reviewer', label: 'Reviewer', tone: 'amber'  },
+  { key: 'finance',  label: 'Finance',  tone: 'green'  },
+];
+export const ROLE_BY_KEY = byKey(ROLES);
+
+/* Client account status. */
+export const CLIENT_STATUSES = [
+  { key: 'active',   label: 'Active',   tone: 'green' },
+  { key: 'retainer', label: 'Retainer', tone: 'brass' },
+  { key: 'prospect', label: 'Prospect', tone: 'blue'  },
+  { key: 'paused',   label: 'Paused',   tone: 'amber' },
+];
+export const CLIENT_STATUS_BY_KEY = byKey(CLIENT_STATUSES);
+
 export const stageTone = (key) => STAGE_BY_KEY[key]?.tone ?? 'dim';
 export const dealTone = (key) => DEAL_STATUS_BY_KEY[key]?.tone ?? 'dim';
 

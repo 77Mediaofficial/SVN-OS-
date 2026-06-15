@@ -3,14 +3,14 @@
    to the profiles table (or the demo profile) and refreshes the
    sidebar identity. */
 
-import { getProfile, updateProfile, getPrefs, savePrefs } from '../store.js';
+import { getProfile, updateProfile, getPrefs, savePrefs, team, clients } from '../store.js';
 import { getAppearance, setAppearance } from '../appearance.js';
 import { openPrivacySheet } from '../applock.js';
 import { signOut } from '../auth.js';
 import { DEMO_MODE } from '../supabase.js';
-import { formData } from '../ui.js';
+import { formData, initials } from '../ui.js';
 import { toast } from '../toast.js';
-import { PLANS, PLAN_BY_ID } from '../domain.js';
+import { PLANS, PLAN_BY_ID, ROLE_BY_KEY, CLIENT_STATUS_BY_KEY } from '../domain.js';
 
 export async function init() {
   const form = document.getElementById('profile-form');
@@ -75,6 +75,7 @@ export async function init() {
   });
 
   initBilling();
+  initWorkspace();
 
   document.getElementById('settings-privacy-btn').addEventListener('click', openPrivacySheet);
   document.getElementById('settings-signout-btn').addEventListener('click', signOut);
@@ -191,4 +192,56 @@ function cardHtml(plan, current, cycle) {
       cta +
     '</article>'
   );
+}
+
+/* ── Workspace: team & clients ───────────────────────────────
+   Read-only roster for now; invite / add are dormant until the
+   workspace backend (Supabase) is wired, mirroring billing. */
+async function initWorkspace() {
+  const teamWrap = document.getElementById('team-list');
+  const clientWrap = document.getElementById('client-list');
+
+  if (teamWrap) {
+    const members = await team.list().catch(() => []);
+    teamWrap.innerHTML = members.map(personRow).join('') || emptyRow('No teammates yet.');
+  }
+  if (clientWrap) {
+    const list = await clients.list().catch(() => []);
+    clientWrap.innerHTML = list.map(clientRow).join('') || emptyRow('No clients yet.');
+  }
+
+  document.getElementById('team-invite')?.addEventListener('click', () => {
+    toast(DEMO_MODE ? 'Invites go out once the workspace backend is connected.' : 'Invitation sent.', 'success');
+  });
+  document.getElementById('client-add')?.addEventListener('click', () => {
+    toast(DEMO_MODE ? 'Client management lands with the workspace backend.' : 'Client added.', 'success');
+  });
+}
+
+function personRow(m) {
+  const role = ROLE_BY_KEY[m.role];
+  return (
+    '<div class="person">' +
+      `<span class="person-av">${initials(m.name)}</span>` +
+      `<span class="person-id"><span class="person-name">${m.name}</span>` +
+      `<span class="person-sub">${m.email || ''}</span></span>` +
+      `<span class="pill tone-${role?.tone || 'dim'}">${role?.label || m.role}</span>` +
+    '</div>'
+  );
+}
+
+function clientRow(c) {
+  const st = CLIENT_STATUS_BY_KEY[c.status];
+  return (
+    '<div class="person">' +
+      `<span class="person-av person-av-sq">${initials(c.name)}</span>` +
+      `<span class="person-id"><span class="person-name">${c.name}</span>` +
+      `<span class="person-sub">${c.contact || 'No contact yet'}</span></span>` +
+      `<span class="pill tone-${st?.tone || 'dim'}">${st?.label || c.status}</span>` +
+    '</div>'
+  );
+}
+
+function emptyRow(msg) {
+  return `<p class="people-empty">${msg}</p>`;
 }

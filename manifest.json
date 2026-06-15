@@ -1,7 +1,7 @@
 {
-  "name": "SVN OS — Creator Operating System",
+  "name": "SVN OS — Operating System for Media Teams",
   "short_name": "SVN OS",
-  "description": "One place to run a creative business: content pipeline, posting calendar, brand deals, and income ledger.",
+  "description": "The operating system for modern media teams: content pipeline, posting calendar, brand deals, and ledger. By 77 Media.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

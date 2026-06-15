@@ -23,6 +23,11 @@ function demo() {
     demoDb = seedDemo();
     persistDemo();
   }
+  // Backfill collections added after a dataset was first seeded.
+  let patched = false;
+  if (!demoDb.team) { demoDb.team = seedTeam(); patched = true; }
+  if (!demoDb.clients) { demoDb.clients = seedClients(); patched = true; }
+  if (patched) persistDemo();
   return demoDb;
 }
 
@@ -110,6 +115,7 @@ function seedDemo() {
     profile: { id: 'demo-user', username: 'demo', full_name: 'Demo Creator' },
     prefs: seedPrefs(),
     projects, deals, transactions,
+    team: seedTeam(), clients: seedClients(),
   };
 }
 
@@ -127,6 +133,34 @@ function seedPrefs() {
     plan: 'studio', billing_cycle: 'monthly', plan_status: 'trial',
     trial_ends_at: trialEnds.toISOString(),
   };
+}
+
+/* ── Workspace: team & client accounts (demo) ─────────────────
+   These make the app read as a multi-seat studio, not a solo tool.
+   Real mode would back them with team_members / clients tables. */
+
+function seedTeam() {
+  const at = (d) => new Date(Date.now() - d * 86400000).toISOString();
+  const M = (name, role, email, d) => ({ id: uuid(), user_id: 'demo-user', name, role, email, created_at: at(d) });
+  return [
+    M('Demo Creator', 'owner',    'you@svnstudio.co',   120),
+    M('Mara Voss',    'producer', 'mara@svnstudio.co',   90),
+    M('Theo Lane',    'editor',   'theo@svnstudio.co',   62),
+    M('Priya Raman',  'reviewer', 'priya@svnstudio.co',  41),
+    M('Sam Okafor',   'finance',  'sam@svnstudio.co',    18),
+  ];
+}
+
+function seedClients() {
+  const at = (d) => new Date(Date.now() - d * 86400000).toISOString();
+  const C = (name, status, contact, d) => ({ id: uuid(), user_id: 'demo-user', name, status, contact, created_at: at(d) });
+  return [
+    C('Aurora Audio',       'active',   'Mia Chen',   80),
+    C('Lumen Lighting Co.', 'active',   'Theo Marsh', 70),
+    C('Atlas Travel Gear',  'active',   'Priya Nair', 60),
+    C('Kestrel Coffee',     'retainer', 'Sam Reid',   50),
+    C('Northbound Apparel', 'prospect', null,         10),
+  ];
 }
 
 /* Six months of audience growth, anchored to the current month so
@@ -201,6 +235,8 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
 export const projects = makeRepo('content_projects', 'projects');
 export const deals = makeRepo('brand_deals', 'deals');
 export const transactions = makeRepo('transactions', 'transactions', { orderBy: 'occurred_at' });
+export const team = makeRepo('team_members', 'team', { orderBy: 'created_at', ascending: true });
+export const clients = makeRepo('clients', 'clients', { orderBy: 'created_at', ascending: true });
 
 export async function getProfile() {
   if (DEMO_MODE) return { ...demo().profile };

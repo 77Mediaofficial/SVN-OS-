@@ -5,11 +5,12 @@ import { defineRoutes, startRouter, render } from './router.js';
 import { initAuth, bindAuthForm, signOut } from './auth.js';
 import { initAppLock, openPrivacySheet } from './applock.js';
 import { applyAppearance } from './appearance.js';
-import { expandRecurring, resetDemo } from './store.js';
+import { expandRecurring, resetDemo, team as teamRepo, getPrefs } from './store.js';
 import { initials } from './ui.js';
 import { toast } from './toast.js';
 import { initSpotlight } from './spotlight.js';
 import { initNavIndicator, moveNavPill } from './nav-indicator.js';
+import { PLAN_BY_ID } from './domain.js';
 
 applyAppearance(); // before anything becomes visible — no flash
 initSpotlight();   // desktop-only cursor glow on cards (no-op on touch)
@@ -44,6 +45,7 @@ function showApp(user) {
   shell.hidden = false;
   const name = user.user_metadata?.full_name || user.email || 'Creator';
   setIdentity(name);
+  renderWorkspace(); // workspace name + team presence in the sidebar
 
   if (!routerStarted) {
     routerStarted = true;
@@ -62,6 +64,25 @@ function showApp(user) {
 function setIdentity(name) {
   document.getElementById('user-name').textContent = name;
   document.getElementById('user-avatar').textContent = initials(name);
+}
+
+// Workspace strip: name + a stacked cluster of teammate avatars, so every
+// screen signals this is a multi-seat studio, not a solo tool.
+async function renderWorkspace() {
+  const strip = document.getElementById('workspace-strip');
+  if (!strip) return;
+  try {
+    const [members, prefs] = await Promise.all([teamRepo.list(), getPrefs()]);
+    if (!members.length) return;
+    document.getElementById('ws-name').textContent = prefs.business_name || 'Your workspace';
+    const planLabel = PLAN_BY_ID[prefs.plan]?.name;
+    document.getElementById('ws-sub').textContent =
+      `${planLabel ? planLabel + ' · ' : ''}${members.length} ${members.length === 1 ? 'person' : 'people'}`;
+    document.getElementById('ws-avatars').innerHTML =
+      members.slice(0, 4).map((m) => `<span class="ws-av">${initials(m.name)}</span>`).join('') +
+      (members.length > 4 ? `<span class="ws-av ws-av-more">+${members.length - 4}</span>` : '');
+    strip.hidden = false;
+  } catch { /* leave the strip hidden if the workspace can't load */ }
 }
 
 // Settings → Save profile dispatches this so the sidebar updates live.

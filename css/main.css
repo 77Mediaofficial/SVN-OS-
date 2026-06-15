@@ -24,7 +24,7 @@
   --text: #1c1c1e;
   --ivory: #1c1c1e;       /* legacy alias → strong ink */
   --dim: #5d5d63;         /* secondary label */
-  --muted: #95959c;       /* tertiary label */
+  --muted: #6e6e75;       /* tertiary label — AA on white */
 
   /* Monochrome accent (replaces brass in light) */
   --brass: #1c1c1e;
@@ -90,7 +90,7 @@ html.theme-dark {
   --text: #f2f1ec;
   --ivory: #f5f3ec;
   --dim: #9b978c;
-  --muted: #615e55;
+  --muted: #8a867b;
 
   --brass: #d4af80;
   --brass-bright: #e9cb98;
@@ -1256,6 +1256,68 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
   .plans { grid-template-columns: 1fr; }
   .plan-tagline { min-height: 0; }
 }
+
+/* ── Workspace strip + people rosters ─────────────────────────
+   Sidebar workspace identity (team presence cluster) + the Team /
+   Clients rosters in Settings. */
+.workspace {
+  display: flex; align-items: center; gap: 10px;
+  margin: 2px 0 16px;
+  padding: 9px 11px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  text-decoration: none;
+  transition: border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.workspace:hover { border-color: var(--brass-faint); background: var(--surface-2); }
+.ws-avatars { display: inline-flex; flex: none; }
+.ws-av {
+  width: 23px; height: 23px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.54rem; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--text); background: var(--surface-3);
+  box-shadow: 0 0 0 2px var(--surface);
+  margin-left: -8px;
+}
+.ws-av:first-child { margin-left: 0; }
+.ws-av-more { color: var(--muted); font-size: 0.5rem; }
+.ws-meta { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.ws-name {
+  font-size: 0.78rem; font-weight: 600; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.ws-sub {
+  font-family: var(--font-mono);
+  font-size: 0.6rem; letter-spacing: 0.02em; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.people { display: flex; flex-direction: column; }
+.person {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 2px;
+  border-top: 1px solid var(--hairline);
+}
+.person:first-child { border-top: none; }
+.person-av {
+  flex: none;
+  width: 34px; height: 34px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 0.7rem; font-weight: 600;
+  color: var(--text); background: var(--surface-3);
+}
+.person-av-sq { border-radius: var(--r-sm); }
+.person-id { display: flex; flex-direction: column; min-width: 0; flex: 1; gap: 1px; }
+.person-name {
+  font-size: 0.85rem; font-weight: 500; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.person-sub {
+  font-size: 0.72rem; color: var(--dim);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.people-empty { padding: 14px 2px; font-size: 0.8rem; color: var(--muted); }
 
 /* ── Invoice modal ────────────────────────────────────────── */
 
