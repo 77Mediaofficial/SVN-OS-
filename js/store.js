@@ -114,6 +114,8 @@ function seedDemo() {
 }
 
 function seedPrefs() {
+  const trialEnds = new Date();
+  trialEnds.setDate(trialEnds.getDate() + 14);
   return {
     business_name: 'Demo Creator Studio',
     business_type: 'Video production',
@@ -122,6 +124,8 @@ function seedPrefs() {
     goal_monthly_revenue: 4000,
     goal_monthly_posts: 6,
     follower_history: seedFollowerHistory(),
+    plan: 'studio', billing_cycle: 'monthly', plan_status: 'trial',
+    trial_ends_at: trialEnds.toISOString(),
   };
 }
 
@@ -225,6 +229,10 @@ const DEFAULT_PREFS = {
   business_name: '', business_type: '', invoice_details: '',
   invoice_seq: 0, goal_monthly_revenue: null, goal_monthly_posts: null,
   follower_history: [],
+  // Subscription state. Billing is dormant: these only drive the plans UI
+  // until a Stripe checkout endpoint is wired. Maps cleanly onto the eventual
+  // user_preferences columns, so no extra table is needed.
+  plan: 'studio', billing_cycle: 'monthly', plan_status: 'trial', trial_ends_at: null,
 };
 
 export async function getPrefs() {

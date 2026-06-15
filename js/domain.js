@@ -66,3 +66,63 @@ export function optionsHtml(list, selected) {
       `<option value="${key}"${key === selected ? ' selected' : ''}>${label}</option>`)
     .join('');
 }
+
+/* ── Subscription plans (commercial scaffold) ─────────────────
+   Prices are per-seat-equivalent in GBP. `monthly` is the rolling
+   price; `annual` is the per-month price when billed yearly.
+   The feature lists deliberately name the studio pillars on the
+   roadmap (SOW & change orders, milestone billing, white-label
+   portal, review rooms, gear matrix) so the pricing page tells the
+   product story. Billing stays dormant until Stripe keys + a
+   checkout endpoint are wired — choosing a plan only persists locally. */
+export const PLANS = [
+  {
+    id: 'solo',
+    name: 'Solo',
+    tagline: 'For the creator running the whole show.',
+    monthly: 19,
+    annual: 15,
+    seats: '1 workspace seat',
+    features: [
+      'Content engine, calendar & scheduling',
+      'Deals pipeline & financial ledger',
+      'Branded invoicing & analytics',
+      'Up to 25 active brand deals',
+    ],
+  },
+  {
+    id: 'studio',
+    name: 'Studio',
+    tagline: 'For small teams shipping client work.',
+    monthly: 49,
+    annual: 39,
+    seats: 'Up to 5 workspace seats',
+    featured: true,
+    badge: 'Most popular',
+    inherits: 'Everything in Solo, plus',
+    features: [
+      'Scope of work & change orders',
+      'Milestone billing & payment-gated delivery',
+      'Unlimited deals, projects & invoices',
+      'Priority support',
+    ],
+  },
+  {
+    id: 'agency',
+    name: 'Agency',
+    tagline: 'For studios & media companies at scale.',
+    monthly: 129,
+    annual: 99,
+    seats: 'Unlimited seats',
+    inherits: 'Everything in Studio, plus',
+    features: [
+      'White-label client portal',
+      'Frame-accurate review rooms',
+      'Gear & liability register',
+      'Custom roles & SSO',
+      'Dedicated onboarding',
+    ],
+  },
+];
+
+export const PLAN_BY_ID = byKey(PLANS.map((p) => ({ ...p, key: p.id })));

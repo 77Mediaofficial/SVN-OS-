@@ -1,6 +1,6 @@
 /* SVN OS service worker — app-shell precache + runtime cache.
    Bump VERSION on every deploy to invalidate old caches. */
-const VERSION = 'svn-os-v9';
+const VERSION = 'svn-os-v10';
 const SHELL = [
   '/',
   '/index.html',

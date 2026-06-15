@@ -33,6 +33,20 @@
   </form>
 </section>
 
+<section class="panel" aria-labelledby="plan-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="plan-label">Plan &amp; billing</h2>
+    <div class="seg" id="billing-cycle" role="radiogroup" aria-label="Billing cycle">
+      <button type="button" class="btn is-active" data-cycle="monthly" role="radio" aria-checked="true">Monthly</button>
+      <button type="button" class="btn" data-cycle="annual" role="radio" aria-checked="false">Annual<span class="seg-save">save 20%</span></button>
+    </div>
+  </div>
+
+  <div class="plan-banner" id="plan-banner" hidden></div>
+  <div class="plans" id="plans"></div>
+  <p class="plan-foot" id="plan-foot"></p>
+</section>
+
 <section class="panel" aria-labelledby="appearance-label">
   <div class="panel-head">
     <h2 class="section-label" id="appearance-label">Appearance</h2>
