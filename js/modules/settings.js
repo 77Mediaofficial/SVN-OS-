@@ -3,14 +3,14 @@
    to the profiles table (or the demo profile) and refreshes the
    sidebar identity. */
 
-import { getProfile, updateProfile, getPrefs, savePrefs, team, clients } from '../store.js';
+import { getProfile, updateProfile, getPrefs, savePrefs, team, clients, projects, deals, transactions, milestones } from '../store.js';
 import { getAppearance, setAppearance } from '../appearance.js';
 import { openPrivacySheet } from '../applock.js';
 import { signOut } from '../auth.js';
 import { DEMO_MODE } from '../supabase.js';
-import { formData, initials } from '../ui.js';
+import { formData, initials, esc, money, fmtDate } from '../ui.js';
 import { toast } from '../toast.js';
-import { PLANS, PLAN_BY_ID, ROLE_BY_KEY, CLIENT_STATUS_BY_KEY } from '../domain.js';
+import { PLANS, PLAN_BY_ID, ROLE_BY_KEY, ROLES, CLIENT_STATUS_BY_KEY, DEAL_STATUS_BY_KEY } from '../domain.js';
 
 export async function init() {
   const form = document.getElementById('profile-form');
@@ -76,6 +76,10 @@ export async function init() {
 
   initBilling();
   initWorkspace();
+  initRoles();
+  initActivity();
+  initNotifications();
+  initIntegrations();
 
   document.getElementById('settings-privacy-btn').addEventListener('click', openPrivacySheet);
   document.getElementById('settings-signout-btn').addEventListener('click', signOut);
@@ -244,4 +248,127 @@ function clientRow(c) {
 
 function emptyRow(msg) {
   return `<p class="people-empty">${msg}</p>`;
+}
+
+/* ── Roles & permissions ─────────────────────────────────────
+   Makes the seeded roles mean something: a capability matrix that
+   shows exactly what each seat can do. Static for now; the same map
+   will gate actions once the workspace backend enforces it. */
+const CAPS = [
+  ['view',    'View all work'],
+  ['content', 'Create & edit content'],
+  ['deals',   'Manage deals'],
+  ['invoice', 'Send invoices'],
+  ['review',  'Review & approve'],
+  ['team',    'Manage team'],
+  ['billing', 'Billing & plan'],
+];
+const ROLE_CAPS = {
+  owner:    new Set(['view', 'content', 'deals', 'invoice', 'review', 'team', 'billing']),
+  producer: new Set(['view', 'content', 'deals', 'invoice', 'review']),
+  editor:   new Set(['view', 'content']),
+  reviewer: new Set(['view', 'review']),
+  finance:  new Set(['view', 'deals', 'invoice', 'billing']),
+};
+
+function initRoles() {
+  const wrap = document.getElementById('roles-grid');
+  if (!wrap) return;
+  const head = ROLES.map((r) => `<th class="rl-role"><span class="pill tone-${r.tone}">${r.label}</span></th>`).join('');
+  const body = CAPS.map(([k, label]) => `
+    <tr>
+      <th class="rl-cap" scope="row">${label}</th>
+      ${ROLES.map((r) => `<td>${(ROLE_CAPS[r.key] || new Set()).has(k)
+        ? '<span class="rl-yes" title="Allowed">✓</span>'
+        : '<span class="rl-no" title="Not allowed" aria-label="Not allowed">–</span>'}</td>`).join('')}
+    </tr>`).join('');
+  wrap.innerHTML = `<div class="rl-scroll"><table class="rl-table">
+    <thead><tr><th scope="col"></th>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+/* ── Activity audit feed ─────────────────────────────────────
+   A who-did-what feed synthesised from the records themselves, so
+   multi-seat workspaces can see recent movement at a glance. */
+function relTime(ts) {
+  const t = new Date(ts).getTime();
+  if (!t) return '';
+  const diff = (Date.now() - t) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  const days = Math.floor(diff / 86400);
+  return days < 30 ? `${days}d ago` : fmtDate(ts);
+}
+
+async function initActivity() {
+  const wrap = document.getElementById('activity-list');
+  if (!wrap) return;
+  const [projs, dls, txns, ms, members] = await Promise.all([
+    projects.list().catch(() => []), deals.list().catch(() => []),
+    transactions.list().catch(() => []), milestones.list().catch(() => []),
+    team.list().catch(() => []),
+  ]);
+  const actors = members.map((m) => m.name).filter(Boolean);
+  const who = (i) => `<b>${esc(actors.length ? actors[i % actors.length] : 'You')}</b>`;
+
+  const ev = [];
+  projs.forEach((p, i) => ev.push({ ts: p.published_at || p.updated_at || p.created_at, tone: p.status === 'published' ? 'green' : 'blue',
+    text: `${who(i)} ${p.status === 'published' ? 'published' : 'updated'} “${esc(p.title)}”` }));
+  dls.forEach((d, i) => ev.push({ ts: d.updated_at || d.created_at, tone: 'violet',
+    text: `${who(i + 1)} moved <b>${esc(d.brand_name)}</b> to ${(DEAL_STATUS_BY_KEY[d.status]?.label || d.status).toLowerCase()}` }));
+  txns.forEach((t, i) => ev.push({ ts: t.created_at || `${t.occurred_at}T09:00:00`, tone: t.type === 'income' ? 'green' : 'amber',
+    text: `${who(i + 2)} logged ${t.type} of <b>${money(t.amount)}</b>` }));
+  ms.filter((m) => m.status === 'paid').forEach((m, i) => ev.push({ ts: m.created_at, tone: 'teal',
+    text: `${who(i + 3)} marked “${esc(m.label)}” paid` }));
+
+  ev.sort((a, b) => new Date(b.ts) - new Date(a.ts));
+  wrap.innerHTML = ev.slice(0, 8).map((e) => `
+    <div class="row-item">
+      <span class="dot tone-${e.tone}"></span>
+      <span class="row-body"><span class="row-title">${e.text}</span></span>
+      <span class="row-right">${relTime(e.ts)}</span>
+    </div>`).join('') || emptyRow('No activity yet.');
+}
+
+/* ── Notifications (dormant, like billing) ───────────────── */
+function initNotifications() {
+  const wrap = document.getElementById('notify-rows');
+  if (!wrap) return;
+  const items = [
+    ['Weekly digest', 'A Monday summary of pipeline, deadlines, and cash.', true],
+    ['Deal deadline reminders', 'Ping the owner two days before a deliverable is due.', true],
+    ['Review mentions', 'Tell a teammate when they’re tagged in a review note.', true],
+    ['Payment received', 'Notify finance when a milestone is paid.', false],
+  ];
+  wrap.innerHTML = items.map(([t, s, on], i) => `
+    <div class="setting-row">
+      <div class="setting-body"><p class="setting-title">${t}</p><p class="setting-sub">${s}</p></div>
+      <label class="switch"><input type="checkbox" ${on ? 'checked' : ''} data-notify="${i}" aria-label="${t}"><span class="switch-track"></span></label>
+    </div>`).join('');
+  wrap.querySelectorAll('[data-notify]').forEach((cb) => cb.addEventListener('change', () => {
+    toast(DEMO_MODE ? 'Saved locally — sends once the backend is connected.' : 'Notification preference saved.');
+  }));
+}
+
+/* ── Integrations (dormant) — server-side, no browser requests ─ */
+function initIntegrations() {
+  const wrap = document.getElementById('integ-rows');
+  if (!wrap) return;
+  const items = [
+    ['Stripe', 'Take real payments on plans, invoices, and milestones.', 'SP'],
+    ['Slack', 'Post deadlines, approvals, and payments to a channel.', 'SL'],
+    ['Google Drive', 'Back up exports and deliverables to your Drive.', 'GD'],
+    ['Frame.io', 'Sync review-room notes with your Frame.io projects.', 'FR'],
+  ];
+  wrap.innerHTML = items.map(([t, s, badge]) => `
+    <div class="setting-row">
+      <div class="integ-id">
+        <span class="integ-logo">${badge}</span>
+        <div class="setting-body"><p class="setting-title">${t}</p><p class="setting-sub">${s}</p></div>
+      </div>
+      <button class="btn" data-integ="${t}">Connect</button>
+    </div>`).join('');
+  wrap.querySelectorAll('[data-integ]').forEach((b) => b.addEventListener('click', () => {
+    toast(`${b.dataset.integ} connects once the workspace backend is wired — it runs server-side, so your browser still makes no third-party requests.`);
+  }));
 }

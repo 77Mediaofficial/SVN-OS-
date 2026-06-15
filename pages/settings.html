@@ -55,12 +55,28 @@
   <div class="people" id="team-list"></div>
 </section>
 
+<section class="panel" aria-labelledby="roles-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="roles-label">Roles &amp; permissions</h2>
+    <span class="count">What each seat can do</span>
+  </div>
+  <div id="roles-grid"></div>
+</section>
+
 <section class="panel" aria-labelledby="clients-label">
   <div class="panel-head">
     <h2 class="section-label" id="clients-label">Clients</h2>
     <button type="button" class="btn" id="client-add">Add client</button>
   </div>
   <div class="people" id="client-list"></div>
+</section>
+
+<section class="panel" aria-labelledby="activity-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="activity-label">Activity</h2>
+    <span class="count">Audit feed</span>
+  </div>
+  <div class="rows" id="activity-list"></div>
 </section>
 
 <section class="panel" aria-labelledby="appearance-label">
@@ -101,6 +117,33 @@
       <label><input type="radio" name="density" value="compact" />Compact</label>
     </div>
   </div>
+</section>
+
+<section class="panel" aria-labelledby="notify-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="notify-label">Notifications</h2>
+  </div>
+  <div id="notify-rows"></div>
+</section>
+
+<section class="panel" aria-labelledby="integ-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="integ-label">Integrations</h2>
+    <span class="count">Server-side · no third-party requests in your browser</span>
+  </div>
+  <div id="integ-rows"></div>
+</section>
+
+<section class="panel" aria-labelledby="news-label">
+  <div class="panel-head">
+    <h2 class="section-label" id="news-label">What's new</h2>
+    <span class="count">Changelog</span>
+  </div>
+  <ul class="changelog">
+    <li><span class="cl-date">Jun 2026</span><div class="cl-body"><b>Studio.</b> Scope of work, milestone billing, review rooms, a gear register, and a white-label client portal.</div></li>
+    <li><span class="cl-date">Jun 2026</span><div class="cl-body"><b>Multi-format resizer.</b> One master asset to every platform size, zipped, fully on-device.</div></li>
+    <li><span class="cl-date">Jun 2026</span><div class="cl-body"><b>Command palette (⌘K).</b> Jump anywhere or create in a keystroke, with inline dashboard actions.</div></li>
+  </ul>
 </section>
 
 <section class="panel" aria-labelledby="account-label">
