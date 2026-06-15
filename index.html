@@ -63,6 +63,7 @@
           <div class="field">
             <label for="auth-password">Password</label>
             <input id="auth-password" name="password" type="password" required minlength="6" autocomplete="current-password" placeholder="••••••••" />
+            <button type="button" class="linklike auth-forgot" id="auth-forgot">Forgot password?</button>
           </div>
           <p class="auth-error" id="auth-error" hidden></p>
           <button class="btn btn-primary btn-block" type="submit" id="auth-submit">Sign in</button>
@@ -131,6 +132,7 @@
       </nav>
 
       <div class="sidebar-foot">
+        <div id="net-pill" class="net-pill" hidden aria-live="polite"></div>
         <button id="demo-pill" class="demo-pill" hidden type="button">
           <span class="demo-dot" aria-hidden="true"></span>Demo data · connect Supabase
         </button>
@@ -191,7 +193,7 @@
     <div class="priv-row">
       <div class="priv-body">
         <p class="priv-title">Export my data</p>
-        <p class="priv-sub">Download everything this account stores — projects, deals, transactions, profile — as JSON.</p>
+        <p class="priv-sub">Download everything this account stores (projects, deals, transactions, profile) as JSON.</p>
       </div>
       <button class="btn" id="priv-export-btn">Export</button>
     </div>
@@ -213,7 +215,7 @@
       <h2 class="modal-title">Enable App Lock<span class="title-dot">.</span></h2>
       <button type="button" class="modal-close" data-close aria-label="Close">✕</button>
     </header>
-    <p class="confirm-msg" id="lock-setup-sub">Use your device's screen lock — Face ID, fingerprint, Windows Hello — or set a PIN.</p>
+    <p class="confirm-msg" id="lock-setup-sub">Use your device's screen lock (Face ID, fingerprint, Windows Hello), or set a PIN.</p>
 
     <div id="lock-pin-fields" hidden>
       <div class="field">

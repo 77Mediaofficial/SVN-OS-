@@ -11,6 +11,7 @@ import { esc, todayKey } from './ui.js';
 import { toast } from './toast.js';
 import { getAppearance, setAppearance } from './appearance.js';
 import { openPrivacySheet } from './applock.js';
+import { simulateOffline, isOnline, enqueue } from './outbox.js';
 import {
   PLATFORMS, CONTENT_STAGES, DEAL_STATUSES, TXN_CATEGORIES, optionsHtml,
 } from './domain.js';
@@ -91,6 +92,16 @@ function toolCommands() {
       group: 'Workspace', icon: ICON.tool, label: 'View landing page',
       keywords: 'landing marketing pricing front door signed out welcome',
       run: () => { close(); window.dispatchEvent(new CustomEvent('svnos:landing')); },
+    },
+    {
+      group: 'Workspace', icon: ICON.tool,
+      label: () => (isOnline() ? 'Simulate offline' : 'Go back online'),
+      keywords: 'offline online network sync queue pwa connectivity',
+      run: () => {
+        if (isOnline()) { simulateOffline(true); enqueue({ kind: 'demo', label: 'Sample change' }); }
+        else { simulateOffline(false); }
+        close();
+      },
     },
   ];
 }

@@ -40,21 +40,26 @@ export async function initAuth(onChange) {
 
 export function bindAuthForm() {
   const form = document.getElementById('auth-form');
-  if (!form || DEMO_MODE) return;
+  if (!form) return;
 
   const errEl = document.getElementById('auth-error');
   const nameField = document.getElementById('auth-name-field');
+  const pwField = document.getElementById('auth-password').closest('.field');
   const submitBtn = document.getElementById('auth-submit');
   const toggleBtn = document.getElementById('auth-toggle');
   const toggleLine = document.getElementById('auth-toggle-line');
-  let mode = 'signin';
+  const forgot = document.getElementById('auth-forgot');
+  let mode = 'signin'; // 'signin' | 'signup' | 'reset'
 
   function syncMode() {
     const signup = mode === 'signup';
+    const reset = mode === 'reset';
     nameField.hidden = !signup;
-    submitBtn.textContent = signup ? 'Create account' : 'Sign in';
-    toggleLine.firstChild.textContent = signup ? 'Already set up? ' : 'No account? ';
-    toggleBtn.textContent = signup ? 'Sign in instead' : 'Create one';
+    if (pwField) pwField.hidden = reset;
+    if (forgot) forgot.hidden = signup || reset;
+    submitBtn.textContent = reset ? 'Send reset link' : signup ? 'Create account' : 'Sign in';
+    toggleLine.firstChild.textContent = reset ? 'Remembered it? ' : signup ? 'Already set up? ' : 'No account? ';
+    toggleBtn.textContent = reset ? 'Back to sign in' : signup ? 'Sign in instead' : 'Create one';
     errEl.hidden = true;
   }
 
@@ -62,6 +67,7 @@ export function bindAuthForm() {
     mode = mode === 'signin' ? 'signup' : 'signin';
     syncMode();
   });
+  forgot?.addEventListener('click', () => { mode = 'reset'; syncMode(); });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -69,10 +75,20 @@ export function bindAuthForm() {
     submitBtn.disabled = true;
     const { email, password, full_name } = formData(form);
     try {
-      if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
-          email, password, options: { data: { full_name } },
-        });
+      if (DEMO_MODE) {
+        toast(mode === 'reset'
+          ? 'Demo mode — connect Supabase to send real reset links.'
+          : 'Demo session — add Supabase credentials in js/supabase.js for real accounts.');
+        return;
+      }
+      if (mode === 'reset') {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: location.origin });
+        if (error) throw error;
+        toast('Password reset link sent — check your inbox.', 'success');
+        mode = 'signin';
+        syncMode();
+      } else if (mode === 'signup') {
+        const { error } = await supabase.auth.signUp({ email, password, options: { data: { full_name } } });
         if (error) throw error;
         toast('Account created — check your inbox to confirm.', 'success');
       } else {

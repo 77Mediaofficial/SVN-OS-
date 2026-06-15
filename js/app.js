@@ -12,6 +12,7 @@ import { initSpotlight } from './spotlight.js';
 import { initNavIndicator, moveNavPill } from './nav-indicator.js';
 import { initCommand } from './command.js';
 import { initShortcuts } from './shortcuts.js';
+import { initOutbox } from './outbox.js';
 import { maybeOnboard } from './onboarding.js';
 import { PLAN_BY_ID, PLANS } from './domain.js';
 
@@ -20,6 +21,7 @@ initSpotlight();   // desktop-only cursor glow on cards (no-op on touch)
 initNavIndicator(); // sliding active-link pill in the sidebar
 initCommand();      // ⌘K command palette + global quick-create
 initShortcuts();    // g-then-key navigation + ? cheat sheet
+initOutbox();       // offline indicator + write queue (PWA)
 renderLandingPricing(); // pricing strip on the signed-out front door
 
 // The signed-out landing is a real marketing front door: pitch + pricing

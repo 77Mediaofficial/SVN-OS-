@@ -2549,6 +2549,31 @@ body.pt-active { overflow: hidden; }
   .lp-tier { flex: 1 1 30%; }
 }
 
+/* ── Auth: forgot-password link ───────────────────────────── */
+
+.auth-forgot { align-self: flex-start; margin-top: 9px; font-size: 0.72rem; }
+
+/* ── Offline outbox indicator ─────────────────────────────── */
+
+.net-pill {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; margin-bottom: 8px;
+  padding: 7px 10px;
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-sm);
+  background: var(--bg-deep);
+  font-size: 0.7rem; font-weight: 500; color: var(--dim);
+}
+.net-pill.is-offline {
+  color: var(--tone-amber);
+  border-color: color-mix(in srgb, var(--tone-amber) 35%, transparent);
+  background: color-mix(in srgb, var(--tone-amber) 7%, var(--bg-deep));
+}
+.net-pill.is-syncing {
+  color: var(--tone-green);
+  border-color: color-mix(in srgb, var(--tone-green) 35%, transparent);
+}
+.net-dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
 /* ── Reduced motion ───────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
