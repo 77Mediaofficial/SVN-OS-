@@ -10,11 +10,13 @@ import { initials } from './ui.js';
 import { toast } from './toast.js';
 import { initSpotlight } from './spotlight.js';
 import { initNavIndicator, moveNavPill } from './nav-indicator.js';
+import { initCommand } from './command.js';
 import { PLAN_BY_ID } from './domain.js';
 
 applyAppearance(); // before anything becomes visible — no flash
 initSpotlight();   // desktop-only cursor glow on cards (no-op on touch)
 initNavIndicator(); // sliding active-link pill in the sidebar
+initCommand();      // ⌘K command palette + global quick-create
 
 const routes = [
   { path: '/',         nav: 'dashboard', title: 'Today',          page: 'pages/dashboard.html',      module: () => import('./modules/dashboard.js') },

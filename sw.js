@@ -1,6 +1,6 @@
 /* SVN OS service worker — app-shell precache + runtime cache.
    Bump VERSION on every deploy to invalidate old caches. */
-const VERSION = 'svn-os-v13';
+const VERSION = 'svn-os-v14';
 const SHELL = [
   '/',
   '/index.html',
@@ -32,6 +32,7 @@ const SHELL = [
   '/js/drawer.js',
   '/js/spotlight.js',
   '/js/nav-indicator.js',
+  '/js/command.js',
   '/js/tabs.js',
   '/js/modules/dashboard.js',
   '/js/modules/content-engine.js',
