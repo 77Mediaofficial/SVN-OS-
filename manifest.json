@@ -1,7 +1,7 @@
 {
   "name": "SVN OS — Operating System for Media Teams",
   "short_name": "SVN OS",
-  "description": "The operating system for modern media teams: content pipeline, posting calendar, brand deals, and ledger. By 77 Media.",
+  "description": "The operating system for modern media teams: content pipeline, posting calendar, brand deals, and ledger.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
