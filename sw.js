@@ -1,6 +1,6 @@
 /* SVN OS service worker — app-shell precache + runtime cache.
    Bump VERSION on every deploy to invalidate old caches. */
-const VERSION = 'svn-os-v10';
+const VERSION = 'svn-os-v11';
 const SHELL = [
   '/',
   '/index.html',
@@ -9,9 +9,10 @@ const SHELL = [
   '/js/theme-boot.js',
   '/css/fonts.css',
   '/css/main.css',
-  '/fonts/archivo-400.woff2',
-  '/fonts/archivo-500.woff2',
-  '/fonts/archivo-600.woff2',
+  '/fonts/switzer-400.woff2',
+  '/fonts/switzer-500.woff2',
+  '/fonts/switzer-600.woff2',
+  '/fonts/switzer-700.woff2',
   '/fonts/instrumentserif-400.woff2',
   '/fonts/instrumentserif-400-italic.woff2',
   '/fonts/splinesansmono-400.woff2',

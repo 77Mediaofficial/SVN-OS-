@@ -1,26 +1,35 @@
 /* Self-hosted fonts (latin subset) — no third-party requests.
-   Files fetched once from Google Fonts and served from /fonts. */
+   Switzer (UI sans) from Fontshare / Indian Type Foundry, ITF Free Font
+   License; Instrument Serif + Spline Sans Mono from Google Fonts. All
+   served first-party from /fonts — see the privacy promise in index.html. */
 
 @font-face {
-  font-family: "Archivo";
+  font-family: "Switzer";
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url("/fonts/archivo-400.woff2") format("woff2");
+  src: url("/fonts/switzer-400.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Archivo";
+  font-family: "Switzer";
   font-style: normal;
   font-weight: 500;
   font-display: swap;
-  src: url("/fonts/archivo-500.woff2") format("woff2");
+  src: url("/fonts/switzer-500.woff2") format("woff2");
 }
 @font-face {
-  font-family: "Archivo";
+  font-family: "Switzer";
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url("/fonts/archivo-600.woff2") format("woff2");
+  src: url("/fonts/switzer-600.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Switzer";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/switzer-700.woff2") format("woff2");
 }
 @font-face {
   font-family: "Instrument Serif";

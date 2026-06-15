@@ -43,7 +43,7 @@
   --tone-brass: #1c1c1e;
   --tone-dim: #95959c;
 
-  --font-ui: "Archivo", system-ui, sans-serif;
+  --font-ui: "Switzer", system-ui, sans-serif;
   --font-display: "Instrument Serif", Georgia, serif;
   --font-mono: "Spline Sans Mono", ui-monospace, monospace;
 
@@ -1285,7 +1285,7 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
     display: block !important;
     color: #16140f;
     background: #fff;
-    font-family: "Archivo", system-ui, sans-serif;
+    font-family: "Switzer", system-ui, sans-serif;
     font-size: 12px;
     line-height: 1.55;
     padding: 12px 4px;
