@@ -32,7 +32,15 @@ let idleTimer = null;
 let hiddenAt = 0;
 
 function loadCfg() {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)); } catch { return null; }
+  try {
+    const c = JSON.parse(localStorage.getItem(LS_KEY));
+    if (!c || typeof c !== 'object') return null;
+    // Only honour a structurally-complete config. A corrupt/partial one would
+    // show the lock screen but make every unlock attempt throw — a hard brick.
+    if (c.method === 'pin' && c.salt && c.hash) return c;
+    if (c.method === 'webauthn' && c.credId) return c;
+    return null;
+  } catch { return null; }
 }
 function saveCfg(next) {
   cfg = next;
@@ -43,7 +51,7 @@ function saveCfg(next) {
 /* ── Crypto helpers ──────────────────────────────────────── */
 
 const toHex = (bytes) => [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
-const fromHex = (hex) => new Uint8Array(hex.match(/.{2}/g).map((h) => parseInt(h, 16)));
+const fromHex = (hex) => new Uint8Array((String(hex).match(/.{2}/g) || []).map((h) => parseInt(h, 16)));
 const toB64 = (bytes) => btoa(String.fromCharCode(...bytes));
 const fromB64 = (b64) => Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
@@ -306,6 +314,12 @@ async function eraseLocalData(skipConfirm = false) {
     if (window.caches) {
       const keys = await caches.keys();
       await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    // Unregister the service worker too — otherwise a stale precached build can
+    // keep serving old code after an "erase".
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map((r) => r.unregister()));
     }
     if (!DEMO_MODE && supabase) await supabase.auth.signOut();
   } finally {

@@ -21,7 +21,10 @@ import {
 const state = { clientId: null, tab: 'scope', brand: 'Your studio' };
 const cache = { clients: [], sow: [], ms: [], gear: [], reviews: [] };
 
-const tc = (s) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}`;
+const tc = (s) => {
+  const r = Math.max(0, Math.round(s)); // round to whole seconds first, else 119.6 → "1:60"
+  return `${Math.floor(r / 60)}:${String(r % 60).padStart(2, '0')}`;
+};
 
 export async function init() {
   const [cl, sow, ms, gr, rv, prefs] = await Promise.all([
@@ -82,7 +85,7 @@ function renderScope(panel) {
   const items = cache.sow.filter((s) => s.client_id === state.clientId);
   const scope = items.filter((s) => s.kind === 'scope');
   const changes = items.filter((s) => s.kind === 'change');
-  const lineTotal = (s) => Number(s.qty) * Number(s.rate);
+  const lineTotal = (s) => (Number(s.qty) || 0) * (Number(s.rate) || 0);
   const scopeTotal = scope.reduce((a, s) => a + lineTotal(s), 0);
   const changeTotal = changes.reduce((a, s) => a + lineTotal(s), 0);
 
@@ -157,8 +160,8 @@ function addSowDrawer(kind) {
 
 function renderMilestones(panel) {
   const items = cache.ms.filter((m) => m.client_id === state.clientId);
-  const billed = items.reduce((a, m) => a + Number(m.amount), 0);
-  const paid = items.filter((m) => m.status === 'paid').reduce((a, m) => a + Number(m.amount), 0);
+  const billed = items.reduce((a, m) => a + (Number(m.amount) || 0), 0);
+  const paid = items.filter((m) => m.status === 'paid').reduce((a, m) => a + (Number(m.amount) || 0), 0);
 
   const card = (m) => {
     const st = MILESTONE_STATUS_BY_KEY[m.status];
@@ -325,7 +328,7 @@ function addNoteDrawer(asset, duration, t) {
 
 function renderGear(panel) {
   const items = cache.gear;
-  const value = items.reduce((a, g) => a + Number(g.value), 0);
+  const value = items.reduce((a, g) => a + (Number(g.value) || 0), 0);
   const out = items.filter((g) => g.status === 'out').length;
   const uninsured = items.filter((g) => !g.insured).length;
 
@@ -417,9 +420,9 @@ function openPortal() {
   const name = clientName();
   const ms = cache.ms.filter((m) => m.client_id === state.clientId);
   const sow = cache.sow.filter((s) => s.client_id === state.clientId);
-  const total = sow.reduce((a, s) => a + Number(s.qty) * Number(s.rate), 0);
-  const paid = ms.filter((m) => m.status === 'paid').reduce((a, m) => a + Number(m.amount), 0);
-  const billed = ms.reduce((a, m) => a + Number(m.amount), 0);
+  const total = sow.reduce((a, s) => a + (Number(s.qty) || 0) * (Number(s.rate) || 0), 0);
+  const paid = ms.filter((m) => m.status === 'paid').reduce((a, m) => a + (Number(m.amount) || 0), 0);
+  const billed = ms.reduce((a, m) => a + (Number(m.amount) || 0), 0);
   const pct = billed ? Math.round((paid / billed) * 100) : 0;
 
   const msRow = (m) => {
@@ -472,13 +475,18 @@ function openPortal() {
   document.body.appendChild(root);
   document.body.classList.add('pt-active');
   root.addEventListener('click', (e) => { if (e.target.closest('[data-pt-close]')) closePortal(root); });
-  const esc2 = (e) => { if (e.key === 'Escape') { closePortal(root); document.removeEventListener('keydown', esc2); } };
-  document.addEventListener('keydown', esc2);
+  // Keep a handle to the key listener so closePortal removes it on EVERY close
+  // path (backdrop / ✕ / Escape), not only the Escape branch — else each
+  // click-close orphans a document keydown listener.
+  const onKey = (e) => { if (e.key === 'Escape') closePortal(root); };
+  document.addEventListener('keydown', onKey);
+  root._onKey = onKey;
   void root.offsetWidth;
   root.classList.add('is-open');
 }
 
 function closePortal(root) {
+  if (root._onKey) { document.removeEventListener('keydown', root._onKey); root._onKey = null; }
   root.classList.remove('is-open');
   document.body.classList.remove('pt-active');
   setTimeout(() => root.remove(), 220);

@@ -1,6 +1,6 @@
 /* SVN OS service worker — app-shell precache + runtime cache.
    Bump VERSION on every deploy to invalidate old caches. */
-const VERSION = 'svn-os-v19';
+const VERSION = 'svn-os-v20';
 const SHELL = [
   '/',
   '/index.html',
@@ -58,8 +58,13 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
+  // Per-asset precache: cache.addAll is atomic, so one missing/renamed path
+  // would abort the whole install and leave zero offline support. allSettled
+  // keeps every asset that fetches successfully and tolerates the odd 404.
   event.waitUntil(
-    caches.open(VERSION).then((cache) => cache.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(VERSION)
+      .then((cache) => Promise.allSettled(SHELL.map((url) => cache.add(url))))
+      .then(() => self.skipWaiting())
   );
 });
 

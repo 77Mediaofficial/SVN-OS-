@@ -190,7 +190,12 @@ async function onSubmit(e) {
     description: raw.description || '',
     notes: raw.notes || '',
   };
-  if (values.status === 'published') values.published_at = new Date().toISOString();
+  // Stamp the publish date once — don't reset it when re-saving an edit to an
+  // already-published project (mirrors the drag path's !published_at guard).
+  if (values.status === 'published') {
+    const existing = editingId ? rows.find((r) => r.id === editingId) : null;
+    if (!existing?.published_at) values.published_at = new Date().toISOString();
+  }
 
   try {
     if (editingId) {

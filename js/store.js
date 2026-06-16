@@ -6,6 +6,7 @@
 
 import { supabase, DEMO_MODE } from './supabase.js';
 import { dayKey, todayKey } from './ui.js';
+import { toast } from './toast.js';
 
 const LS_KEY = 'svnos-demo-v1';
 
@@ -18,8 +19,12 @@ let demoDb = null;
 
 function demo() {
   if (demoDb) return demoDb;
-  try { demoDb = JSON.parse(localStorage.getItem(LS_KEY)); } catch { demoDb = null; }
+  let raw = null;
+  try { raw = localStorage.getItem(LS_KEY); demoDb = raw ? JSON.parse(raw) : null; }
+  catch { demoDb = null; }
   if (!demoDb || !demoDb.projects) {
+    // Preserve unparseable / old-schema data instead of silently overwriting it.
+    if (raw) { try { localStorage.setItem(`${LS_KEY}-corrupt`, raw); } catch { /* ignore */ } }
     demoDb = seedDemo();
     persistDemo();
   }
@@ -39,8 +44,19 @@ function demo() {
   return demoDb;
 }
 
+let storageWarned = false;
 function persistDemo() {
-  localStorage.setItem(LS_KEY, JSON.stringify(demoDb));
+  try {
+    localStorage.setItem(LS_KEY, JSON.stringify(demoDb));
+  } catch (err) {
+    // Quota exceeded / private-mode write block: keep the in-memory DB usable
+    // and warn once instead of throwing out of create/update/remove.
+    console.warn('Could not persist demo state:', err);
+    if (!storageWarned) {
+      storageWarned = true;
+      toast('Storage is full — changes won’t survive a refresh.', 'error');
+    }
+  }
 }
 
 export function resetDemo() {
@@ -92,7 +108,7 @@ function seedDemo() {
     D(-26, { brand_name: 'Forma Furniture', status: 'delivered', value: 1800, deadline: day(-2), contact_name: 'Jon Ellis', contact_email: 'jon@forma.studio' }),
     D(-50, { brand_name: 'Kestrel Coffee', status: 'paid', value: 1500, deadline: day(-20), contact_name: 'Sam Reid', contact_email: 'sam@kestrel.coffee', tags: ['fmcg'] }),
   ];
-  const dealId = (name) => deals.find((d) => d.brand_name === name).id;
+  const dealId = (name) => deals.find((d) => d.brand_name === name)?.id ?? null;
 
   const T = (offset, fields) => ({
     id: uuid(), user_id: 'demo-user', description: '', category: 'other',
@@ -273,6 +289,22 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
       return data;
     },
 
+    async createMany(list) {
+      if (!list.length) return [];
+      if (DEMO_MODE) {
+        const now = new Date().toISOString();
+        const rows = list.map((values) => ({ id: uuid(), user_id: 'demo-user', created_at: now, updated_at: now, ...values }));
+        demo()[demoKey].unshift(...rows);
+        persistDemo(); // one write for the whole batch
+        return rows;
+      }
+      const { data, error } = await supabase
+        .from(table).insert(list.map((v) => ({ ...v, user_id: userId })))
+        .select();
+      if (error) throw error;
+      return data;
+    },
+
     async update(id, patch) {
       if (DEMO_MODE) {
         const row = demo()[demoKey].find((r) => r.id === id);
@@ -393,20 +425,26 @@ function advance(dateStr, interval) {
 export async function expandRecurring() {
   const all = await transactions.list();
   const today = todayKey();
-  const created = [];
+  const pending = [];
 
   for (const parent of all.filter((t) => t.recurrence && t.recurrence !== 'none')) {
-    const latest = all
-      .filter((t) => t.parent_transaction_id === parent.id)
-      .reduce((max, t) => (t.occurred_at > max ? t.occurred_at : max), parent.occurred_at);
+    // Newest occurrence so far. Children share the parent's YYYY-MM-DD format,
+    // so a lexical max is also the chronological max.
+    let latest = parent.occurred_at;
+    for (const t of all) {
+      if (t.parent_transaction_id === parent.id && t.occurred_at > latest) latest = t.occurred_at;
+    }
 
+    // Materialise every due occurrence for THIS parent. Per-parent cap (not a
+    // shared budget) so one long-dormant series can't starve the others.
     let next = advance(latest, parent.recurrence);
+    let guard = 0;
     while (
       next <= today &&
       (!parent.recurrence_end || next <= parent.recurrence_end) &&
-      created.length < 36
+      guard < 60
     ) {
-      created.push(await transactions.create({
+      pending.push({
         type: parent.type,
         category: parent.category,
         description: parent.description,
@@ -415,9 +453,12 @@ export async function expandRecurring() {
         recurrence: 'none',
         parent_transaction_id: parent.id,
         deal_id: parent.deal_id ?? null,
-      }));
+      });
       next = advance(next, parent.recurrence);
+      guard += 1;
     }
   }
-  return created;
+
+  // One batched write instead of a whole-DB serialize per occurrence.
+  return transactions.createMany(pending);
 }

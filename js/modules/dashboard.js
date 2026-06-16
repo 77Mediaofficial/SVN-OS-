@@ -67,12 +67,12 @@ function statHtml(label, num, foot, numClass = '') {
 function renderStats(projs, dls, txns, prefs) {
   const month = todayKey().slice(0, 7);
   const inMonth = txns.filter((t) => String(t.occurred_at).startsWith(month));
-  const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-  const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+  const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const net = income - costs;
 
   const open = dls.filter((d) => OPEN_DEAL_STATUSES.has(d.status));
-  const pipelineValue = open.reduce((s, d) => s + Number(d.value), 0);
+  const pipelineValue = open.reduce((s, d) => s + (Number(d.value) || 0), 0);
 
   const active = projs.filter((p) => p.status !== 'published');
   const inProduction = active.filter((p) => p.status === 'production').length;
@@ -203,6 +203,7 @@ async function handleProject(id, act) {
     toast(`“${truncate(p.title)}” marked published.`, 'success',
       undo(() => projects.update(id, prev)));
   } else {
+    if (!p.scheduled_at) { await load(); return; } // nothing to snooze — avoid new Date(null) → 1970
     const prev = { scheduled_at: p.scheduled_at };
     const d = new Date(p.scheduled_at);
     const now = new Date();
@@ -264,8 +265,8 @@ function renderPipeline(projs) {
 function renderLedgerMini(txns) {
   const month = todayKey().slice(0, 7);
   const inMonth = txns.filter((t) => String(t.occurred_at).startsWith(month));
-  const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-  const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+  const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const net = income - costs;
   const max = Math.max(1, income, costs);
 

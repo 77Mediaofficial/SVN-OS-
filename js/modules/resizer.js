@@ -30,6 +30,13 @@ const state = {
 
 let els = {};
 
+/* Free a decoded ImageBitmap before we drop our reference — ImageBitmaps hold
+   native/GPU memory until closed (canvas sample sources don't need it). */
+function releaseSource() {
+  if (state.source && typeof state.source.close === 'function') state.source.close();
+  state.source = null;
+}
+
 export function init() {
   els = {
     empty:   document.getElementById('rz-empty'),
@@ -49,7 +56,7 @@ export function init() {
   };
 
   // Reset per-mount state (the module object persists across navigations).
-  state.source = null;
+  releaseSource();
   state.fit = 'cover';
   state.format = 'png';
   state.selected = new Set(PRESETS.map((p) => p.slug));
@@ -118,6 +125,7 @@ async function loadFile(file) {
   if (!file.type.startsWith('image/')) { toast('That doesn’t look like an image.', 'error'); return; }
   try {
     const bmp = await createImageBitmap(file);
+    releaseSource();        // free the previous bitmap before replacing it
     state.source = bmp;
     state.w = bmp.width;
     state.h = bmp.height;
@@ -146,6 +154,7 @@ function loadSample() {
   ctx.font = '500 40px "Spline Sans Mono", monospace';
   ctx.fillStyle = 'rgba(245,243,236,0.7)';
   ctx.fillText('ONE MASTER · EVERY FORMAT', 156, 600);
+  releaseSource();
   state.source = c;
   state.w = c.width; state.h = c.height; state.name = 'svn-sample';
   showStudio();
@@ -231,7 +240,11 @@ function renderFull(p) {
   return c;
 }
 
-const toBlob = (canvas) => new Promise((res) => canvas.toBlob(res, mime(), 0.92));
+const toBlob = (canvas) => new Promise((res, rej) =>
+  canvas.toBlob(
+    (b) => (b ? res(b) : rej(new Error('This image is too large to export on this device.'))),
+    mime(), 0.92,
+  ));
 
 function download(blob, filename) {
   const url = URL.createObjectURL(blob);
@@ -243,9 +256,14 @@ function download(blob, filename) {
 
 async function exportOne(p) {
   if (!state.source) return;
-  const blob = await toBlob(renderFull(p));
-  download(blob, `${slugify(state.name)}-${p.slug}.${ext()}`);
-  toast(`${p.group} ${p.label.split('·')[0].trim()} downloaded.`, 'success');
+  try {
+    const blob = await toBlob(renderFull(p));
+    download(blob, `${slugify(state.name)}-${p.slug}.${ext()}`);
+    toast(`${p.group} ${p.label.split('·')[0].trim()} downloaded.`, 'success');
+  } catch (err) {
+    console.error(err);
+    toast(err.message || 'Export failed — try again.', 'error');
+  }
 }
 
 async function exportAll() {
@@ -282,6 +300,6 @@ function setSeg(container, sel, active) {
 
 function updateExportLabel() {
   const n = state.selected.size;
-  els.export.textContent = `Download ${n} ${n === 1 ? 'size' : 'sizes'} (.${ext() === 'jpg' ? 'zip' : 'zip'})`;
+  els.export.textContent = `Download ${n} ${n === 1 ? 'size' : 'sizes'} (.zip)`;
   if (els.count) els.count.textContent = `${n} of ${PRESETS.length} selected`;
 }

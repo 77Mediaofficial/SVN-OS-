@@ -23,16 +23,26 @@ export function enqueue(op) {
   paint();
 }
 
-export function flush() {
-  if (!isOnline()) return;   // never replay while offline (incl. simulated offline)
-  if (!queue.length) return;
-  const n = queue.length;
-  // Scaffold: real mode replays each queued op against its repo here, then
-  // drops the ones that succeed. Demo has nothing to replay.
-  queue = [];
+let replayHandler = null;
+/* Real mode registers how to replay a queued op against its repo. Until one is
+   set, flush() KEEPS queued ops rather than dropping them — clearing without
+   replaying would silently lose writes the moment real mode starts enqueuing. */
+export function setReplayHandler(fn) { replayHandler = fn; }
+
+export async function flush() {
+  if (!isOnline() || !queue.length) return; // never replay while offline
+  const pending = queue.slice();
+  const kept = [];
+  let synced = 0;
+  for (const op of pending) {
+    if (!replayHandler) { kept.push(op); continue; } // nothing wired — never drop
+    try { await replayHandler(op); synced += 1; }
+    catch { kept.push(op); }                          // keep failures to retry next time
+  }
+  queue = kept;
   save();
   paint();
-  toast(`Back online — synced ${n} change${n === 1 ? '' : 's'}.`, 'success');
+  if (synced) toast(`Back online — synced ${synced} change${synced === 1 ? '' : 's'}.`, 'success');
 }
 
 function paint() {

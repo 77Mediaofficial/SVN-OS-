@@ -121,7 +121,7 @@ function renderDeals() {
   const paidThisYear = dealRows.filter((d) =>
     d.status === 'paid' && String(d.updated_at ?? '').startsWith(year));
 
-  const sum = (list) => list.reduce((s, d) => s + Number(d.value), 0);
+  const sum = (list) => list.reduce((s, d) => s + (Number(d.value) || 0), 0);
 
   const dealStatsEl = document.getElementById('deal-stats');
   dealStatsEl.innerHTML =
@@ -133,7 +133,7 @@ function renderDeals() {
   renderDealFilters();
 
   const sorted = [...dealRows].sort((a, b) => {
-    const rank = STATUS_RANK[a.status] - STATUS_RANK[b.status];
+    const rank = (STATUS_RANK[a.status] ?? 99) - (STATUS_RANK[b.status] ?? 99);
     if (rank !== 0) return rank;
     if (a.deadline && b.deadline) return a.deadline < b.deadline ? -1 : 1;
     if (a.deadline) return -1;
@@ -206,7 +206,7 @@ function openDealDrawer(id) {
     .sort((a, b) => (a.occurred_at < b.occurred_at ? 1 : -1));
   const received = linked
     .filter((t) => t.type === 'income')
-    .reduce((s, t) => s + Number(t.amount), 0);
+    .reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const outstanding = Math.max(0, value - received);
 
   const row = (k, v) => `<div class="detail-row"><span class="k">${k}</span><span class="v">${v}</span></div>`;
@@ -390,8 +390,8 @@ async function onDealDelete() {
 function renderLedger() {
   const month = todayKey().slice(0, 7);
   const inMonth = txnRows.filter((t) => String(t.occurred_at).startsWith(month));
-  const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + Number(t.amount), 0);
-  const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + Number(t.amount), 0);
+  const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const net = income - costs;
 
   const ledgerStatsEl = document.getElementById('ledger-stats');

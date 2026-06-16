@@ -35,7 +35,7 @@ export async function makeZip(files) {
     const dv = new DataView(local.buffer);
     dv.setUint32(0, 0x04034b50, true); // local file header
     dv.setUint16(4, 20, true);         // version needed
-    dv.setUint16(6, 0, true);          // flags
+    dv.setUint16(6, 0x0800, true);     // flags: bit 11 = filename is UTF-8
     dv.setUint16(8, 0, true);          // method: store
     dv.setUint16(10, 0, true);         // mod time
     dv.setUint16(12, 0x21, true);      // mod date (1980-01-01)
@@ -52,7 +52,7 @@ export async function makeZip(files) {
     cv.setUint32(0, 0x02014b50, true); // central dir header
     cv.setUint16(4, 20, true);
     cv.setUint16(6, 20, true);
-    cv.setUint16(8, 0, true);
+    cv.setUint16(8, 0x0800, true);     // flags: bit 11 = filename is UTF-8
     cv.setUint16(10, 0, true);
     cv.setUint16(12, 0, true);
     cv.setUint16(14, 0x21, true);
