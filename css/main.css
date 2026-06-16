@@ -233,12 +233,24 @@ img, svg { display: block; }
 }
 .darkroom-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .darkroom-btn:hover { color: var(--text); border-color: var(--brass-faint); }
+/* Keyboard-accessible toggle: the checkbox is visually hidden but still focusable
+   (not display:none), so Tab + Space works; the focus ring shows on the glyph. */
+.darkroom-input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; margin: 0; }
+.darkroom-input:focus-visible + .darkroom-btn { outline: 2px solid var(--brass); outline-offset: 2px; }
 
 html:has(#darkroom-toggle:checked) .sidebar { transform: translateX(-100%); opacity: 0; pointer-events: none; }
 html:has(#darkroom-toggle:checked) .main { margin-left: 0; }
 html:has(#darkroom-toggle:checked) .grain { opacity: 0; }
 html:has(#darkroom-toggle:checked) .hero-spotlight { opacity: 0.55; }
 html:has(#darkroom-toggle:checked) .darkroom-btn { color: var(--brass); border-color: var(--brass-faint); background: var(--brass-soft); }
+
+/* Touch targets — bump small icon buttons to a 44px tap area on touch devices
+   only (ui-ux-pro-max: Touch Target Size, 44x44 min). Desktop precision is kept. */
+@media (pointer: coarse) {
+  .darkroom-btn, .iconbtn, .act-btn { width: 44px; height: 44px; }
+  .act-btns { gap: 8px; }
+  .nav-link { min-height: 44px; }
+}
 
 /* ── Typography utilities ─────────────────────────────────── */
 
@@ -2033,6 +2045,7 @@ body.drawer-open { overflow: hidden; }
   .nav-pill { transition: opacity 0.2s var(--ease); }
   .tab-underline { transition: none; }
   .btn-primary::after { display: none; }
+  .sidebar, .main { transition: none; }   /* no Darkroom/Spine slide under reduced motion */
 }
 
 /* ── Responsive ───────────────────────────────────────────── */
