@@ -5,7 +5,7 @@
    truth for runtime changes and keeps the system theme in sync. */
 
 const KEY = 'svnos-appearance-v1';
-const DEFAULTS = { theme: 'light', textSize: 'normal', density: 'comfortable' };
+const DEFAULTS = { theme: 'dark', textSize: 'normal', density: 'comfortable' };
 
 let current = load();
 let systemWatched = false;

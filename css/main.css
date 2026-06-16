@@ -92,11 +92,14 @@ html.theme-dark {
   --dim: #9b978c;
   --muted: #8a867b;
 
-  --brass: #d4af80;
-  --brass-bright: #e9cb98;
-  --brass-deep: #a8895d;
-  --brass-soft: rgba(212, 175, 128, 0.14);
-  --brass-faint: rgba(212, 175, 128, 0.45);
+  /* Accent — monochrome white (NOIR). The legacy --brass* token names are
+     kept so the single shared component sheet needs no edits; only the values
+     change. White is the one focal accent; everything else is ink + hairline. */
+  --brass: #ffffff;
+  --brass-bright: #ffffff;
+  --brass-deep: #a8a297;        /* gradient tail / metallic shade (silver, not gold) */
+  --brass-soft: rgba(244, 241, 233, 0.12);
+  --brass-faint: rgba(244, 241, 233, 0.40);
 
   --tone-blue: #8fb8f2;
   --tone-violet: #b8a3ee;
@@ -104,11 +107,11 @@ html.theme-dark {
   --tone-green: #8bd9a8;
   --tone-teal: #82d4cd;
   --tone-red: #ee9089;
-  --tone-brass: #d4af80;
+  --tone-brass: #f2f1ec;
   --tone-dim: #8d8a80;
 
   --app-bg:
-    radial-gradient(1000px 460px at 50% -140px, rgba(212, 175, 128, 0.055), transparent 70%),
+    radial-gradient(1000px 460px at 50% -140px, rgba(244, 241, 233, 0.04), transparent 70%),
     #0a0a09;
   --panel-bg: linear-gradient(180deg, #151412 0%, #100f0e 100%);
   --card-bg: linear-gradient(180deg, #161514 0%, #121110 100%);
@@ -127,8 +130,8 @@ html.theme-dark {
   --veil: rgba(8, 8, 7, 0.86);
   --backdrop: rgba(5, 5, 4, 0.72);
   --input-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
-  --spot-sheen: rgba(212, 175, 128, 0.14);
-  --spot-edge: rgba(212, 175, 128, 0.42);
+  --spot-sheen: rgba(244, 241, 233, 0.14);
+  --spot-edge: rgba(244, 241, 233, 0.42);
 }
 
 /* ── Reset & base ─────────────────────────────────────────── */
@@ -205,10 +208,10 @@ img, svg { display: block; }
 
 .page-title {
   font-family: var(--font-display);
-  font-size: clamp(2.2rem, 4vw, 3.05rem);
+  font-size: clamp(2.4rem, 4.4vw, 3.5rem);
   font-weight: 400;
-  letter-spacing: 0.005em;
-  line-height: 1.04;
+  letter-spacing: -0.01em;
+  line-height: 1.02;
 }
 .page-title em { font-style: normal; color: var(--dim); }
 .title-dot { color: var(--brass); }
@@ -294,18 +297,8 @@ img, svg { display: block; }
   color: var(--text);
 }
 .brand-os { font-style: normal; color: var(--dim); }
-html.theme-dark .brand-mark {
-  background: linear-gradient(180deg, #faf8f1 20%, #c9c4b5 95%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-html.theme-dark .brand-os {
-  background: linear-gradient(180deg, var(--brass-bright) 10%, var(--brass-deep) 95%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
+/* Wordmark stays solid in both themes — bone "SVN" + dim "OS". Monochrome and
+   confident; no gradient-on-text, which reads cleaner and less templated. */
 .brand-sub {
   display: block;
   margin-top: 8px;
@@ -952,7 +945,7 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
   transition: border-color 0.12s var(--ease), transform 0.12s var(--ease);
 }
-.cal-chip:hover { border-color: rgba(212, 175, 128, 0.35); transform: translateY(-1px); }
+.cal-chip:hover { border-color: var(--brass-faint); transform: translateY(-1px); }
 .cal-chip .chip-title {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   min-width: 0;

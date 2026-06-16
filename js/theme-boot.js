@@ -6,7 +6,7 @@
 (function () {
   try {
     var a = JSON.parse(localStorage.getItem('svnos-appearance-v1')) || {};
-    var theme = a.theme || 'light';
+    var theme = a.theme || 'dark';
     if (theme === 'system') {
       theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
@@ -14,5 +14,5 @@
     if (theme === 'dark') root.classList.add('theme-dark');
     if (a.textSize === 'large') root.classList.add('text-lg');
     if (a.density === 'compact') root.classList.add('compact');
-  } catch (e) { /* fall through to the light default */ }
+  } catch (e) { /* fall through to the dark default */ }
 })();
