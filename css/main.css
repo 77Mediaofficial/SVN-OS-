@@ -185,6 +185,36 @@ img, svg { display: block; }
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
+/* Spotlight — hand-ported from Aceternity (vanilla, CSP-safe). A large soft
+   light washes in from the top over the black canvas, behind the dashboard.
+   Monochrome to suit NOIR; z-index -1 keeps it above the canvas but beneath
+   content, so it also glows *through* the translucent glass panels. Mounted
+   only on the dashboard view (it lives in that fragment). */
+.hero-spotlight {
+  position: fixed;
+  top: -12vh;
+  left: var(--spine-w);
+  width: 58vw;
+  height: 72vh;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 50% 50% at 30% 0%,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02) 42%,
+    transparent 72%);
+  filter: blur(20px);
+  opacity: 0;
+  transform: translateX(-26px) scale(0.96);
+  transform-origin: top left;
+  animation: spotlight-in 1.5s var(--ease) 0.15s forwards;
+}
+@keyframes spotlight-in {
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-spotlight { animation: none; opacity: 1; transform: none; }
+}
+
 /* ── Typography utilities ─────────────────────────────────── */
 
 .mono { font-family: var(--font-mono); }
@@ -262,7 +292,7 @@ img, svg { display: block; }
 .row-gap { display: flex; align-items: center; gap: 10px; }
 
 /* Staggered entrance for each view's top-level sections. */
-.view > * { animation: rise 0.55s var(--ease) both; }
+.view > *:not(.hero-spotlight) { animation: rise 0.55s var(--ease) both; }
 .view > *:nth-child(2) { animation-delay: 0.05s; }
 .view > *:nth-child(3) { animation-delay: 0.1s; }
 .view > *:nth-child(4) { animation-delay: 0.15s; }
