@@ -215,6 +215,31 @@ img, svg { display: block; }
   .hero-spotlight { animation: none; opacity: 1; transform: none; }
 }
 
+/* ── Darkroom — focus mode. A pure-CSS :has() toggle (the focus glyph, fixed
+   top-right): the Spine slides away, content reclaims the rail space, the grain
+   calms, and the work sits alone on the black stage. Reversible, app-wide. ── */
+.darkroom-btn {
+  position: fixed; top: 14px; right: 16px; z-index: 95;
+  width: 34px; height: 34px;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--hairline-strong);
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  color: var(--muted);
+  cursor: pointer;
+  transition: color 0.15s var(--ease), border-color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.darkroom-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+.darkroom-btn:hover { color: var(--text); border-color: var(--brass-faint); }
+
+html:has(#darkroom-toggle:checked) .sidebar { transform: translateX(-100%); opacity: 0; pointer-events: none; }
+html:has(#darkroom-toggle:checked) .main { margin-left: 0; }
+html:has(#darkroom-toggle:checked) .grain { opacity: 0; }
+html:has(#darkroom-toggle:checked) .hero-spotlight { opacity: 0.55; }
+html:has(#darkroom-toggle:checked) .darkroom-btn { color: var(--brass); border-color: var(--brass-faint); background: var(--brass-soft); }
+
 /* ── Typography utilities ─────────────────────────────────── */
 
 .mono { font-family: var(--font-mono); }
@@ -278,7 +303,7 @@ img, svg { display: block; }
 
 /* Content clears the collapsed Spine. The rail expands as an overlay, so this
    margin is constant — expanding never reflows the canvas. */
-.main { min-width: 0; margin-left: var(--spine-w); }
+.main { min-width: 0; margin-left: var(--spine-w); transition: margin-left 0.4s var(--ease); }
 
 .view {
   max-width: 1160px;
@@ -292,7 +317,7 @@ img, svg { display: block; }
 .row-gap { display: flex; align-items: center; gap: 10px; }
 
 /* Staggered entrance for each view's top-level sections. */
-.view > *:not(.hero-spotlight) { animation: rise 0.55s var(--ease) both; }
+.view > * { animation: rise 0.55s var(--ease) both; }
 .view > *:nth-child(2) { animation-delay: 0.05s; }
 .view > *:nth-child(3) { animation-delay: 0.1s; }
 .view > *:nth-child(4) { animation-delay: 0.15s; }
@@ -317,7 +342,8 @@ img, svg { display: block; }
   overflow: hidden;
   white-space: nowrap;
   transition: width 0.34s var(--ease), background 0.34s var(--ease),
-              box-shadow 0.34s var(--ease), border-color 0.34s var(--ease);
+              box-shadow 0.34s var(--ease), border-color 0.34s var(--ease),
+              transform 0.4s var(--ease), opacity 0.4s var(--ease);
 }
 .sidebar:hover, .sidebar:focus-within {
   width: var(--sidebar-w);
@@ -1804,6 +1830,16 @@ body.shielded .app, body.shielded .auth-gate {
   transition: transform 0.32s var(--ease);
   outline: none;
 }
+/* Inspector — the slide-over reads as a floating frosted-glass panel in dark,
+   over the blurred canvas behind it. */
+html.theme-dark .drawer {
+  background: rgba(18, 16, 13, 0.72);
+  backdrop-filter: blur(26px) saturate(1.25);
+  -webkit-backdrop-filter: blur(26px) saturate(1.25);
+  border-left-color: rgba(255, 255, 255, 0.10);
+  box-shadow: inset 1px 0 0 rgba(255, 255, 255, 0.06), var(--shadow-soft);
+}
+html.theme-dark .drawer-actions { background: rgba(255, 255, 255, 0.02); }
 .drawer-root.is-open .drawer { transform: none; }
 .drawer-head {
   display: flex; align-items: flex-start; justify-content: space-between;
@@ -2165,6 +2201,12 @@ kbd {
   opacity: 0;
   transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
   overflow: hidden;
+}
+/* Command palette as frosted glass too — same floating-panel family. */
+html.theme-dark .cmd-panel {
+  background: rgba(18, 16, 13, 0.80);
+  backdrop-filter: blur(26px) saturate(1.2);
+  -webkit-backdrop-filter: blur(26px) saturate(1.2);
 }
 .cmd-root.is-open .cmd-panel { opacity: 1; transform: translateX(-50%) translateY(0); }
 
