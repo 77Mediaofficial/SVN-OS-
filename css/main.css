@@ -73,7 +73,8 @@
   --r-md: 13px;
   --r-lg: 18px;
   --ease: cubic-bezier(0.22, 0.61, 0.21, 1);
-  --sidebar-w: 236px;
+  --sidebar-w: 240px;   /* expanded rail width (hover / keyboard focus) */
+  --spine-w: 58px;      /* collapsed glyph rail — the Adaptive Shell Spine */
 }
 
 /* ── Dark theme — the original cinematic warm-black ──────────── */
@@ -243,13 +244,11 @@ img, svg { display: block; }
 
 /* ── Layout ───────────────────────────────────────────────── */
 
-.app {
-  display: grid;
-  grid-template-columns: var(--sidebar-w) 1fr;
-  min-height: 100vh;
-}
+.app { min-height: 100vh; }
 
-.main { min-width: 0; }
+/* Content clears the collapsed Spine. The rail expands as an overlay, so this
+   margin is constant — expanding never reflows the canvas. */
+.main { min-width: 0; margin-left: var(--spine-w); }
 
 .view {
   max-width: 1160px;
@@ -278,13 +277,75 @@ img, svg { display: block; }
 /* ── Sidebar ──────────────────────────────────────────────── */
 
 .sidebar {
-  position: sticky; top: 0;
+  position: fixed; left: 0; top: 0; z-index: 100;
+  width: var(--spine-w);
   height: 100vh;
   display: flex; flex-direction: column;
-  padding: 32px 22px 22px;
+  padding: 20px 0 16px;
   border-right: 1px solid var(--hairline);
   background: var(--bg-deep);
+  overflow: hidden;
+  white-space: nowrap;
+  transition: width 0.34s var(--ease), background 0.34s var(--ease),
+              box-shadow 0.34s var(--ease), border-color 0.34s var(--ease);
 }
+.sidebar:hover, .sidebar:focus-within {
+  width: var(--sidebar-w);
+  background: var(--panel-bg);
+  box-shadow: var(--shadow-soft);
+  border-right-color: var(--hairline-strong);
+}
+
+/* Rail rows: glyph centres sit at ~29px in both states, so nothing jumps
+   horizontally as the rail widens. */
+.sidebar .brand { padding: 0 18px; margin: 0 0 20px; }
+.sidebar .nav { padding: 0 8px; }
+.sidebar .nav-link { padding: 10px 14px 10px 12px; margin: 0; }
+.sidebar .nav-link svg { flex: none; }
+.sidebar .cmd-launch {
+  margin: 0 8px 14px; width: auto;
+  padding: 9px 12px 9px 13px;
+  border-color: var(--brass-faint); color: var(--text);
+}
+.sidebar .workspace { margin: 2px 8px 14px; width: auto; padding: 8px 10px; }
+.sidebar .sidebar-foot { padding: 0; gap: 12px; }
+.sidebar .user-chip { padding: 0 4px 0 13px; }
+
+/* Active nav: CSS state (the JS moving-pill is retired on the desktop rail). */
+.sidebar .nav-link[aria-current="page"] {
+  background: var(--brass-soft);
+  box-shadow: inset 2px 0 0 0 var(--brass);
+}
+
+/* Brand mark shrinks to fit the collapsed rail; grows when expanded. */
+.sidebar .brand-mark { font-size: 1.2rem; transition: font-size 0.34s var(--ease); }
+.sidebar:hover .brand-mark, .sidebar:focus-within .brand-mark { font-size: 1.55rem; }
+
+/* Labels fade in only when the rail is expanded — kept in the a11y tree
+   (opacity, not display) so screen readers always announce them. */
+.sidebar .brand-os, .sidebar .brand-sub,
+.sidebar .nav-link > span,
+.sidebar .cmd-launch > span, .sidebar .cmd-launch > kbd,
+.sidebar .ws-meta, .sidebar .user-name,
+.sidebar .user-chip .iconbtn {
+  opacity: 0;
+  transition: opacity 0.18s var(--ease);
+}
+.sidebar:hover .brand-os, .sidebar:focus-within .brand-os,
+.sidebar:hover .brand-sub, .sidebar:focus-within .brand-sub,
+.sidebar:hover .nav-link > span, .sidebar:focus-within .nav-link > span,
+.sidebar:hover .cmd-launch > span, .sidebar:focus-within .cmd-launch > span,
+.sidebar:hover .cmd-launch > kbd, .sidebar:focus-within .cmd-launch > kbd,
+.sidebar:hover .ws-meta, .sidebar:focus-within .ws-meta,
+.sidebar:hover .user-name, .sidebar:focus-within .user-name,
+.sidebar:hover .user-chip .iconbtn, .sidebar:focus-within .user-chip .iconbtn {
+  opacity: 1;
+}
+
+/* Secondary chrome (demo / network pills) shows only in the expanded rail. */
+.sidebar .demo-pill, .sidebar .net-pill { display: none; margin: 0 8px; }
+.sidebar:hover .demo-pill, .sidebar:focus-within .demo-pill,
+.sidebar:hover .net-pill, .sidebar:focus-within .net-pill { display: flex; }
 
 .brand { display: block; margin-bottom: 46px; }
 .brand-mark {
@@ -336,6 +397,7 @@ img, svg { display: block; }
    FLIP-translated to the active link's box via offset vars set in JS, so it
    works for both the vertical rail and the horizontal mobile bar. */
 .nav-pill {
+  display: none;   /* retired on the desktop Spine; restored for the mobile bar */
   position: absolute; top: 0; left: 0; z-index: 0;
   width: var(--pill-w, 0); height: var(--pill-h, 0);
   transform: translate(var(--pill-x, 0), var(--pill-y, 0));
@@ -1962,6 +2024,26 @@ body.drawer-open { overflow: hidden; }
 
   .aud-grid { grid-template-columns: 1fr; gap: 18px; }
   .aud-spark { max-width: none; margin-left: 0; }
+}
+
+/* Spine → horizontal top bar on mobile: undo the rail collapse/expand so the
+   sidebar behaves exactly as it did before (the moving pill returns too). */
+@media (max-width: 920px) {
+  .main { margin-left: 0; }
+  .sidebar,
+  .sidebar:hover,
+  .sidebar:focus-within {
+    position: sticky; width: auto;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    box-shadow: none; overflow: visible; white-space: normal;
+  }
+  .sidebar .brand-mark,
+  .sidebar:hover .brand-mark { font-size: 1.3rem; }
+  .sidebar .brand-os, .sidebar .nav-link > span,
+  .sidebar .ws-meta, .sidebar .user-chip .iconbtn { opacity: 1; }
+  .sidebar .nav-link[aria-current="page"] { background: none; box-shadow: none; }
+  .sidebar .demo-pill { display: flex; }
+  .nav-pill { display: block; }
 }
 
 /* ── Keyboard hint (kbd) ──────────────────────────────────── */
