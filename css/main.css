@@ -46,6 +46,7 @@
   --font-ui: "Switzer", system-ui, sans-serif;
   --font-display: "Clash Display", "Switzer", sans-serif;
   --font-mono: "Spline Sans Mono", ui-monospace, monospace;
+  --font-serif: "Fraunces", "Clash Display", Georgia, serif;
 
   /* Materials */
   --app-bg: #fbfbfd;
@@ -86,8 +87,8 @@ html.theme-dark {
   --surface: #121211;
   --surface-2: #181816;
   --surface-3: #1f1f1c;
-  --hairline: #232320;
-  --hairline-strong: #34342f;
+  --hairline: rgba(255, 255, 255, 0.06);        /* hair-thin glass separators (Cinematic Utility) */
+  --hairline-strong: rgba(255, 255, 255, 0.12);
   --text: #f2f1ec;
   --ivory: #f5f3ec;
   --dim: #9b978c;
@@ -111,9 +112,7 @@ html.theme-dark {
   --tone-brass: #f2f1ec;
   --tone-dim: #8d8a80;
 
-  --app-bg:
-    radial-gradient(1000px 460px at 50% -140px, rgba(244, 241, 233, 0.04), transparent 70%),
-    #0a0a09;
+  --app-bg: #050505;   /* true absolute black canvas */
   --panel-bg: linear-gradient(180deg, #151412 0%, #100f0e 100%);
   --card-bg: linear-gradient(180deg, #161514 0%, #121110 100%);
   --panel-edge: inset 0 1px 0 rgba(255, 255, 255, 0.045);
@@ -208,10 +207,10 @@ img, svg { display: block; }
 }
 
 .page-title {
-  font-family: var(--font-display);
+  font-family: var(--font-serif);    /* editorial serif (Fraunces) against the technical UI */
   font-size: clamp(2.4rem, 4.4vw, 3.5rem);
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.005em;
   line-height: 1.02;
 }
 .page-title em { font-style: normal; color: var(--dim); }
@@ -606,28 +605,33 @@ input[type="date"], input[type="datetime-local"] { color-scheme: inherit; }
   margin-bottom: 18px;
   box-shadow: var(--panel-edge);
 }
+/* Dark theme: panels become a translucent glass layer over the black canvas —
+   hair-thin border + a top inner highlight for a tactile, lifted feel. */
+html.theme-dark .panel {
+  background: rgba(255, 255, 255, 0.015);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
 .panel-head {
   display: flex; align-items: baseline; justify-content: space-between;
   gap: 12px; margin-bottom: 16px;
 }
 
+/* Floating metric strip — no card; four metrics sit natively on the canvas,
+   divided only by hair-thin vertical rules (Cinematic Utility). */
 .stat-band {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  border: 1px solid var(--hairline);
-  border-radius: var(--r-lg);
-  background: var(--panel-bg);
-  box-shadow: var(--panel-edge);
-  margin-bottom: 18px;
-  overflow: hidden;
+  margin-bottom: 26px;
 }
 .stat-band-3 { grid-template-columns: repeat(3, 1fr); }
 .stat {
-  padding: 24px 26px 22px;
+  padding: 4px 28px;
   border-left: 1px solid var(--hairline);
   min-width: 0;
 }
-.stat:first-child { border-left: none; }
+.stat:first-child { border-left: none; padding-left: 2px; }
 .stat-label {
   font-size: 0.6rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.18em;
@@ -635,11 +639,11 @@ input[type="date"], input[type="datetime-local"] { color-scheme: inherit; }
   margin-bottom: 12px;
 }
 .stat-num {
-  font-family: var(--font-display);
-  font-size: clamp(1.8rem, 2.7vw, 2.55rem);
+  font-family: var(--font-mono);     /* precision-data numerals */
+  font-size: clamp(1.7rem, 2.5vw, 2.35rem);
   line-height: 1;
-  letter-spacing: 0.005em;
-  font-variant-numeric: lining-nums;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .stat-num .cur {
@@ -661,6 +665,18 @@ input[type="date"], input[type="datetime-local"] { color-scheme: inherit; }
 .grid-main > .panel, .col-stack > .panel { margin-bottom: 0; }
 .col-stack { display: grid; gap: 18px; }
 
+/* Unified Bento grid — Action items (tall, left), Pipeline + This month
+   stacked (right), Up next spanning the base. Tight gaps = dense + engineered. */
+.dash-bento {
+  display: grid;
+  grid-template-columns: 1.6fr 1fr;
+  gap: 12px;
+  align-items: stretch;   /* panels fill the grid — no wasted canvas gaps */
+}
+.dash-bento > .panel { margin-bottom: 0; padding: 20px 22px; }
+.dash-bento .b-actions { grid-row: span 2; }
+.dash-bento .b-upnext { grid-column: 1 / -1; }
+
 /* ── Rows (action items, schedules, mini-ledgers) ─────────── */
 
 .rows { display: flex; flex-direction: column; }
@@ -671,13 +687,14 @@ input[type="date"], input[type="datetime-local"] { color-scheme: inherit; }
   border-radius: 2px;
   text-align: left;
   width: 100%;
-  transition: background 0.15s var(--ease), box-shadow 0.15s var(--ease);
+  transition: box-shadow 0.15s var(--ease), transform 0.2s var(--ease), color 0.2s var(--ease);
 }
 .row-item:last-child { border-bottom: none; }
 button.row-item:hover, a.row-item:hover {
-  background: var(--surface-2);
   box-shadow: inset 2px 0 0 0 var(--brass);
+  transform: translateX(4px);
 }
+.row-item:hover .row-title { color: var(--brass); }
 
 .row-body { flex: 1; min-width: 0; }
 .row-title {
@@ -687,16 +704,20 @@ button.row-item:hover, a.row-item:hover {
 .row-meta { font-size: 0.72rem; color: var(--muted); margin-top: 2px; }
 .row-right { flex: none; text-align: right; font-size: 0.74rem; color: var(--dim); }
 
-.dot { flex: none; width: 7px; height: 7px; border-radius: 50%; background: var(--tone-dim); }
-
-.dot.tone-blue   { background: var(--tone-blue); }
-.dot.tone-violet { background: var(--tone-violet); }
-.dot.tone-amber  { background: var(--tone-amber); }
-.dot.tone-green  { background: var(--tone-green); }
-.dot.tone-teal   { background: var(--tone-teal); }
-.dot.tone-red    { background: var(--tone-red); }
-.dot.tone-brass  { background: var(--tone-brass); }
-.dot.tone-dim    { background: var(--tone-dim); }
+.dot {
+  flex: none; width: 7px; height: 7px; border-radius: 50%;
+  color: var(--tone-dim);
+  background: currentColor;
+  box-shadow: 0 0 8px -1px currentColor;   /* sharp, vibrant status glow */
+}
+.dot.tone-blue   { color: var(--tone-blue); }
+.dot.tone-violet { color: var(--tone-violet); }
+.dot.tone-amber  { color: var(--tone-amber); }
+.dot.tone-green  { color: var(--tone-green); }
+.dot.tone-teal   { color: var(--tone-teal); }
+.dot.tone-red    { color: var(--tone-red); }
+.dot.tone-brass  { color: var(--tone-brass); }
+.dot.tone-dim    { color: var(--tone-dim); }
 
 /* ── Pills, badges, tags ──────────────────────────────────── */
 
@@ -1991,6 +2012,8 @@ body.drawer-open { overflow: hidden; }
   .stat-band-3 .stat:first-child { border-left: none; }
 
   .grid-main { grid-template-columns: 1fr; }
+  .dash-bento { grid-template-columns: 1fr; }
+  .dash-bento .b-actions, .dash-bento .b-upnext { grid-row: auto; grid-column: auto; }
 
   .board {
     grid-template-columns: repeat(5, 76vw);
@@ -2182,7 +2205,9 @@ body.cmd-open { overflow: hidden; }
   display: flex; align-items: center; gap: 12px;
   flex: 1; min-width: 0;
   padding: 12px 4px;
+  transition: transform 0.2s var(--ease);
 }
+.act-main:hover { transform: translateX(4px); }
 .act-main:hover .row-title { color: var(--brass); }
 .act-tail { display: flex; align-items: center; gap: 10px; flex: none; }
 .act-btns { display: flex; gap: 4px; }

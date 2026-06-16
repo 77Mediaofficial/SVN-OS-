@@ -66,3 +66,21 @@
   font-display: swap;
   src: url("/fonts/splinesansmono-500.woff2") format("woff2");
 }
+
+/* Fraunces — editorial serif for page-title headers (the "Today." moment),
+   set against the technical sans/mono UI. Self-hosted (Fontsource latin
+   subset), served first-party so the strict CSP stays intact. */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/fraunces-400.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url("/fonts/fraunces-600.woff2") format("woff2");
+}
