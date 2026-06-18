@@ -1,6 +1,19 @@
 /* Dashboard Home — the morning briefing.
-   Immediate action items (now operable — resolve/snooze inline, with undo),
-   monthly revenue, pipeline snapshot, what's next. */
+   Immediate action items (operable inline — resolve/snooze with optimistic
+   updates + undo), monthly revenue, pipeline snapshot, what's next.
+
+   QA / architecture pass:
+   • render-from-state is pure & synchronous; fetch-into-state is async. That
+     split is what lets an inline action repaint instantly and roll back cleanly.
+   • A generation token + a returned cleanup keep the view leak-safe: a fetch
+     that resolves after you've navigated away — or a late background write —
+     becomes a no-op instead of writing to torn-down DOM. The one click listener
+     lives on the stable #outlet and is removed on cleanup.
+   • Every write goes through the data layer (store.js repos), which throws on a
+     Supabase error. We catch, roll the UI back, and surface it — never fail
+     silently. Reads use allSettled so one dead query degrades a single panel,
+     not the whole view. All of this is correct in demo mode today and works
+     unchanged once Supabase is wired. */
 
 import { projects, deals, transactions, getPrefs } from '../store.js';
 import {
@@ -19,38 +32,113 @@ const DEAL_FLOW = { lead: 'negotiating', negotiating: 'signed', signed: 'deliver
 const ICON_DONE = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 8.5 6.5 11.5 12.5 5"/></svg>';
 const ICON_SNOOZE = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8.5" r="5.2"/><path d="M8 5.6V8.6l2 1.4"/><path d="M2.5 3.5 5 1.8M13.5 3.5 11 1.8"/></svg>';
 
-let state = { projs: [], dls: [], txns: [], prefs: null };
+/* ── View state & lifecycle ──────────────────────────────────
+   `gen` increments on every mount and on cleanup; async continuations capture
+   the gen they began under and bail when it changes. `busy` guards a single
+   item against a double-tap while its write is in flight. */
+let gen = 0;
+let state = emptyState();
+let busy = new Set();
 
-export async function init() {
-  renderSlate();
-  bindActions();
-  await load();
+function emptyState() {
+  return { projs: [], dls: [], txns: [], prefs: null, errors: {} };
 }
 
-async function load() {
-  const [projs, dls, txns, prefs] = await Promise.all([
-    projects.list(), deals.list(), transactions.list(),
-    getPrefs().catch(() => null),
-  ]);
-  state = { projs, dls, txns, prefs };
+const byId = (id) => document.getElementById(id);
+const REPOS = { projs: projects, dls: deals, txns: transactions };
 
-  renderStats(projs, dls, txns, prefs);
-  renderActions(projs, dls);
-  renderPipeline(projs);
-  renderLedgerMini(txns);
-  renderUpNext(projs);
+export async function init() {
+  const myGen = ++gen;
+  state = emptyState();
+  busy = new Set();
+
+  const outlet = byId('outlet');
+  renderSlate();
+  // Delegated click handling on the STABLE outlet node: survives panel
+  // re-renders, and is removed on cleanup so it can't leak or fire on the next
+  // view. Re-adding the same fn ref is a spec no-op, so this stays idempotent.
+  outlet?.addEventListener('click', onClick);
+
+  // Hydrate without blocking init: the fragment ships skeletons, so they show
+  // until data lands. Detaching also lets the router register `cleanup` before
+  // any mid-fetch navigation, closing the listener-leak window entirely.
+  hydrate(myGen).catch((err) => console.error('dashboard: hydrate crashed', err));
+
+  return function cleanup() {
+    gen++;
+    outlet?.removeEventListener('click', onClick);
+  };
+}
+
+/* ── Hydrate: fetch-into-state, then render ──────────────────
+   allSettled, not all — one dead query degrades a single panel, never the
+   whole view, and never leaves a skeleton spinning forever. */
+async function hydrate(myGen) {
+  const [projsR, dlsR, txnsR, prefsR] = await Promise.allSettled([
+    projects.list(), deals.list(), transactions.list(), getPrefs(),
+  ]);
+  if (myGen !== gen) return; // navigated away mid-fetch — drop the stale result
+
+  state = {
+    projs: projsR.status === 'fulfilled' ? projsR.value : [],
+    dls:   dlsR.status === 'fulfilled' ? dlsR.value : [],
+    txns:  txnsR.status === 'fulfilled' ? txnsR.value : [],
+    prefs: prefsR.status === 'fulfilled' ? prefsR.value : null,
+    errors: {
+      projs: projsR.status === 'rejected',
+      dls:   dlsR.status === 'rejected',
+      txns:  txnsR.status === 'rejected',
+    },
+  };
+
+  for (const [label, r] of [['projects', projsR], ['deals', dlsR], ['transactions', txnsR], ['prefs', prefsR]]) {
+    if (r.status === 'rejected') console.error(`dashboard: ${label} failed to load`, r.reason);
+  }
+
+  renderFromState();
+}
+
+/* Re-fetch and repaint — panel "Try again" + post-undo reconciliation. */
+async function reload() {
+  await hydrate(gen);
+}
+
+/* ── render-from-state: pure, synchronous, fault-isolated ─────
+   Each panel renders independently; one throwing never blocks the others. */
+function renderFromState() {
+  safe(renderStats);
+  safe(renderActions);
+  safe(renderPipeline);
+  safe(renderLedgerMini);
+  safe(renderUpNext);
+}
+
+function safe(fn) {
+  try { fn(); } catch (err) { console.error(`dashboard: ${fn.name} threw`, err); }
+}
+
+/* Inline panel failure state — reuses existing .empty / .btn styling, and the
+   retry button is picked up by the delegated outlet listener. */
+function panelError(label) {
+  return `
+    <div class="empty">
+      <p class="empty-title">Couldn’t load ${label}.</p>
+      <p class="empty-sub">Your data is safe — nothing was lost.</p>
+      <button type="button" class="btn" data-dash-retry>Try again</button>
+    </div>`;
 }
 
 /* ── Slate line ──────────────────────────────────────────── */
 
 function renderSlate() {
+  const el = byId('dash-slate');
+  if (!el) return;
   const now = new Date();
   const parts = now
     .toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })
     .toUpperCase()
     .replace(/,/g, '');
-  document.getElementById('dash-slate').textContent =
-    `${parts} · WEEK ${String(isoWeek(now)).padStart(2, '0')}`;
+  el.textContent = `${parts} · WEEK ${String(isoWeek(now)).padStart(2, '0')}`;
 }
 
 /* ── Stat band ───────────────────────────────────────────── */
@@ -64,42 +152,61 @@ function statHtml(label, num, foot, numClass = '') {
     </div>`;
 }
 
-function renderStats(projs, dls, txns, prefs) {
-  const month = todayKey().slice(0, 7);
-  const inMonth = txns.filter((t) => String(t.occurred_at).startsWith(month));
-  const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
-  const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
-  const net = income - costs;
+/* Each stat degrades on its own source: a failed query shows "—" rather than a
+   misleading zero. In demo mode nothing fails, so this is byte-identical output. */
+function renderStats() {
+  const statsEl = byId('dash-stats');
+  if (!statsEl) return;
+  const { projs, dls, txns, prefs, errors } = state;
+  const DASH = '—';
 
-  const open = dls.filter((d) => OPEN_DEAL_STATUSES.has(d.status));
-  const pipelineValue = open.reduce((s, d) => s + (Number(d.value) || 0), 0);
+  let revenueNum = DASH, revenueFoot = 'unavailable';
+  if (!errors.txns) {
+    const month = todayKey().slice(0, 7);
+    const inMonth = txns.filter((t) => String(t.occurred_at).startsWith(month));
+    const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    const net = income - costs;
+    const goal = Number(prefs?.goal_monthly_revenue) || 0;
+    const goalFoot = goal > 0 ? ` · ${Math.round((income / goal) * 100)}% of ${money(goal)} target` : '';
+    revenueNum = statMoney(income);
+    revenueFoot = `net ${money(net)} after ${money(costs)} costs${goalFoot}`;
+  }
 
-  const active = projs.filter((p) => p.status !== 'published');
-  const inProduction = active.filter((p) => p.status === 'production').length;
+  let pipelineNum = DASH, pipelineFoot = 'unavailable';
+  if (!errors.dls) {
+    const open = dls.filter((d) => OPEN_DEAL_STATUSES.has(d.status));
+    const pipelineValue = open.reduce((s, d) => s + (Number(d.value) || 0), 0);
+    pipelineNum = statMoney(pipelineValue);
+    pipelineFoot = `${open.length} open deal${open.length === 1 ? '' : 's'}`;
+  }
 
-  const today = todayKey();
-  const horizon = dayKey(new Date(Date.now() + 7 * 86400000));
-  const dueContent = projs.filter((p) =>
-    p.status !== 'published' && p.scheduled_at &&
-    dayKey(p.scheduled_at) >= today && dayKey(p.scheduled_at) <= horizon);
-  const dueDeals = open.filter((d) =>
-    d.deadline && d.deadline >= today && d.deadline <= horizon);
+  let activeNum = DASH, activeFoot = 'unavailable';
+  if (!errors.projs) {
+    const active = projs.filter((p) => p.status !== 'published');
+    const inProduction = active.filter((p) => p.status === 'production').length;
+    activeNum = statInt(active.length);
+    activeFoot = `${inProduction} in production`;
+  }
 
-  const goal = Number(prefs?.goal_monthly_revenue) || 0;
-  const goalFoot = goal > 0
-    ? ` · ${Math.round((income / goal) * 100)}% of ${money(goal)} target`
-    : '';
+  let dueNum = DASH, dueFoot = 'unavailable';
+  if (!errors.projs && !errors.dls) {
+    const today = todayKey();
+    const horizon = dayKey(new Date(Date.now() + 7 * 86400000));
+    const open = dls.filter((d) => OPEN_DEAL_STATUSES.has(d.status));
+    const dueContent = projs.filter((p) =>
+      p.status !== 'published' && p.scheduled_at &&
+      dayKey(p.scheduled_at) >= today && dayKey(p.scheduled_at) <= horizon);
+    const dueDeals = open.filter((d) => d.deadline && d.deadline >= today && d.deadline <= horizon);
+    dueNum = statInt(dueContent.length + dueDeals.length);
+    dueFoot = `${dueContent.length} post${dueContent.length === 1 ? '' : 's'} · ${dueDeals.length} deal deadline${dueDeals.length === 1 ? '' : 's'}`;
+  }
 
-  const statsEl = document.getElementById('dash-stats');
   statsEl.innerHTML =
-    statHtml('Revenue this month', statMoney(income),
-      `net ${money(net)} after ${money(costs)} costs${goalFoot}`) +
-    statHtml('Pipeline value', statMoney(pipelineValue),
-      `${open.length} open deal${open.length === 1 ? '' : 's'}`) +
-    statHtml('Active projects', statInt(active.length),
-      `${inProduction} in production`) +
-    statHtml('Due in 7 days', statInt(dueContent.length + dueDeals.length),
-      `${dueContent.length} post${dueContent.length === 1 ? '' : 's'} · ${dueDeals.length} deal deadline${dueDeals.length === 1 ? '' : 's'}`);
+    statHtml('Revenue this month', revenueNum, revenueFoot) +
+    statHtml('Pipeline value', pipelineNum, pipelineFoot) +
+    statHtml('Active projects', activeNum, activeFoot) +
+    statHtml('Due in 7 days', dueNum, dueFoot);
   runCountUps(statsEl);
 }
 
@@ -125,11 +232,11 @@ function actionRowHtml({ id, kind, tone, title, meta, right, href, resolveTitle 
     </li>`;
 }
 
-function renderActions(projs, dls) {
+function buildActionItems() {
   const today = todayKey();
   const items = [];
 
-  for (const d of dls) {
+  for (const d of state.dls) {
     if (!OPEN_DEAL_STATUSES.has(d.status) || !d.deadline) continue;
     const rel = relDay(d.deadline);
     const next = DEAL_FLOW[d.status];
@@ -147,7 +254,7 @@ function renderActions(projs, dls) {
     }
   }
 
-  for (const p of projs) {
+  for (const p of state.projs) {
     if (p.status === 'published' || !p.scheduled_at) continue;
     const key = dayKey(p.scheduled_at);
     if (key < today) {
@@ -164,12 +271,26 @@ function renderActions(projs, dls) {
   }
 
   items.sort((a, b) => a.rank - b.rank);
+  return items;
+}
+
+function renderActions() {
+  const listEl = byId('actions-list');
+  const countEl = byId('actions-count');
+  if (!listEl) return;
+
+  if (state.errors.projs || state.errors.dls) {
+    if (countEl) countEl.textContent = '';
+    listEl.innerHTML = panelError('action items');
+    return;
+  }
+
+  const items = buildActionItems();
   const shown = items.slice(0, 8);
 
-  document.getElementById('actions-count').textContent =
-    items.length ? `${items.length}` : '';
+  if (countEl) countEl.textContent = items.length ? `${items.length}` : '';
 
-  document.getElementById('actions-list').innerHTML = shown.length
+  listEl.innerHTML = shown.length
     ? `<ul class="acts">${shown.map(actionRowHtml).join('')}</ul>`
     : `<div class="empty">
          <p class="empty-title">All clear.</p>
@@ -177,82 +298,168 @@ function renderActions(projs, dls) {
        </div>`;
 }
 
-function bindActions() {
-  const list = document.getElementById('actions-list');
-  if (!list) return;
-  list.addEventListener('click', (e) => {
-    const btn = e.target.closest('.act-btn');
-    if (!btn) return;
+/* ── Interaction: one delegated handler for the whole view ─── */
+
+function onClick(e) {
+  // Per-panel retry after a load failure.
+  if (e.target.closest('[data-dash-retry]')) {
     e.preventDefault();
-    const li = btn.closest('.act');
-    if (!li) return;
-    const { id, kind } = li.dataset;
-    li.classList.add('is-leaving');
-    if (kind === 'deal') handleDeal(id, btn.dataset.act);
-    else handleProject(id, btn.dataset.act);
+    reload();
+    return;
+  }
+  const btn = e.target.closest('.act-btn');
+  if (!btn) return;
+  e.preventDefault();
+  const li = btn.closest('.act');
+  if (!li) return;
+  const { id, kind } = li.dataset;
+  if (kind === 'deal') resolveDeal(id, btn.dataset.act);
+  else resolveProject(id, btn.dataset.act);
+}
+
+/* ── Optimistic state helpers ────────────────────────────────
+   Updates are immutable: demo `list()` hands back live store-row references, so
+   we swap in a fresh object rather than mutate one in place — the store is never
+   touched until its own update() runs, which keeps rollback honest. */
+function patchLocal(coll, id, patch) {
+  const arr = state[coll];
+  const i = arr.findIndex((r) => r.id === id);
+  if (i < 0) return null;
+  const prev = arr[i];
+  state[coll] = [...arr.slice(0, i), { ...prev, ...patch }, ...arr.slice(i + 1)];
+  return prev;
+}
+
+function restoreLocal(coll, id, prevRow) {
+  if (!prevRow) return;
+  const arr = state[coll];
+  const i = arr.findIndex((r) => r.id === id);
+  state[coll] = i < 0
+    ? [prevRow, ...arr]
+    : [...arr.slice(0, i), prevRow, ...arr.slice(i + 1)];
+}
+
+/* The heart of it: patch local state → repaint instantly → persist in the
+   background → roll back + surface on failure → offer undo on success. */
+async function optimistic({ coll, id, patch, undoPatch, message, tone, errorMsg }) {
+  if (busy.has(id)) return;                          // write already in flight
+  if (!state[coll].some((r) => r.id === id)) return;
+
+  const myGen = gen;
+  const prevRow = patchLocal(coll, id, patch);
+  busy.add(id);
+  renderFromState();                                 // instant — item is gone/updated now
+
+  try {
+    await REPOS[coll].update(id, patch);             // silent background sync
+    if (myGen === gen) {
+      toast(message, tone, undoAction(coll, id, prevRow, undoPatch));
+    }
+  } catch (err) {
+    console.error(`dashboard: ${coll}.update failed`, err);
+    if (myGen === gen) {
+      restoreLocal(coll, id, prevRow);               // roll the UI back
+      renderFromState();
+      toast(errorMsg, 'error');
+    }
+  } finally {
+    busy.delete(id);
+  }
+}
+
+function undoAction(coll, id, prevRow, undoPatch) {
+  return {
+    action: {
+      label: 'Undo',
+      onClick: async () => {
+        try {
+          await REPOS[coll].update(id, undoPatch);
+          await reload();                            // reconcile from the store
+        } catch (err) {
+          console.error('dashboard: undo failed', err);
+          await reload();
+          toast('Couldn’t undo that — refreshed.', 'error');
+        }
+      },
+    },
+  };
+}
+
+function resolveProject(id, act) {
+  const p = state.projs.find((x) => x.id === id);
+  if (!p) return;
+
+  if (act === 'resolve') {
+    return optimistic({
+      coll: 'projs', id,
+      patch: { status: 'published', published_at: new Date().toISOString() },
+      undoPatch: { status: p.status, published_at: p.published_at ?? null },
+      message: `“${truncate(p.title)}” marked published.`,
+      tone: 'success',
+      errorMsg: 'Couldn’t publish that — restored. Check your connection.',
+    });
+  }
+
+  if (!p.scheduled_at) return;          // nothing to snooze — avoid new Date(null) → 1970
+  const d = new Date(p.scheduled_at);
+  const now = new Date();
+  if (d < now) d.setTime(now.getTime());
+  d.setDate(d.getDate() + 1);
+  return optimistic({
+    coll: 'projs', id,
+    patch: { scheduled_at: d.toISOString() },
+    undoPatch: { scheduled_at: p.scheduled_at },
+    message: `Snoozed to ${relDay(d).label.toLowerCase()}.`,
+    tone: 'info',
+    errorMsg: 'Couldn’t snooze that — restored.',
   });
 }
 
-async function handleProject(id, act) {
-  const p = state.projs.find((x) => x.id === id);
-  if (!p) return;
+function resolveDeal(id, act) {
+  const dl = state.dls.find((x) => x.id === id);
+  if (!dl) return;
+
   if (act === 'resolve') {
-    const prev = { status: p.status, published_at: p.published_at ?? null };
-    await projects.update(id, { status: 'published', published_at: new Date().toISOString() });
-    await load();
-    toast(`“${truncate(p.title)}” marked published.`, 'success',
-      undo(() => projects.update(id, prev)));
-  } else {
-    if (!p.scheduled_at) { await load(); return; } // nothing to snooze — avoid new Date(null) → 1970
-    const prev = { scheduled_at: p.scheduled_at };
-    const d = new Date(p.scheduled_at);
-    const now = new Date();
-    if (d < now) d.setTime(now.getTime());
-    d.setDate(d.getDate() + 1);
-    await projects.update(id, { scheduled_at: d.toISOString() });
-    await load();
-    toast(`Snoozed to ${relDay(d).label.toLowerCase()}.`, 'info',
-      undo(() => projects.update(id, prev)));
+    const next = DEAL_FLOW[dl.status];
+    if (!next) return;
+    return optimistic({
+      coll: 'dls', id,
+      patch: { status: next },
+      undoPatch: { status: dl.status },
+      message: `${dl.brand_name} moved to ${DEAL_STATUS_BY_KEY[next].label}.`,
+      tone: 'success',
+      errorMsg: `Couldn’t update ${dl.brand_name} — restored.`,
+    });
   }
+
+  const base = dl.deadline ? new Date(dl.deadline + 'T00:00:00') : new Date();
+  base.setDate(base.getDate() + 7);
+  return optimistic({
+    coll: 'dls', id,
+    patch: { deadline: dayKey(base) },
+    undoPatch: { deadline: dl.deadline },
+    message: 'Deadline pushed a week.',
+    tone: 'info',
+    errorMsg: 'Couldn’t push the deadline — restored.',
+  });
 }
 
-async function handleDeal(id, act) {
-  const d = state.dls.find((x) => x.id === id);
-  if (!d) return;
-  if (act === 'resolve') {
-    const next = DEAL_FLOW[d.status];
-    if (!next) { await load(); return; }
-    const prev = { status: d.status };
-    await deals.update(id, { status: next });
-    await load();
-    toast(`${d.brand_name} moved to ${DEAL_STATUS_BY_KEY[next].label}.`, 'success',
-      undo(() => deals.update(id, prev)));
-  } else {
-    const prev = { deadline: d.deadline };
-    const base = d.deadline ? new Date(d.deadline + 'T00:00:00') : new Date();
-    base.setDate(base.getDate() + 7);
-    await deals.update(id, { deadline: dayKey(base) });
-    await load();
-    toast('Deadline pushed a week.', 'info', undo(() => deals.update(id, prev)));
-  }
-}
-
-function undo(revert) {
-  return { action: { label: 'Undo', onClick: async () => { await revert(); await load(); } } };
-}
-
-const truncate = (s, n = 40) => (s.length > n ? s.slice(0, n - 1) + '…' : s);
+const truncate = (s, n = 40) => (String(s).length > n ? String(s).slice(0, n - 1) + '…' : String(s));
 
 /* ── Pipeline snapshot ───────────────────────────────────── */
 
-function renderPipeline(projs) {
+function renderPipeline() {
+  const el = byId('pipeline-bars');
+  if (!el) return;
+  if (state.errors.projs) { el.innerHTML = panelError('the pipeline'); return; }
+
   const counts = CONTENT_STAGES.map((s) => ({
     ...s,
-    n: projs.filter((p) => p.status === s.key).length,
+    n: state.projs.filter((p) => p.status === s.key).length,
   }));
   const max = Math.max(1, ...counts.map((c) => c.n));
 
-  document.getElementById('pipeline-bars').innerHTML = counts.map((c) => `
+  el.innerHTML = counts.map((c) => `
     <div class="bar-row">
       <span class="bar-label">${c.label}</span>
       <span class="bar-track"><span class="bar-fill" style="width:${(c.n / max) * 100}%"></span></span>
@@ -262,15 +469,19 @@ function renderPipeline(projs) {
 
 /* ── Month mini-ledger ───────────────────────────────────── */
 
-function renderLedgerMini(txns) {
+function renderLedgerMini() {
+  const el = byId('ledger-mini');
+  if (!el) return;
+  if (state.errors.txns) { el.innerHTML = panelError('this month'); return; }
+
   const month = todayKey().slice(0, 7);
-  const inMonth = txns.filter((t) => String(t.occurred_at).startsWith(month));
+  const inMonth = state.txns.filter((t) => String(t.occurred_at).startsWith(month));
   const income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
   const net = income - costs;
   const max = Math.max(1, income, costs);
 
-  document.getElementById('ledger-mini').innerHTML = `
+  el.innerHTML = `
     <div class="bar-row">
       <span class="bar-label">Income</span>
       <span class="bar-track"><span class="bar-fill" style="width:${(income / max) * 100}%;background:var(--tone-green)"></span></span>
@@ -301,14 +512,18 @@ function rowHtml({ tone, title, meta, right, href }) {
     </a>`;
 }
 
-function renderUpNext(projs) {
+function renderUpNext() {
+  const el = byId('upnext-list');
+  if (!el) return;
+  if (state.errors.projs) { el.innerHTML = panelError('the calendar'); return; }
+
   const today = todayKey();
-  const upcoming = projs
+  const upcoming = state.projs
     .filter((p) => p.status !== 'published' && p.scheduled_at && dayKey(p.scheduled_at) >= today)
     .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
     .slice(0, 6);
 
-  document.getElementById('upnext-list').innerHTML = upcoming.length
+  el.innerHTML = upcoming.length
     ? upcoming.map((p) => {
         const rel = relDay(p.scheduled_at);
         return rowHtml({
