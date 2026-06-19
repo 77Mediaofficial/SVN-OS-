@@ -39,6 +39,7 @@ const ICON_SNOOZE = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" 
 let gen = 0;
 let state = emptyState();
 let busy = new Set();
+let countedUp = false;  // 1A: the stat count-up fires once per mount, never on a mutation re-render
 
 function emptyState() {
   return { projs: [], dls: [], txns: [], prefs: null, errors: {} };
@@ -47,13 +48,21 @@ function emptyState() {
 const byId = (id) => document.getElementById(id);
 const REPOS = { projs: projects, dls: deals, txns: transactions };
 
+const EXIT_MS = 200;                              // 3A: row exit-fade duration (mirrors the CSS)
+const ACTION_LIMIT = 8;                           // 1D: rows shown before collapsing to "+N more"
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const actionRow = (id) => byId('actions-list')?.querySelector(`.act[data-id="${CSS.escape(id)}"]`);
+
 export async function init() {
   const myGen = ++gen;
   state = emptyState();
   busy = new Set();
+  countedUp = false;                               // 1A: re-arm the once-per-mount count-up
 
   const outlet = byId('outlet');
   renderSlate();
+  mountSpotlight();                                // 2G: Today-only cinematic wash
   // Delegated click handling on the STABLE outlet node: survives panel
   // re-renders, and is removed on cleanup so it can't leak or fire on the next
   // view. Re-adding the same fn ref is a spec no-op, so this stays idempotent.
@@ -67,7 +76,25 @@ export async function init() {
   return function cleanup() {
     gen++;
     outlet?.removeEventListener('click', onClick);
+    unmountSpotlight();                            // 2G: tear the wash down with the view
   };
+}
+
+/* 2G — Hero spotlight: a Today-only flourish. It lives on <body> (fixed-position,
+   so it stays viewport-anchored regardless of parent) and is created on mount /
+   removed on cleanup — it no longer sits in the global shell glowing behind every
+   route. Re-mounting replays its entrance each time you land on Today. */
+let spotlightEl = null;
+function mountSpotlight() {
+  unmountSpotlight();
+  spotlightEl = document.createElement('div');
+  spotlightEl.className = 'hero-spotlight';
+  spotlightEl.setAttribute('aria-hidden', 'true');
+  document.body.appendChild(spotlightEl);
+}
+function unmountSpotlight() {
+  spotlightEl?.remove();
+  spotlightEl = null;
 }
 
 /* ── Hydrate: fetch-into-state, then render ──────────────────
@@ -207,7 +234,16 @@ function renderStats() {
     statHtml('Pipeline value', pipelineNum, pipelineFoot) +
     statHtml('Active projects', activeNum, activeFoot) +
     statHtml('Due in 7 days', dueNum, dueFoot);
-  runCountUps(statsEl);
+  // 1A: animate only on the first paint of this mount — never re-roll on a mutation.
+  // 1C: hand the loop a cancel token so it aborts the instant the view is torn down.
+  // N1: only spend the once-per-mount flag once REAL numbers paint. An all-error first
+  // hydrate renders "—" (no [data-count-to] spans), so the flag stays armed and a
+  // successful retry still gets the count-up.
+  if (!countedUp && statsEl.querySelector('[data-count-to]')) {
+    countedUp = true;
+    const animGen = gen;
+    runCountUps(statsEl, () => animGen !== gen);
+  }
 }
 
 /* ── Action items (operable) ─────────────────────────────── */
@@ -286,12 +322,21 @@ function renderActions() {
   }
 
   const items = buildActionItems();
-  const shown = items.slice(0, 8);
+  const shown = items.slice(0, ACTION_LIMIT);
+  const overflow = items.length - shown.length;
 
-  if (countEl) countEl.textContent = items.length ? `${items.length}` : '';
+  // 1D: never show a count that disagrees with the list. The badge reads "8 of 12"
+  // when truncated, and a static "+N more" row accounts for the remainder.
+  if (countEl) {
+    countEl.textContent = items.length
+      ? (overflow > 0 ? `${shown.length} of ${items.length}` : `${items.length}`)
+      : '';
+  }
 
   listEl.innerHTML = shown.length
-    ? `<ul class="acts">${shown.map(actionRowHtml).join('')}</ul>`
+    ? `<ul class="acts">${shown.map(actionRowHtml).join('')}${
+        overflow > 0 ? `<li class="act act-more">+${overflow} more in Content &amp; Deals</li>` : ''
+      }</ul>`
     : `<div class="empty">
          <p class="empty-title">All clear.</p>
          <p class="empty-sub">Nothing overdue, nothing on fire. Go make something.</p>
@@ -313,6 +358,7 @@ function onClick(e) {
   const li = btn.closest('.act');
   if (!li) return;
   const { id, kind } = li.dataset;
+  if (busy.has(id)) return; // 1E: this row is mid-resolve — ignore repeat taps entirely
   if (kind === 'deal') resolveDeal(id, btn.dataset.act);
   else resolveProject(id, btn.dataset.act);
 }
@@ -342,23 +388,34 @@ function restoreLocal(coll, id, prevRow) {
 /* The heart of it: patch local state → repaint instantly → persist in the
    background → roll back + surface on failure → offer undo on success. */
 async function optimistic({ coll, id, patch, undoPatch, message, tone, errorMsg }) {
-  if (busy.has(id)) return;                          // write already in flight
+  if (busy.has(id)) return;                          // 1E: synchronous lock — no double-fire
   if (!state[coll].some((r) => r.id === id)) return;
+  busy.add(id);                                      // claim the row before any await
 
   const myGen = gen;
+  const li = actionRow(id);
+  if (li) li.classList.add('is-resolving');          // 1E: freezes this row (pointer-events:none)
   const prevRow = patchLocal(coll, id, patch);
-  busy.add(id);
-  renderFromState();                                 // instant — item is gone/updated now
+
+  // 3A: if this row is leaving the list, play its exit fade before repainting.
+  // (A row that stays — e.g. a snooze, or a still-overdue deal — repaints instantly.)
+  const leaving = !buildActionItems().some((it) => it.id === id);
+  if (li && leaving && !reducedMotion()) {
+    li.classList.add('is-leaving');
+    await delay(EXIT_MS);
+    if (myGen !== gen) { busy.delete(id); return; }  // navigated away mid-fade
+  }
+  renderFromState();                                 // item is gone/updated now
 
   try {
-    await REPOS[coll].update(id, patch);             // silent background sync
+    await REPOS[coll].update(id, patch);             // background sync
     if (myGen === gen) {
       toast(message, tone, undoAction(coll, id, prevRow, undoPatch));
     }
   } catch (err) {
     console.error(`dashboard: ${coll}.update failed`, err);
     if (myGen === gen) {
-      restoreLocal(coll, id, prevRow);               // roll the UI back
+      restoreLocal(coll, id, prevRow);               // 1B: a real failure now reaches here — roll back
       renderFromState();
       toast(errorMsg, 'error');
     }
@@ -481,20 +538,23 @@ function renderLedgerMini() {
   const net = income - costs;
   const max = Math.max(1, income, costs);
 
+  // V1: monochrome ledger hierarchy — Income is the brightest element (the white
+  // accent), Expenses recede to a dim gray. Net stays bright when positive, dims
+  // when negative (no red — the danger reads through recession, not hue).
   el.innerHTML = `
     <div class="bar-row">
       <span class="bar-label">Income</span>
-      <span class="bar-track"><span class="bar-fill" style="width:${(income / max) * 100}%;background:var(--tone-green)"></span></span>
+      <span class="bar-track"><span class="bar-fill" style="width:${(income / max) * 100}%;background:var(--brass)"></span></span>
       <span class="bar-count">${money(income)}</span>
     </div>
     <div class="bar-row">
       <span class="bar-label">Expenses</span>
-      <span class="bar-track"><span class="bar-fill" style="width:${(costs / max) * 100}%;background:var(--tone-red)"></span></span>
+      <span class="bar-track"><span class="bar-fill" style="width:${(costs / max) * 100}%;background:#737373"></span></span>
       <span class="bar-count">${money(costs)}</span>
     </div>
     <div class="net-line">
       <span class="label">Net</span>
-      <span class="value ${net >= 0 ? '' : 'tone-danger'}">${money(net)}</span>
+      <span class="value ${net >= 0 ? '' : 'tone-dim'}">${money(net)}</span>
     </div>`;
 }
 

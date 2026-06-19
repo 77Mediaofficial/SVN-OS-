@@ -113,7 +113,7 @@ export function statInt(value) {
 /* Animate every [data-count-to] inside scope from 0 → target.
    Markup ships with the final value, so no-JS and reduced-motion
    users simply see the number. */
-export function runCountUps(scope) {
+export function runCountUps(scope, shouldCancel) {
   if (!scope || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   scope.querySelectorAll('[data-count-to]').forEach((el) => {
     const to = Number(el.dataset.countTo);
@@ -121,6 +121,9 @@ export function runCountUps(scope) {
     const t0 = performance.now();
     const DURATION = 650;
     const tick = (t) => {
+      // Abort the moment the view is torn down (cancel token) or the node detaches —
+      // no writes to orphaned DOM, no work bleeding past a fast navigation.
+      if ((shouldCancel && shouldCancel()) || !el.isConnected) return;
       const p = Math.min(1, (t - t0) / DURATION);
       el.textContent = NUM_GB.format(Math.round(to * (1 - Math.pow(1 - p, 3))));
       if (p < 1) requestAnimationFrame(tick);

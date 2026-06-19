@@ -26,7 +26,7 @@ function demo() {
     // Preserve unparseable / old-schema data instead of silently overwriting it.
     if (raw) { try { localStorage.setItem(`${LS_KEY}-corrupt`, raw); } catch { /* ignore */ } }
     demoDb = seedDemo();
-    persistDemo();
+    persistDemoSafe();
   }
   // Backfill collections added after a dataset was first seeded.
   let patched = false;
@@ -40,23 +40,32 @@ function demo() {
     if (!demoDb.reviews) demoDb.reviews = studio.reviews;
     patched = true;
   }
-  if (patched) persistDemo();
+  if (patched) persistDemoSafe();
   return demoDb;
 }
 
 let storageWarned = false;
+function warnStorageOnce() {
+  if (storageWarned) return;
+  storageWarned = true;
+  toast('Storage is full — changes won’t be saved.', 'error');
+}
+
+// 1B: persistDemo now THROWS on a quota / write-block so a write can roll back and
+// report the failure instead of silently "succeeding". Non-critical callers (seeding,
+// backfill, fire-and-forget writes) use persistDemoSafe, which degrades quietly —
+// they have nothing to undo and must never break boot.
 function persistDemo() {
   try {
     localStorage.setItem(LS_KEY, JSON.stringify(demoDb));
   } catch (err) {
-    // Quota exceeded / private-mode write block: keep the in-memory DB usable
-    // and warn once instead of throwing out of create/update/remove.
     console.warn('Could not persist demo state:', err);
-    if (!storageWarned) {
-      storageWarned = true;
-      toast('Storage is full — changes won’t survive a refresh.', 'error');
-    }
+    throw err;
   }
+}
+
+function persistDemoSafe() {
+  try { persistDemo(); } catch { warnStorageOnce(); }
 }
 
 export function resetDemo() {
@@ -279,7 +288,7 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
         const now = new Date().toISOString();
         const row = { id: uuid(), user_id: 'demo-user', created_at: now, updated_at: now, ...values };
         demo()[demoKey].unshift(row);
-        persistDemo();
+        persistDemoSafe();
         return row;
       }
       const { data, error } = await supabase
@@ -295,7 +304,7 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
         const now = new Date().toISOString();
         const rows = list.map((values) => ({ id: uuid(), user_id: 'demo-user', created_at: now, updated_at: now, ...values }));
         demo()[demoKey].unshift(...rows);
-        persistDemo(); // one write for the whole batch
+        persistDemoSafe(); // one write for the whole batch
         return rows;
       }
       const { data, error } = await supabase
@@ -309,8 +318,14 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
       if (DEMO_MODE) {
         const row = demo()[demoKey].find((r) => r.id === id);
         if (!row) throw new Error('Row not found');
+        const prev = { ...row };                        // snapshot for rollback
         Object.assign(row, patch, { updated_at: new Date().toISOString() });
-        persistDemo();
+        try {
+          persistDemo();                                // 1B: throws if storage is full
+        } catch (err) {
+          Object.assign(row, prev);                     // keep in-memory state consistent with disk
+          throw err;                                    // → optimistic() rolls the UI back + surfaces it
+        }
         return row;
       }
       const { data, error } = await supabase
@@ -325,7 +340,7 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
         const rows = demo()[demoKey];
         const idx = rows.findIndex((r) => r.id === id);
         if (idx >= 0) rows.splice(idx, 1);
-        persistDemo();
+        persistDemoSafe();
         return;
       }
       const { error } = await supabase.from(table).delete().eq('id', id);
@@ -355,7 +370,7 @@ export async function getProfile() {
 export async function updateProfile(patch) {
   if (DEMO_MODE) {
     Object.assign(demo().profile, patch);
-    persistDemo();
+    persistDemoSafe();
     return { ...demo().profile };
   }
   const { data, error } = await supabase
@@ -380,11 +395,11 @@ const DEFAULT_PREFS = {
 export async function getPrefs() {
   if (DEMO_MODE) {
     const db = demo();
-    if (!db.prefs) { db.prefs = seedPrefs(); persistDemo(); } // older demo datasets
+    if (!db.prefs) { db.prefs = seedPrefs(); persistDemoSafe(); } // older demo datasets
     // Backfill audience history for datasets seeded before it existed.
     if (!Array.isArray(db.prefs.follower_history) || !db.prefs.follower_history.length) {
       db.prefs.follower_history = seedFollowerHistory();
-      persistDemo();
+      persistDemoSafe();
     }
     return { ...DEFAULT_PREFS, ...db.prefs };
   }
@@ -398,7 +413,7 @@ export async function savePrefs(patch) {
   if (DEMO_MODE) {
     const db = demo();
     db.prefs = { ...(db.prefs || seedPrefs()), ...patch };
-    persistDemo();
+    persistDemoSafe();
     return { ...db.prefs };
   }
   const { data, error } = await supabase

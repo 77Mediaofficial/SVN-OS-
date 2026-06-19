@@ -98,34 +98,36 @@ html.theme-dark {
      change. White is the one focal accent; everything else is ink + hairline. */
   --brass: #ffffff;
   --brass-bright: #ffffff;
-  --brass-deep: #a8a297;        /* gradient tail / metallic shade (silver, not gold) */
+  --brass-deep: #9a9a9a;        /* neutral silver (de-warmed) */
   --brass-soft: rgba(244, 241, 233, 0.12);
   --brass-faint: rgba(244, 241, 233, 0.40);
 
-  --tone-blue: #8fb8f2;
-  --tone-violet: #b8a3ee;
-  --tone-amber: #eec27d;
-  --tone-green: #8bd9a8;
-  --tone-teal: #82d4cd;
-  --tone-red: #ee9089;
-  --tone-brass: #f2f1ec;
-  --tone-dim: #8d8a80;
+  /* 2F/V3: muted, low-saturation semantic hues — a hint of colour so status reads
+     and .pill text clears WCAG contrast app-wide, without the neon "rainbow" on Today. */
+  --tone-blue:   #9fb0cb;
+  --tone-violet: #b0a6c8;
+  --tone-amber:  #cdbb95;
+  --tone-green:  #9bc0a8;
+  --tone-teal:   #97bdb8;
+  --tone-red:    #cf9f9b;
+  --tone-brass:  #f2f2f2;
+  --tone-dim:    #7a7a7a;
 
-  --app-bg: #050505;   /* true absolute black canvas */
-  --panel-bg: linear-gradient(180deg, #151412 0%, #100f0e 100%);
-  --card-bg: linear-gradient(180deg, #161514 0%, #121110 100%);
+  --app-bg: #030303;   /* absolute black canvas (NOIR spec) */
+  --panel-bg: #121212;   /* flat neutral — warm gradient removed */
+  --card-bg: #161616;    /* flat neutral — warm gradient removed */
   --panel-edge: inset 0 1px 0 rgba(255, 255, 255, 0.045);
   --shadow-soft: 0 24px 70px rgba(0, 0, 0, 0.55);
   --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.35);
 
-  --btn-primary-bg: linear-gradient(180deg, #fbf9f3 0%, #e8e4d9 100%);
-  --btn-primary-fg: #131210;
-  --fill-strong: linear-gradient(90deg, #d9d5c8, #f5f3ec);
+  --btn-primary-bg: #f4f4f5;   /* neutral white accent (de-warmed) */
+  --btn-primary-fg: #0a0a0a;
+  --fill-strong: #f4f4f5;       /* neutral white fill (de-warmed) */
   --ring-track: #1f1f1c;
   --scroll-thumb: #2a2a27;
   --selection-ink: #14110b;
   --grain-opacity: 0.045;
-  --nav-active-bg: linear-gradient(180deg, #161513, #121110);
+  --nav-active-bg: #1a1a1a;
   --veil: rgba(8, 8, 7, 0.86);
   --backdrop: rgba(5, 5, 4, 0.72);
   --input-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -219,7 +221,7 @@ img, svg { display: block; }
 /* Touch targets — bump small icon buttons to a 44px tap area on touch devices
    only (ui-ux-pro-max: Touch Target Size, 44x44 min). Desktop precision is kept. */
 @media (pointer: coarse) {
-  .iconbtn, .act-btn { width: 44px; height: 44px; }
+  .iconbtn { width: 44px; height: 44px; }
   .act-btns { gap: 8px; }
   .nav-link { min-height: 44px; }
 }
@@ -326,8 +328,8 @@ img, svg { display: block; }
   background: var(--bg-deep);
   overflow: hidden;
   white-space: nowrap;
-  transition: width 0.34s var(--ease), background 0.34s var(--ease),
-              box-shadow 0.34s var(--ease), border-color 0.34s var(--ease),
+  transition: width 0.3s ease-in-out, background 0.3s ease-in-out,
+              box-shadow 0.3s ease-in-out, border-color 0.3s ease-in-out,
               transform 0.4s var(--ease), opacity 0.4s var(--ease);
 }
 .sidebar:hover, .sidebar:focus-within {
@@ -359,7 +361,7 @@ img, svg { display: block; }
 }
 
 /* Brand mark shrinks to fit the collapsed rail; grows when expanded. */
-.sidebar .brand-mark { font-size: 1.2rem; transition: font-size 0.34s var(--ease); }
+.sidebar .brand-mark { font-size: 1.2rem; transition: font-size 0.3s ease-in-out; }
 .sidebar:hover .brand-mark, .sidebar:focus-within .brand-mark { font-size: 1.55rem; }
 
 /* Labels fade in only when the rail is expanded — kept in the a11y tree
@@ -370,7 +372,7 @@ img, svg { display: block; }
 .sidebar .ws-meta, .sidebar .user-name,
 .sidebar .user-chip .iconbtn {
   opacity: 0;
-  transition: opacity 0.18s var(--ease);
+  transition: opacity 0.3s ease-in-out;
 }
 .sidebar:hover .brand-os, .sidebar:focus-within .brand-os,
 .sidebar:hover .brand-sub, .sidebar:focus-within .brand-sub,
@@ -650,7 +652,7 @@ input[type="date"], input[type="datetime-local"] { color-scheme: inherit; }
 /* Dark theme: panels become a translucent glass layer over the black canvas —
    hair-thin border + a top inner highlight for a tactile, lifted feel. */
 html.theme-dark .panel {
-  background: rgba(255, 255, 255, 0.04);   /* visible surface (was 0.015 — too faint); blur dropped (nothing behind it to frost) */
+  background: rgba(255, 255, 255, 0.025);   /* V2: imperceptibly faint, but lifts off true black */
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .panel-head {
@@ -710,14 +712,14 @@ html.theme-dark .panel {
 .dash-bento {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
-  gap: 12px;              /* honest, comfortable gap — distinct cards, not a broken near-flush */
+  gap: 2px;              /* razor-thin hairline gutter (NOIR spec) */
   align-items: stretch;
 }
 .dash-bento > .panel {
   margin-bottom: 0;
   padding: 20px 22px;
-  border-radius: var(--r-md);
-  border-color: rgba(255, 255, 255, 0.09);
+  border-radius: var(--r-lg);   /* unified with every other panel */
+  border-color: var(--hairline); /* token-bound — tracks the hairline, no literal drift */
 }
 .dash-bento .b-actions { grid-row: span 2; }
 .dash-bento .b-upnext { grid-column: 1 / -1; }
@@ -838,7 +840,7 @@ button.row-item:hover, a.row-item:hover {
   margin-top: 12px; padding-top: 12px;
 }
 .net-line .label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.16em; }
-.net-line .value { font-family: var(--font-display); font-size: 1.55rem; }
+.net-line .value { font-family: var(--font-mono); font-size: 1.5rem; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
 
 /* ── Tables ───────────────────────────────────────────────── */
 
@@ -2134,7 +2136,7 @@ body.drawer-open { overflow: hidden; }
 /* ── iOS / touch hardening ──────────────────────────────────
    Real-device fixes that don't show on desktop. */
 @media (hover: none) {
-  .row-item:hover, .act-main:hover { transform: none; }   /* hover-translate must not stick after a tap */
+  .row-item:hover, .act:hover { transform: none; }   /* hover-translate must not stick after a tap */
 }
 @media (max-width: 640px) {
   input, select, textarea { font-size: 16px; }            /* >=16px stops iOS Safari focus-zoom */
@@ -2274,23 +2276,36 @@ body.cmd-open { overflow: hidden; }
 .act {
   display: flex; align-items: center; gap: 8px;
   border-bottom: 1px solid var(--hairline);
-  transition: opacity 0.2s var(--ease);
+  transition: opacity 0.2s var(--ease), transform 0.2s var(--ease);
 }
 .act:last-child { border-bottom: none; }
-.act.is-leaving { opacity: 0.45; }
+/* 3C: hover shifts the WHOLE row — title and buttons travel together. */
+.act:not(.act-more):hover { transform: translateX(4px); }
+.act:not(.act-more):hover .row-title { color: var(--brass); }
+/* 1E: a row mid-resolve is frozen so repeat taps can't reach it. */
+.act.is-resolving { pointer-events: none; }
+/* 3A: live exit animation — JS adds .is-leaving, waits 200ms, then re-renders. */
+.act.is-leaving { opacity: 0; transform: translateX(6px); }
 .act-main {
   display: flex; align-items: center; gap: 12px;
   flex: 1; min-width: 0;
   padding: 12px 4px;
-  transition: transform 0.2s var(--ease);
 }
-.act-main:hover { transform: translateX(4px); }
-.act-main:hover .row-title { color: var(--brass); }
 .act-tail { display: flex; align-items: center; gap: 10px; flex: none; }
 .act-btns { display: flex; gap: 4px; }
+/* 1D: static overflow row at the foot of the list — never a hidden remainder. */
+.act-more {
+  justify-content: center;
+  padding: 11px 4px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  pointer-events: none;   /* U1: static summary — never an actionable row */
+}
 .act-btn {
   display: grid; place-items: center;
-  width: 28px; height: 28px;
+  width: 36px; height: 36px;
   border: 1px solid transparent;
   border-radius: var(--r-sm);
   color: var(--muted);
@@ -2299,6 +2314,13 @@ body.cmd-open { overflow: hidden; }
 .act-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .act-btn:hover { background: var(--surface-2); border-color: var(--hairline-strong); color: var(--text); }
 .act-resolve:hover { color: var(--tone-green); border-color: color-mix(in srgb, var(--tone-green) 40%, transparent); }
+
+/* U2: 44px touch target on coarse pointers. Placed AFTER the 36px base so it wins the
+   cascade — the early coarse block (top of file) is defeated by source order. */
+@media (pointer: coarse) {
+  .act-btn { width: 44px; height: 44px; }
+  .act-btns { gap: 8px; }
+}
 
 /* ── Toast action (undo) ──────────────────────────────────── */
 
