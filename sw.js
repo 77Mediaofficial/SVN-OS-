@@ -85,7 +85,7 @@ self.addEventListener('fetch', (event) => {
   // SPA navigations: network first, fall back to the cached shell.
   if (request.mode === 'navigate') {
     event.respondWith(
-      fetch(request).catch(() => caches.match('/index.html'))
+      fetch(request).catch(() => caches.match('/index.html').then((r) => r || caches.match('/')))
     );
     return;
   }

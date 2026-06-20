@@ -2029,44 +2029,66 @@ body.drawer-open { overflow: hidden; }
 /* ── Responsive ───────────────────────────────────────────── */
 
 @media (max-width: 920px) {
-  .app { grid-template-columns: 1fr; }
-
+  /* ── Spine → native bottom tab bar (Pillar 4) ───────────────
+     The fixed left rail can't work on a phone, so it becomes a
+     blurred bottom tab bar (the iOS pattern). Only the eight nav
+     glyphs ride the bar; brand, ⌘K, workspace and the footer
+     chrome fall away — Sign out + Privacy live on the Settings
+     tab, so nothing is stranded. Icon-only, exactly like the
+     desktop Spine (labels stay in the a11y tree). */
   .sidebar {
-    position: sticky; top: 0; z-index: 100;
-    height: auto;
-    flex-direction: row; align-items: center;
-    gap: 14px;
-    padding: max(10px, env(safe-area-inset-top)) 14px 10px;
+    position: fixed; inset: auto 0 0 0; z-index: 100;
+    width: 100%; height: auto;
+    flex-direction: row; align-items: stretch; gap: 0;
+    padding: 6px 0;   /* full width to the nav so 8 tabs clear 44px even at 360px */
+    padding-bottom: max(6px, env(safe-area-inset-bottom));
     border-right: none;
-    border-bottom: 1px solid var(--hairline);
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
-    -webkit-backdrop-filter: blur(12px) saturate(1.3);
-    backdrop-filter: blur(12px) saturate(1.3);
+    border-top: 1px solid var(--hairline);
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    -webkit-backdrop-filter: blur(20px) saturate(1.3);
+    backdrop-filter: blur(20px) saturate(1.3);
+    overflow: visible;
   }
-  .brand { margin-bottom: 0; flex: none; }
-  .brand-mark { font-size: 1.3rem; }
-  .brand-sub { display: none; }
+  .sidebar .brand,
+  .sidebar .workspace,
+  .sidebar .cmd-launch,
+  .sidebar .sidebar-foot { display: none; }
 
-  .nav {
-    flex-direction: row; gap: 2px;
-    overflow-x: auto;
-    flex: 1; min-width: 0;
-    scrollbar-width: none;
+  /* .sidebar prefix so this beats the rail's `.sidebar .nav { padding: 0 8px }`
+     — otherwise that 16px steals two tabs under the 44px target at 360px. */
+  .sidebar .nav {
+    flex-direction: row; gap: 0; padding: 0;
+    width: 100%; min-width: 0;
+    justify-content: space-between;
   }
-  .nav::-webkit-scrollbar { display: none; }
-  .nav-link { padding: 8px 10px; flex: none; font-size: 0.78rem; }
-  .nav-pill::before {
-    left: 10px; right: 10px; top: auto; bottom: -1px;
-    width: auto; height: 2px; transform: none;
+  .nav-link {
+    flex: 1 1 0; min-width: 0;
+    flex-direction: column; gap: 3px;
+    align-items: center; justify-content: center;
+    padding: 7px 2px; min-height: 50px;
+  }
+  .nav-link svg { width: 21px; height: 21px; opacity: 1; }
+  /* Icon-only — label hidden visually, kept for screen readers. */
+  .sidebar .nav-link > span {
+    position: absolute; width: 1px; height: 1px;
+    margin: -1px; padding: 0; overflow: hidden;
+    clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap;
+  }
+  .sidebar .nav-link[aria-current="page"] {
+    color: var(--brass); background: none; box-shadow: none;
+  }
+  .sidebar .nav-link[aria-current="page"]::after {
+    content: ""; position: absolute; top: 0; left: 50%;
+    width: 22px; height: 2px; transform: translateX(-50%);
+    background: var(--brass); border-radius: 0 0 3px 3px;
   }
 
-  .sidebar-foot { margin: 0; flex-direction: row; align-items: center; gap: 8px; }
-  .demo-pill { padding: 6px 8px; font-size: 0; gap: 0; }
-  .demo-pill .demo-dot { width: 8px; height: 8px; }
-  .user-name { display: none; }
-  .avatar { width: 28px; height: 28px; }
-
-  .view { padding: 26px 18px 90px; }
+  .view {
+    padding: calc(22px + env(safe-area-inset-top))
+             max(16px, env(safe-area-inset-right))
+             calc(84px + env(safe-area-inset-bottom))
+             max(16px, env(safe-area-inset-left));
+  }
   .stat-band { grid-template-columns: repeat(2, 1fr); }
   .stat-band-3 { grid-template-columns: 1fr 1fr 1fr; }
   .stat { border-left: none; border-top: 1px solid var(--hairline); }
@@ -2075,8 +2097,10 @@ body.drawer-open { overflow: hidden; }
   .stat-band-3 .stat { border-top: none; border-left: 1px solid var(--hairline); }
   .stat-band-3 .stat:first-child { border-left: none; }
 
-  .grid-main { grid-template-columns: 1fr; }
-  .dash-bento { grid-template-columns: 1fr; }
+  /* minmax(0, 1fr) — not 1fr — so a wide child (nowrap title, bar row) can't
+     blow the column out past the 16px gutter and clip off-screen. */
+  .grid-main { grid-template-columns: minmax(0, 1fr); }
+  .dash-bento { grid-template-columns: minmax(0, 1fr); }
   .dash-bento .b-actions, .dash-bento .b-upnext { grid-row: auto; grid-column: auto; }
 
   .board {
@@ -2113,33 +2137,63 @@ body.drawer-open { overflow: hidden; }
   .aud-spark { max-width: none; margin-left: 0; }
 }
 
-/* Spine → horizontal top bar on mobile: undo the rail collapse/expand so the
-   sidebar behaves exactly as it did before (the moving pill returns too). */
+/* Spine → bottom tab bar: neutralise the desktop rail's hover/focus expand so
+   the fixed bar never grows or shifts on a tap. The moving pill is retired here
+   — the active tab is marked by a CSS top-accent instead (robust on a fixed bar
+   across rotation/resize, with no JS geometry to keep in sync). */
 @media (max-width: 920px) {
-  .main { margin-left: 0; }
+  .main { margin-left: 0; transition: none; }
   .sidebar,
   .sidebar:hover,
   .sidebar:focus-within {
-    position: sticky; width: auto;
-    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    width: 100%;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
     box-shadow: none; overflow: visible; white-space: normal;
   }
-  .sidebar .brand-mark,
-  .sidebar:hover .brand-mark { font-size: 1.3rem; }
-  .sidebar .brand-os, .sidebar .nav-link > span,
-  .sidebar .ws-meta, .sidebar .user-chip .iconbtn { opacity: 1; }
-  .sidebar .nav-link[aria-current="page"] { background: none; box-shadow: none; }
-  .sidebar .demo-pill { display: flex; }
-  .nav-pill { display: block; }
+  .nav-pill { display: none; }
 }
 
 /* ── iOS / touch hardening ──────────────────────────────────
    Real-device fixes that don't show on desktop. */
 @media (hover: none) {
-  .row-item:hover, .act:hover { transform: none; }   /* hover-translate must not stick after a tap */
+  /* Hover-translate / lift must never stick after a tap (Pillar 5). */
+  .row-item:hover, .act:not(.act-more):hover,
+  .kcard:hover, .cal-chip:hover { transform: none; }
 }
 @media (max-width: 640px) {
   input, select, textarea { font-size: 16px; }            /* >=16px stops iOS Safari focus-zoom */
+}
+
+/* Every icon button clears a 44px tap target on touch (Pillar 5). Placed at
+   the foot of the sheet so it wins the cascade — the early coarse block is
+   defeated by source order, which is why .iconbtn never actually grew. */
+@media (pointer: coarse) {
+  .iconbtn { width: 44px; height: 44px; }
+}
+
+/* ── Native-app tactility (Pillar 1: viewport physics) ──────
+   Kill the browser rubber-band, and stop the chrome (nav, buttons,
+   labels, the tab bar) from text-selecting / long-press call-out'ing
+   like a web page. Inputs and body content stay selectable — copyable
+   data is exempt by design. */
+html, body { overscroll-behavior-y: none; }
+
+.sidebar, .nav, .nav-link, .brand, .cmd-launch, .cmd-item, .demo-pill, .net-pill,
+.btn, .iconbtn, .act-btn, .seg-btn, .chip, .pill, .badge, .tagchip,
+.kicker, .section-label, .stat-label, .tab, .toast-action, .modal-close,
+.skip-link, kbd {
+  -webkit-user-select: none; user-select: none;
+  -webkit-touch-callout: none;
+}
+input, textarea, select, [contenteditable="true"] {
+  -webkit-user-select: text; user-select: text;
+}
+
+/* Tab-bar-aware overlays: float toasts above the bar; re-anchor the
+   dashboard light wash now the Spine is gone. */
+@media (max-width: 920px) {
+  .toast-root { bottom: calc(68px + env(safe-area-inset-bottom)); }
+  .hero-spotlight { left: 0; width: 100vw; top: -8vh; height: 54vh; }
 }
 
 /* ── Keyboard hint (kbd) ──────────────────────────────────── */
