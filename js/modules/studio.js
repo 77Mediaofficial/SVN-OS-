@@ -20,6 +20,7 @@ import {
 
 const state = { clientId: null, tab: 'scope', brand: 'Your studio' };
 const cache = { clients: [], sow: [], ms: [], gear: [], reviews: [] };
+let portalRoot = null;   // the open client-portal overlay, if any — for teardown on nav
 
 const tc = (s) => {
   const r = Math.max(0, Math.round(s)); // round to whole seconds first, else 119.6 → "1:60"
@@ -52,6 +53,10 @@ export async function init() {
 
   initTabUnderline(document.getElementById('st-tabs').parentElement);
   renderTab();
+
+  // Navigating away with the client-portal preview open would orphan a
+  // body-level overlay + a document keydown listener and leave scroll locked.
+  return () => { if (portalRoot) closePortal(portalRoot); };
 }
 
 async function reload(kind) {
@@ -437,6 +442,7 @@ function openPortal() {
 
   let root = document.createElement('div');
   root.className = 'pt-root';
+  portalRoot = root;
   root.innerHTML = `
     <div class="pt-backdrop" data-pt-close></div>
     <div class="pt-frame" role="dialog" aria-modal="true" aria-label="Client portal preview">
@@ -487,6 +493,7 @@ function openPortal() {
 
 function closePortal(root) {
   if (root._onKey) { document.removeEventListener('keydown', root._onKey); root._onKey = null; }
+  portalRoot = null;
   root.classList.remove('is-open');
   document.body.classList.remove('pt-active');
   setTimeout(() => root.remove(), 220);

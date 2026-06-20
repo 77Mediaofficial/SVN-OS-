@@ -187,3 +187,26 @@ export function confirmAction(message, { confirmLabel = 'Delete' } = {}) {
     dialog.addEventListener('close', () => resolve(dialog.returnValue === 'ok'), { once: true });
   });
 }
+
+/* ── Focus trap ──────────────────────────────────────────────
+   The command palette and drawer are aria-modal overlays built as
+   plain <div>s (not native <dialog>), so Tab would walk out to the
+   page behind them. Call trapFocus() from the overlay's keydown to
+   cycle Tab/Shift-Tab within the panel while it's open. */
+
+export function focusables(container) {
+  const sel = 'a[href], button:not([disabled]), input:not([disabled]),'
+    + ' select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  return [...container.querySelectorAll(sel)].filter((el) => el.getClientRects().length > 0);
+}
+
+export function trapFocus(container, e) {
+  if (e.key !== 'Tab' || !container) return;
+  const f = focusables(container);
+  if (!f.length) { e.preventDefault(); return; }
+  const first = f[0];
+  const last = f[f.length - 1];
+  const act = document.activeElement;
+  if (e.shiftKey && (act === first || !container.contains(act))) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && (act === last || !container.contains(act))) { e.preventDefault(); first.focus(); }
+}

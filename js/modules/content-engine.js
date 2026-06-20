@@ -69,8 +69,10 @@ export async function init() {
 
       const patch = { status };
       if (status === 'published' && !row.published_at) patch.published_at = new Date().toISOString();
-      Object.assign(row, patch);
-      renderBoard(); // optimistic
+      // Optimistic update via an immutable clone — don't mutate the shared store
+      // row, or store.update()'s snapshot rollback can't revert a failed write.
+      rows = rows.map((r) => (r.id === id ? { ...r, ...patch } : r));
+      renderBoard();
       try {
         await projects.update(id, patch);
         toast(`Moved to ${status}.`, 'success');

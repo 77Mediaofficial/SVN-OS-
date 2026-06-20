@@ -7,7 +7,7 @@
 
 import { navigate } from './router.js';
 import { projects, deals, clients, transactions } from './store.js';
-import { esc, todayKey } from './ui.js';
+import { esc, todayKey, trapFocus } from './ui.js';
 import { toast } from './toast.js';
 import { getAppearance, setAppearance } from './appearance.js';
 import { openPrivacySheet } from './applock.js';
@@ -17,6 +17,7 @@ import {
 } from './domain.js';
 
 let root = null;
+let panel = null;
 let input = null;
 let listEl = null;
 let footEl = null;
@@ -361,6 +362,7 @@ function build() {
       </div>`;
   document.body.appendChild(root);
 
+  panel = root.querySelector('.cmd-panel');
   input = root.querySelector('#cmd-input');
   listEl = root.querySelector('#cmd-list');
   footEl = root.querySelector('#cmd-foot');
@@ -393,9 +395,12 @@ function build() {
       if (root && !root.hidden) close(); else openCommand();
       return;
     }
-    if (e.key === 'Escape' && root && !root.hidden) {
+    if (!root || root.hidden) return;
+    if (e.key === 'Escape') {
       e.preventDefault();
       if (root.classList.contains('is-form')) exitForm(); else close();
+    } else if (e.key === 'Tab') {
+      trapFocus(panel, e);   // keep focus inside the open palette
     }
   });
 }

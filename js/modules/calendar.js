@@ -85,11 +85,15 @@ export async function init() {
       const next = new Date(`${date}T00:00:00`);
       next.setHours(prev ? prev.getHours() : 10, prev ? prev.getMinutes() : 0, 0, 0);
 
-      row.scheduled_at = next.toISOString();
-      renderMonth(); // optimistic
+      const nextIso = next.toISOString();
+      // Optimistic update via an immutable clone — never mutate the shared store
+      // row, or store.update()'s snapshot rollback can't revert a failed write
+      // (it would snapshot the already-mutated object). Mirrors dashboard.js.
+      rows = rows.map((r) => (r.id === row.id ? { ...r, scheduled_at: nextIso } : r));
+      renderMonth();
       if (selectedDay) renderDayDetail();
       try {
-        await projects.update(row.id, { scheduled_at: row.scheduled_at });
+        await projects.update(row.id, { scheduled_at: nextIso });
         toast('Rescheduled.', 'success');
       } catch (err) {
         console.error(err);

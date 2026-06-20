@@ -5,7 +5,7 @@
    handlers. Themed entirely through CSS tokens, so it matches both
    the white and warm-black themes without changes here. */
 
-import { esc } from './ui.js';
+import { esc, trapFocus } from './ui.js';
 
 let root = null;
 let panel = null;
@@ -48,7 +48,9 @@ function build() {
     if (e.target.closest('[data-close]')) closeDrawer();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && root && !root.hidden) closeDrawer();
+    if (!root || root.hidden) return;
+    if (e.key === 'Escape') closeDrawer();
+    else if (e.key === 'Tab') trapFocus(panel, e);   // keep focus inside the modal
   });
 }
 
