@@ -18,7 +18,7 @@ const port = Number(process.argv[2]) || 4173;
    which don't apply over plain-http localhost) so CSP breakage shows up in dev. */
 const SECURITY_HEADERS = {
   'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' https://esm.sh; style-src 'self' 'unsafe-inline'; " +
+    "default-src 'self'; script-src 'self' https://esm.sh; style-src 'self'; " +
     "font-src 'self'; img-src 'self' data: blob:; " +
     "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://esm.sh; " +
     "worker-src 'self'; manifest-src 'self'; object-src 'none'; base-uri 'self'; " +

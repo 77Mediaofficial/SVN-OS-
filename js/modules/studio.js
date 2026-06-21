@@ -8,7 +8,7 @@
    same repos as the rest of the app (demo: localStorage). */
 
 import { sowItems, milestones, gear, reviews, clients, getPrefs } from '../store.js';
-import { money, esc, relDay, initials, fmtDate } from '../ui.js';
+import { money, esc, relDay, initials, fmtDate, applyVars } from '../ui.js';
 import { toast } from '../toast.js';
 import { openDrawer, closeDrawer } from '../drawer.js';
 import { initTabUnderline } from '../tabs.js';
@@ -253,7 +253,7 @@ function renderReview(panel) {
   const open = list.filter((c) => !c.resolved).length;
 
   const ticks = list.map((c) => `
-    <button class="st-tick ${c.resolved ? 'is-done' : ''}" data-seek="${c.id}" style="left:${(c.t_sec / duration) * 100}%" title="${tc(c.t_sec)} — ${esc(c.author)}" aria-label="Note at ${tc(c.t_sec)}"></button>`).join('');
+    <button class="st-tick ${c.resolved ? 'is-done' : ''}" data-seek="${c.id}" data-svar="--x:${(c.t_sec / duration) * 100}%" title="${tc(c.t_sec)} — ${esc(c.author)}" aria-label="Note at ${tc(c.t_sec)}"></button>`).join('');
 
   const comment = (c) => `
     <li class="st-note ${c.resolved ? 'is-done' : ''}" data-id="${c.id}">
@@ -283,6 +283,7 @@ function renderReview(panel) {
       </div>
       <ul class="st-notes">${list.map(comment).join('') || '<li class="st-note-empty">No notes yet — click the timeline to leave one.</li>'}</ul>
     </div>`;
+  applyVars(panel);
 
   panel.querySelector('#st-scrub').addEventListener('click', (e) => {
     if (e.target.closest('.st-tick')) return;
@@ -461,7 +462,7 @@ function openPortal() {
 
         <div class="pt-progress">
           <div class="pt-progress-top"><span>Project payment</span><span><b>${money(paid)}</b> of ${money(billed)}</span></div>
-          <div class="pt-bar-track"><span class="pt-bar-fill" style="width:${pct}%"></span></div>
+          <div class="pt-bar-track"><span class="pt-bar-fill" data-svar="--w:${pct}%"></span></div>
         </div>
 
         <section class="pt-section">
@@ -478,6 +479,7 @@ function openPortal() {
         <p class="pt-foot">Powered by ${esc(state.brand)} · SVN OS</p>
       </div>
     </div>`;
+  applyVars(root);
   document.body.appendChild(root);
   document.body.classList.add('pt-active');
   root.addEventListener('click', (e) => { if (e.target.closest('[data-pt-close]')) closePortal(root); });

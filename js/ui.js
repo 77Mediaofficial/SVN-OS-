@@ -5,6 +5,22 @@ export const esc = (value) =>
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
   }[c]));
 
+/* CSP-safe dynamic styling. A strict style-src (no 'unsafe-inline') forbids
+   inline style="" attributes — even ones produced by innerHTML. So render code
+   emits a plain data-svar attribute instead, e.g. data-svar="--w:42%", and this
+   promotes it to a real CSS custom property via the CSSOM (which style-src does
+   NOT govern) once the markup is inserted. CSS then reads var(--w). */
+export function applyVars(root) {
+  if (!root) return;
+  for (const el of root.querySelectorAll('[data-svar]')) {
+    for (const decl of el.dataset.svar.split(';')) {
+      const c = decl.indexOf(':');
+      if (c > 0) el.style.setProperty(decl.slice(0, c).trim(), decl.slice(c + 1).trim());
+    }
+    el.removeAttribute('data-svar');
+  }
+}
+
 const CURRENCY = 'GBP';
 const moneyRound = new Intl.NumberFormat('en-GB', {
   style: 'currency', currency: CURRENCY, maximumFractionDigits: 0,

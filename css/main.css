@@ -2839,3 +2839,24 @@ body.pt-active { overflow: hidden; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ── CSP hardening: dynamic dimensions via CSS vars ───────────
+   These consume custom properties promoted from data-svar attributes by
+   js/ui.js applyVars(), so render code emits NO inline style="" and the
+   style-src directive needs no 'unsafe-inline'. The var() fallbacks keep an
+   element sane for the single frame before applyVars runs (it runs
+   synchronously right after innerHTML, so there's no visible flash). */
+.funnel-bar { width: var(--w, 0); }
+.bar-fill   { width: var(--w, 0); }
+.bar-fill.is-income { background: var(--brass); }
+.bar-fill.is-cost   { background: #737373; }
+.cbar        { height: var(--h, 0); }
+.pt-bar-fill { width: var(--w, 0); }
+.st-tick     { left: var(--x, 0); }
+.ring-fill   { stroke-dasharray: var(--dash, 0); stroke-dashoffset: var(--off, 0); }
+
+/* Static utility classes that replaced one-off inline style="" attributes. */
+.lbl-note { text-transform: none; letter-spacing: 0; }
+.svg-defs { position: absolute; }
+.nowrap { white-space: nowrap; }
+.ledger-empty-cell { text-align: center; padding: 28px; }

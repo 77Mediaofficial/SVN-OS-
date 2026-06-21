@@ -18,7 +18,7 @@
 import { projects, deals, transactions, getPrefs } from '../store.js';
 import {
   money, esc, fmtTime, relDay, dayKey, todayKey, isoWeek,
-  statMoney, statInt, runCountUps,
+  statMoney, statInt, runCountUps, applyVars,
 } from '../ui.js';
 import {
   CONTENT_STAGES, STAGE_BY_KEY, PLATFORM_BY_KEY, DEAL_STATUS_BY_KEY,
@@ -519,9 +519,10 @@ function renderPipeline() {
   el.innerHTML = counts.map((c) => `
     <div class="bar-row">
       <span class="bar-label">${c.label}</span>
-      <span class="bar-track"><span class="bar-fill" style="width:${(c.n / max) * 100}%"></span></span>
+      <span class="bar-track"><span class="bar-fill" data-svar="--w:${(c.n / max) * 100}%"></span></span>
       <span class="bar-count">${c.n}</span>
     </div>`).join('');
+  applyVars(el);
 }
 
 /* ── Month mini-ledger ───────────────────────────────────── */
@@ -544,18 +545,19 @@ function renderLedgerMini() {
   el.innerHTML = `
     <div class="bar-row">
       <span class="bar-label">Income</span>
-      <span class="bar-track"><span class="bar-fill" style="width:${(income / max) * 100}%;background:var(--brass)"></span></span>
+      <span class="bar-track"><span class="bar-fill is-income" data-svar="--w:${(income / max) * 100}%"></span></span>
       <span class="bar-count">${money(income)}</span>
     </div>
     <div class="bar-row">
       <span class="bar-label">Expenses</span>
-      <span class="bar-track"><span class="bar-fill" style="width:${(costs / max) * 100}%;background:#737373"></span></span>
+      <span class="bar-track"><span class="bar-fill is-cost" data-svar="--w:${(costs / max) * 100}%"></span></span>
       <span class="bar-count">${money(costs)}</span>
     </div>
     <div class="net-line">
       <span class="label">Net</span>
       <span class="value ${net >= 0 ? '' : 'tone-dim'}">${money(net)}</span>
     </div>`;
+  applyVars(el);
 }
 
 /* ── Up next ─────────────────────────────────────────────── */

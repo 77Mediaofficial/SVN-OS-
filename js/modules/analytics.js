@@ -5,7 +5,7 @@
 import { transactions, projects, deals, getPrefs, savePrefs } from '../store.js';
 import {
   esc, money, todayKey, formData, bindDialog,
-  statMoney, statInt, runCountUps, sparkline,
+  statMoney, statInt, runCountUps, sparkline, applyVars,
 } from '../ui.js';
 import { CATEGORY_BY_KEY, DEAL_STATUS_BY_KEY } from '../domain.js';
 import { toast } from '../toast.js';
@@ -161,10 +161,11 @@ function renderFunnel() {
     return `
       <div class="funnel-row">
         <span class="funnel-label">${DEAL_STATUS_BY_KEY[stage].label}</span>
-        <div class="funnel-bar-wrap"><div class="funnel-bar" style="width:${Math.max(3, (n / top) * 100)}%"></div></div>
+        <div class="funnel-bar-wrap"><div class="funnel-bar" data-svar="--w:${Math.max(3, (n / top) * 100)}%"></div></div>
         <span class="funnel-num">${n} · ${pct}%</span>
       </div>`;
   }).join('');
+  applyVars(el);
 }
 
 /* ── Stat band ───────────────────────────────────────────── */
@@ -222,14 +223,16 @@ function renderChart(months) {
   }));
   const max = Math.max(1, ...data.flatMap((d) => [d.income, d.costs]));
 
-  document.getElementById('ana-chart').innerHTML = data.map((d) => `
+  const chartEl = document.getElementById('ana-chart');
+  chartEl.innerHTML = data.map((d) => `
     <div class="chart-col" title="${d.label} ${d.year} — in ${money(d.income)} · out ${money(d.costs)}">
       <div class="chart-bars">
-        <span class="cbar cbar-in" style="height:${(d.income / max) * 100}%"></span>
-        <span class="cbar cbar-out" style="height:${(d.costs / max) * 100}%"></span>
+        <span class="cbar cbar-in" data-svar="--h:${(d.income / max) * 100}%"></span>
+        <span class="cbar cbar-out" data-svar="--h:${(d.costs / max) * 100}%"></span>
       </div>
       <span class="chart-label">${d.label}</span>
     </div>`).join('');
+  applyVars(chartEl);
 }
 
 /* ── Income by category ──────────────────────────────────── */
@@ -250,13 +253,14 @@ function renderCats(months) {
     ? sorted.map(([cat, sum]) => `
         <div class="bar-row">
           <span class="bar-label">${esc(CATEGORY_BY_KEY[cat]?.label ?? cat)}</span>
-          <span class="bar-track"><span class="bar-fill" style="width:${(sum / total) * 100}%"></span></span>
+          <span class="bar-track"><span class="bar-fill" data-svar="--w:${(sum / total) * 100}%"></span></span>
           <span class="bar-count">${money(sum)} · ${Math.round((sum / total) * 100)}%</span>
         </div>`).join('')
     : `<div class="empty">
          <p class="empty-title">No income in this range.</p>
          <p class="empty-sub">Log payments in the ledger and the mix shows up here.</p>
        </div>`;
+  applyVars(document.getElementById('ana-cats'));
 }
 
 /* ── Goals ───────────────────────────────────────────────── */
@@ -272,7 +276,7 @@ function ringHtml(label, value, target, fmt) {
         <svg viewBox="0 0 80 80" aria-hidden="true">
           <circle class="ring-bg" cx="40" cy="40" r="34"></circle>
           <circle class="ring-fill ${pct >= 100 ? 'is-done' : ''}" cx="40" cy="40" r="34"
-                  style="stroke-dasharray:${RING_C.toFixed(1)};stroke-dashoffset:${off.toFixed(1)}"></circle>
+                  data-svar="--dash:${RING_C.toFixed(1)};--off:${off.toFixed(1)}"></circle>
         </svg>
         <div class="ring-center"><span class="ring-pct">${pct}%</span></div>
       </div>
@@ -309,13 +313,14 @@ function renderGoals() {
   ].join('');
 
   el.innerHTML =
-    `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    `<svg width="0" height="0" class="svg-defs" aria-hidden="true"><defs>
        <linearGradient id="ringbrass" x1="0" y1="0" x2="1" y2="1">
          <stop offset="0" stop-color="#e9cb98"></stop>
          <stop offset="1" stop-color="#a8895d"></stop>
        </linearGradient>
      </defs></svg>
      <div class="rings">${rings}</div>`;
+  applyVars(el);
 }
 
 function openGoals() {
@@ -366,11 +371,13 @@ function renderOutput(months) {
   document.getElementById('ana-output-count').textContent =
     total ? `${total} published` : '';
 
-  document.getElementById('ana-output').innerHTML = counts.map((c) => `
+  const outEl = document.getElementById('ana-output');
+  outEl.innerHTML = counts.map((c) => `
     <div class="chart-col" title="${c.label} ${c.year} — ${c.n} published">
       <div class="chart-bars">
-        <span class="cbar cbar-posts" style="height:${(c.n / max) * 100}%"></span>
+        <span class="cbar cbar-posts" data-svar="--h:${(c.n / max) * 100}%"></span>
       </div>
       <span class="chart-label">${c.label}</span>
     </div>`).join('');
+  applyVars(outEl);
 }
