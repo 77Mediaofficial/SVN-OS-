@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": false,
   "rewrites": [
-    { "source": "/((?!js/|css/|fonts/|pages/|sql/|docs/|scripts/|sw\\.js|manifest\\.json|icon\\.svg|icon-192\\.png|icon-512\\.png|favicon\\.ico).*)", "destination": "/index.html" }
+    { "source": "/early-access", "destination": "/early-access.html" },
+    { "source": "/((?!js/|css/|fonts/|pages/|sql/|docs/|scripts/|early-access|sw\\.js|manifest\\.json|icon\\.svg|icon-192\\.png|icon-512\\.png|favicon\\.ico).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
