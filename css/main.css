@@ -19,6 +19,7 @@
   --surface-3: #eaeaef;   /* bar / track fills */
   --hairline: #e9e9ec;    /* separators */
   --hairline-strong: #d8d8df; /* borders, input outlines */
+  --control-border: #8a8a8f;  /* interactive-control boundary — clears WCAG 1.4.11 3:1 vs field + panel */
 
   /* Ink */
   --text: #1c1c1e;
@@ -88,6 +89,7 @@ html.theme-dark {
   --surface-3: #1f1f1c;
   --hairline: rgba(255, 255, 255, 0.09);        /* separators — lifted for legibility (restraint pass) */
   --hairline-strong: rgba(255, 255, 255, 0.16);
+  --control-border: rgba(255, 255, 255, 0.35);  /* interactive-control boundary — ~3.2:1 vs panel/card/field, WCAG 1.4.11. Decorative borders keep --hairline-strong. */
   --text: #f2f1ec;
   --ivory: #f5f3ec;
   --dim: #9b978c;
@@ -520,7 +522,7 @@ img, svg { display: block; }
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 8px;
   padding: 9px 17px;
-  border: 1px solid var(--hairline-strong);
+  border: 1px solid var(--control-border);
   border-radius: var(--r-sm);
   background: transparent;
   color: var(--text);
@@ -591,7 +593,7 @@ input, select, textarea {
   font-size: 0.88rem;
   color: var(--text);
   background: var(--bg-deep);
-  border: 1px solid var(--hairline-strong);
+  border: 1px solid var(--control-border);
   border-radius: var(--r-sm);
   padding: 10px 12px;
   width: 100%;
@@ -623,7 +625,7 @@ input[type="date"], input[type="datetime-local"] { color-scheme: inherit; }
   flex: 1;
   display: flex; align-items: center; justify-content: center;
   padding: 9px 12px;
-  border: 1px solid var(--hairline-strong);
+  border: 1px solid var(--control-border);
   border-radius: var(--r-sm);
   font-size: 0.8rem; font-weight: 500;
   color: var(--dim);
@@ -1128,7 +1130,7 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
   font-family: var(--font-display);
   font-size: 1.6rem; font-weight: 400; line-height: 1.1;
 }
-.modal-close { font-size: 1.1rem; line-height: 1; padding: 4px 8px; color: var(--muted); border-radius: var(--r-sm); transition: color 0.15s var(--ease), background 0.15s var(--ease); }
+.modal-close { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 32px; font-size: 1.1rem; line-height: 1; padding: 4px 8px; color: var(--muted); border-radius: var(--r-sm); transition: color 0.15s var(--ease), background 0.15s var(--ease); }
 .modal-close:hover { color: var(--text); background: var(--surface-2); }
 
 .modal-actions {
@@ -2169,6 +2171,7 @@ body.drawer-open { overflow: hidden; }
    defeated by source order, which is why .iconbtn never actually grew. */
 @media (pointer: coarse) {
   .iconbtn { width: 44px; height: 44px; }
+  .modal-close { min-width: 44px; min-height: 44px; }
 }
 
 /* ── Native-app tactility (Pillar 1: viewport physics) ──────
@@ -2217,7 +2220,7 @@ kbd {
   width: 100%;
   margin: 2px 0 12px;
   padding: 9px 11px;
-  border: 1px solid var(--hairline-strong);
+  border: 1px solid var(--control-border);
   border-radius: var(--r-sm);
   background: var(--bg-deep);
   color: var(--muted);
@@ -2409,7 +2412,7 @@ body.cmd-open { overflow: hidden; }
 
 .seg-btn {
   padding: 7px 13px;
-  border: 1px solid var(--hairline-strong);
+  border: 1px solid var(--control-border);
   border-radius: var(--r-sm);
   background: var(--bg-deep);
   color: var(--dim);
@@ -2457,7 +2460,7 @@ body.cmd-open { overflow: hidden; }
 .rz-bg { display: inline-flex; align-items: center; gap: 7px; font-size: 0.74rem; color: var(--dim); }
 .rz-bg input[type="color"] {
   width: 32px; height: 32px; padding: 0;
-  border: 1px solid var(--hairline-strong); border-radius: var(--r-sm);
+  border: 1px solid var(--control-border); border-radius: var(--r-sm);
   background: none; box-shadow: none; cursor: pointer;
 }
 .rz-bg input[type="color"]::-webkit-color-swatch-wrapper { padding: 3px; }
@@ -2726,7 +2729,7 @@ body.pt-active { overflow: hidden; }
 .switch input { position: absolute; opacity: 0; width: 0; height: 0; }
 .switch-track {
   width: 40px; height: 23px; border-radius: 99px;
-  background: var(--surface-3); border: 1px solid var(--hairline-strong);
+  background: var(--surface-3); border: 1px solid var(--control-border);
   position: relative; transition: background 0.18s var(--ease), border-color 0.18s var(--ease);
 }
 .switch-track::after {

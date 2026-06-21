@@ -150,6 +150,8 @@ function renderList(q) {
 
   if (!visible.length) {
     listEl.innerHTML = `<p class="cmd-empty">No matches for “${esc(q)}”.</p>`;
+    input.setAttribute('aria-expanded', 'false');
+    input.removeAttribute('aria-activedescendant');
     return;
   }
 
@@ -167,20 +169,31 @@ function renderList(q) {
       ${items.map((it) => {
         const i = idx++;
         return `
-          <button type="button" class="cmd-item${i === 0 ? ' is-active' : ''}" role="option" data-idx="${i}">
+          <button type="button" class="cmd-item${i === 0 ? ' is-active' : ''}" role="option"
+                  id="cmd-opt-${i}" aria-selected="${i === 0 ? 'true' : 'false'}" data-idx="${i}">
             <span class="cmd-ico">${it.icon || ''}</span>
             <span class="cmd-label">${esc(labelOf(it))}</span>
             <span class="cmd-hint">${esc(it.hint || '')}</span>
           </button>`;
       }).join('')}
     </div>`).join('');
+
+  // Reflect the listbox/active-option state on the combobox input so screen
+  // readers announce the highlighted result as the user arrows through it.
+  input.setAttribute('aria-expanded', 'true');
+  input.setAttribute('aria-activedescendant', 'cmd-opt-0');
 }
 
 function setActive(next) {
   const items = listEl.querySelectorAll('.cmd-item');
   if (!items.length) return;
   active = (next + items.length) % items.length;
-  items.forEach((el, i) => el.classList.toggle('is-active', i === active));
+  items.forEach((el, i) => {
+    const on = i === active;
+    el.classList.toggle('is-active', on);
+    el.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  input.setAttribute('aria-activedescendant', items[active].id);
   items[active].scrollIntoView({ block: 'nearest' });
 }
 
@@ -252,6 +265,10 @@ function showForm(kind) {
   const spec = forms[kind];
   root.classList.add('is-form');
   input.value = '';
+  // Leaving the listbox for the quick-create form — drop the stale combobox
+  // popup state so AT doesn't point aria-activedescendant at a removed option.
+  input.setAttribute('aria-expanded', 'false');
+  input.removeAttribute('aria-activedescendant');
   listEl.innerHTML = `
     <form class="cmd-form" id="cmd-form" novalidate>
       <p class="cmd-form-title">${spec.title}</p>
@@ -351,6 +368,8 @@ function build() {
       <div class="cmd-search">
         ${ICON.search}
         <input id="cmd-input" type="text" autocomplete="off" spellcheck="false"
+               role="combobox" aria-expanded="false" aria-controls="cmd-list"
+               aria-autocomplete="list" aria-haspopup="listbox"
                placeholder="Search or run a command…" aria-label="Command palette search" />
         <kbd class="cmd-esc">esc</kbd>
       </div>
