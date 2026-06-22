@@ -3,7 +3,7 @@
   "cleanUrls": false,
   "rewrites": [
     { "source": "/early-access", "destination": "/early-access.html" },
-    { "source": "/((?!js/|css/|fonts/|pages/|sql/|docs/|scripts/|early-access|sw\\.js|manifest\\.json|icon\\.svg|icon-192\\.png|icon-512\\.png|favicon\\.ico).*)", "destination": "/index.html" }
+    { "source": "/((?!js/|css/|fonts/|pages/|sql/|docs/|scripts/|early-access|og-card\\.png|og-card\\.svg|sw\\.js|manifest\\.json|icon\\.svg|icon-192\\.png|icon-512\\.png|favicon\\.ico).*)", "destination": "/index.html" }
   ],
   "headers": [
     {
