@@ -35,6 +35,7 @@ create type recurrence_interval as enum ('none', 'weekly', 'monthly', 'yearly');
 create or replace function public.touch_updated_at()
 returns trigger
 language plpgsql
+set search_path = ''
 as $$
 begin
   new.updated_at = now();
@@ -68,9 +69,10 @@ create policy "profiles: owner read"
   on public.profiles for select
   using (auth.uid() = id);
 
-create policy "profiles: public read when published"
-  on public.profiles for select
-  using (username is not null);
+-- NOTE: an earlier draft had a "public read when published" policy (any row with a
+-- username readable by anyone). SVN OS only ever reads its OWN profile
+-- (getProfile → eq('id', userId)), so that policy was pure attack surface and is
+-- intentionally omitted. Re-add a scoped public policy only if public creator pages ship.
 
 create policy "profiles: owner insert"
   on public.profiles for insert
