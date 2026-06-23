@@ -117,36 +117,53 @@ window.addEventListener('svnos:identity', (e) => {
 // Onboarding / workspace changes → refresh the sidebar workspace strip.
 window.addEventListener('svnos:workspace', () => renderWorkspace());
 
-function showGate() {
-  shell.hidden = true;
+// The signed-out gate (marketing pitch + sign-in) is now OPT-IN: guests land straight in
+// the app on demo data and reveal the gate on demand (footer pill / palette command).
+const landingBack = document.getElementById('landing-back');
+function openGate() {
   gate.hidden = false;
+  if (landingBack) landingBack.hidden = false;
   document.getElementById('auth-email')?.focus();
 }
 
-initAuth((user) => (user ? showApp(user) : showGate()));
+// Mode-aware footer pill:
+//  • no creds (DEMO_MODE) → "Demo data · connect Supabase" (dev hint)
+//  • creds + signed out   → "Guest · Sign in to save" (opens the gate)
+//  • signed in            → hidden
+const demoPill = document.getElementById('demo-pill');
+function paintModePill(user) {
+  if (!demoPill) return;
+  const label = demoPill.querySelector('.demo-label');
+  if (DEMO_MODE) {
+    if (label) label.textContent = 'Demo data · connect Supabase';
+    demoPill.hidden = false;
+  } else if (user?.id === 'guest') {
+    if (label) label.textContent = 'Guest · Sign in to save';
+    demoPill.hidden = false;
+  } else {
+    demoPill.hidden = true;
+  }
+}
+demoPill?.addEventListener('click', () => {
+  if (DEMO_MODE) toast('Demo mode: paste your Supabase URL + anon key into js/supabase.js, run sql/schema.sql, reload.');
+  else openGate(); // guest → reveal sign-in
+});
+
+initAuth((user) => { paintModePill(user); showApp(user); });
 bindAuthForm();
 
 document.getElementById('signout-btn').addEventListener('click', signOut);
 document.getElementById('privacy-btn').addEventListener('click', openPrivacySheet);
 
 // Preview the signed-out front door from inside the app (palette command).
-const landingBack = document.getElementById('landing-back');
-window.addEventListener('svnos:landing', () => {
-  gate.hidden = false;
-  if (landingBack) landingBack.hidden = false;
-});
+window.addEventListener('svnos:landing', openGate);
 landingBack?.addEventListener('click', () => {
   gate.hidden = true;
   if (landingBack) landingBack.hidden = true;
 });
 
+// Console escape hatch for a fresh demo dataset (demo/guest data is local).
 if (DEMO_MODE) {
-  const pill = document.getElementById('demo-pill');
-  pill.hidden = false;
-  pill.addEventListener('click', () => {
-    toast('Demo mode: paste your Supabase URL + anon key into js/supabase.js, run sql/schema.sql, reload.');
-  });
-  // Console escape hatch for a fresh demo dataset.
   window.svnos = { resetDemo: () => { resetDemo(); location.reload(); } };
 }
 
