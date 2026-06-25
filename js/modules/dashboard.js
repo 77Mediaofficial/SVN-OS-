@@ -296,12 +296,12 @@ function buildActionItems() {
     if (key < today) {
       items.push({ rank: 1, tone: 'red', href: '/content', id: p.id, kind: 'project', resolveTitle: 'Mark published',
         title: esc(p.title),
-        meta: 'slipped past its slot — reschedule or publish',
+        meta: p.owner ? `with ${esc(p.owner)} · past its slot — reassign or publish` : 'slipped past its slot — reschedule or publish',
         right: relDay(p.scheduled_at).label });
     } else if (key === today) {
       items.push({ rank: 2, tone: 'amber', href: '/content', id: p.id, kind: 'project', resolveTitle: 'Mark published',
         title: esc(p.title),
-        meta: `${PLATFORM_BY_KEY[p.platform]?.label ?? p.platform} · scheduled today`,
+        meta: `${p.owner ? esc(p.owner) + ' · ' : ''}${PLATFORM_BY_KEY[p.platform]?.label ?? p.platform} · scheduled today`,
         right: fmtTime(p.scheduled_at) });
     }
   }
