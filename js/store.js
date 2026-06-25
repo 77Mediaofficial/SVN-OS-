@@ -9,7 +9,7 @@ import { dayKey, todayKey } from './ui.js';
 import { toast } from './toast.js';
 import { enqueue, isOnline, setReplayHandler } from './outbox.js';
 
-const LS_KEY = 'svnos-demo-v1';
+const LS_KEY = 'svnos-demo-v2';
 
 let userId = null;
 // `live` gates the data layer: true ONLY when real credentials are wired AND a real user
@@ -96,20 +96,20 @@ function seedDemo() {
 
   const P = (offset, fields) => ({
     id: uuid(), user_id: 'demo-user', description: '', notes: '',
-    tags: [], scheduled_at: null, published_at: null,
+    tags: [], scheduled_at: null, published_at: null, owner: null,
     created_at: stamp(offset), updated_at: stamp(offset), ...fields,
   });
   const projects = [
-    P(-2,  { title: 'Studio tour — what £10k of kit actually buys', status: 'idea', platform: 'youtube', tags: ['studio', 'gear'] }),
-    P(-1,  { title: '30 days of daily edits — announcement', status: 'idea', platform: 'tiktok', tags: ['series'] }),
-    P(-6,  { title: 'Client story: full rebrand in six weeks', status: 'scripting', platform: 'youtube', scheduled_at: iso(9, 17), tags: ['case-study'] }),
-    P(-4,  { title: 'How I price video projects', status: 'scripting', platform: 'podcast', scheduled_at: iso(12, 8) }),
-    P(-9,  { title: 'Cinematic b-roll masterclass', status: 'production', platform: 'youtube', scheduled_at: iso(4, 17), tags: ['tutorial'] }),
-    P(-3,  { title: 'BTS — charity gala film', status: 'production', platform: 'instagram', scheduled_at: iso(2, 12), tags: ['bts'] }),
-    P(-8,  { title: 'Five lighting setups under £200', status: 'ready', platform: 'youtube', scheduled_at: iso(1, 17), tags: ['tutorial', 'gear'] }),
-    P(-5,  { title: 'Reel — spring brand campaigns', status: 'ready', platform: 'instagram', scheduled_at: iso(0, 18), tags: ['showreel'] }),
-    P(-20, { title: 'Why your edits feel slow', status: 'published', platform: 'youtube', scheduled_at: iso(-6, 17), published_at: iso(-6, 17) }),
-    P(-30, { title: 'Colour grading start to finish', status: 'published', platform: 'youtube', scheduled_at: iso(-16, 17), published_at: iso(-16, 17), tags: ['tutorial'] }),
+    P(-2,  { title: 'Aurora Audio — flagship brand film', status: 'idea', platform: 'youtube', owner: 'Marcus', tags: ['client', 'brand-film'] }),
+    P(-1,  { title: 'Lumen Lighting — product launch series', status: 'idea', platform: 'instagram', owner: 'Sarah', tags: ['client', 'launch'] }),
+    P(-6,  { title: 'Atlas Travel Gear — hero campaign film', status: 'scripting', platform: 'youtube', scheduled_at: iso(9, 17), owner: 'Marcus', tags: ['client', 'campaign'] }),
+    P(-4,  { title: 'Kestrel Coffee — retainer · July drop', status: 'scripting', platform: 'instagram', scheduled_at: iso(12, 8), owner: 'Sarah', tags: ['retainer'] }),
+    P(-9,  { title: 'Forma Furniture — 6× product films', status: 'production', platform: 'youtube', scheduled_at: iso(4, 17), owner: 'Theo', tags: ['client', 'product'] }),
+    P(-3,  { title: 'Northbound Apparel — SS campaign reel', status: 'production', platform: 'instagram', scheduled_at: iso(2, 12), owner: 'Theo', tags: ['client', 'fashion'] }),
+    P(-8,  { title: 'Aurora Audio — 30s paid-social cut', status: 'ready', platform: 'instagram', scheduled_at: iso(1, 17), owner: 'Sarah', tags: ['client', 'social'] }),
+    P(-5,  { title: 'Lumen Lighting — launch showreel', status: 'ready', platform: 'youtube', scheduled_at: iso(0, 18), owner: 'Theo', tags: ['client', 'showreel'] }),
+    P(-20, { title: 'Kestrel Coffee — brand documentary', status: 'published', platform: 'youtube', scheduled_at: iso(-6, 17), published_at: iso(-6, 17), owner: 'Marcus', tags: ['client'] }),
+    P(-30, { title: 'Atlas Travel Gear — launch teaser', status: 'published', platform: 'instagram', scheduled_at: iso(-16, 17), published_at: iso(-16, 17), owner: 'Theo', tags: ['client'] }),
   ];
 
   const D = (offset, fields) => ({
@@ -118,12 +118,12 @@ function seedDemo() {
     created_at: stamp(offset), updated_at: stamp(offset), ...fields,
   });
   const deals = [
-    D(-3,  { brand_name: 'Aurora Audio', status: 'lead', value: 1200, deadline: day(21), contact_name: 'Mia Chen', contact_email: 'mia@auroraaudio.co', tags: ['audio'] }),
-    D(-1,  { brand_name: 'Northbound Apparel', status: 'lead', value: 800, deadline: day(30), tags: ['fashion'] }),
-    D(-12, { brand_name: 'Lumen Lighting Co.', status: 'negotiating', value: 2400, deadline: day(10), contact_name: 'Theo Marsh', contact_email: 'theo@lumen.co', tags: ['gear'] }),
-    D(-18, { brand_name: 'Atlas Travel Gear', status: 'signed', value: 3200, deadline: day(5), contact_name: 'Priya Nair', contact_email: 'priya@atlastravel.com', tags: ['travel'] }),
-    D(-26, { brand_name: 'Forma Furniture', status: 'delivered', value: 1800, deadline: day(-2), contact_name: 'Jon Ellis', contact_email: 'jon@forma.studio' }),
-    D(-50, { brand_name: 'Kestrel Coffee', status: 'paid', value: 1500, deadline: day(-20), contact_name: 'Sam Reid', contact_email: 'sam@kestrel.coffee', tags: ['fmcg'] }),
+    D(-3,  { brand_name: 'Aurora Audio', status: 'lead', value: 14000, deadline: day(21), contact_name: 'Mia Chen', contact_email: 'mia@auroraaudio.co', tags: ['brand-film'] }),
+    D(-1,  { brand_name: 'Northbound Apparel', status: 'lead', value: 9500, deadline: day(30), tags: ['fashion'] }),
+    D(-12, { brand_name: 'Lumen Lighting Co.', status: 'negotiating', value: 22000, deadline: day(4), contact_name: 'Theo Marsh', contact_email: 'theo@lumen.co', tags: ['launch'] }),
+    D(-18, { brand_name: 'Atlas Travel Gear', status: 'signed', value: 28000, deadline: day(-1), contact_name: 'Priya Nair', contact_email: 'priya@atlastravel.com', tags: ['campaign'] }),
+    D(-26, { brand_name: 'Forma Furniture', status: 'delivered', value: 19500, deadline: day(-3), contact_name: 'Jon Ellis', contact_email: 'jon@forma.studio' }),
+    D(-50, { brand_name: 'Kestrel Coffee', status: 'paid', value: 16000, deadline: day(-20), contact_name: 'Sam Reid', contact_email: 'sam@kestrel.coffee', tags: ['retainer'] }),
   ];
   const dealId = (name) => deals.find((d) => d.brand_name === name)?.id ?? null;
 
@@ -133,23 +133,25 @@ function seedDemo() {
     parent_transaction_id: null, deal_id: null,
     created_at: stamp(offset), updated_at: stamp(offset), ...fields,
   });
-  const adsense = T(-60, { type: 'income', category: 'platform_revenue', description: 'YouTube AdSense payout', amount: 412, recurrence: 'monthly' });
-  const adobe = T(-45, { type: 'expense', category: 'software', description: 'Adobe Creative Cloud', amount: 56.98, recurrence: 'monthly' });
+  const adsense = T(-60, { type: 'income', category: 'platform_revenue', description: 'Channel management — brand partner', amount: 3200, recurrence: 'monthly' });
+  const adobe = T(-40, { type: 'expense', category: 'software', description: 'Adobe CC (5 seats) + Frame.io + DaVinci', amount: 620, recurrence: 'monthly' });
   const transactions = [
     adsense,
-    T(-30, { type: 'income', category: 'platform_revenue', description: 'YouTube AdSense payout', amount: 398, parent_transaction_id: adsense.id }),
     adobe,
-    T(-40, { type: 'income', category: 'sponsorship', description: 'Lumen Lighting — pilot ad read', amount: 400, deal_id: dealId('Lumen Lighting Co.') }),
-    T(-33, { type: 'expense', category: 'equipment', description: 'Sigma 24-70 f2.8', amount: 949 }),
-    T(-25, { type: 'income', category: 'services', description: 'Wedding film — final balance', amount: 2200 }),
-    T(-18, { type: 'income', category: 'sponsorship', description: 'Kestrel Coffee — campaign final payment', amount: 1500, deal_id: dealId('Kestrel Coffee') }),
-    T(-12, { type: 'income', category: 'affiliate', description: 'Lens affiliate links', amount: 86 }),
-    T(-9,  { type: 'expense', category: 'travel', description: 'Client shoot — fuel + parking', amount: 38.5 }),
-    T(-8,  { type: 'income', category: 'sponsorship', description: 'Atlas Travel Gear — 50% upfront', amount: 1600, deal_id: dealId('Atlas Travel Gear') }),
-    T(-7,  { type: 'expense', category: 'contractors', description: 'Second shooter — gala film', amount: 250 }),
-    T(-4,  { type: 'income', category: 'merchandise', description: 'Preset pack sales', amount: 240 }),
-    T(-3,  { type: 'expense', category: 'software', description: 'Frame.io seats', amount: 23 }),
-    T(-2,  { type: 'expense', category: 'marketing', description: 'Instagram boost — reel', amount: 40 }),
+    // This month — agency scale (£52k income / ~£12k costs)
+    T(-2,  { type: 'income', category: 'services', description: 'Atlas Travel Gear — brand film, final balance', amount: 18500, deal_id: dealId('Atlas Travel Gear') }),
+    T(-5,  { type: 'income', category: 'sponsorship', description: 'Lumen Lighting Co. — Q2 campaign films', amount: 12500, deal_id: dealId('Lumen Lighting Co.') }),
+    T(-9,  { type: 'income', category: 'services', description: 'Kestrel Coffee — content retainer (June)', amount: 6500, deal_id: dealId('Kestrel Coffee') }),
+    T(-14, { type: 'income', category: 'services', description: 'Forma Furniture — product launch series', amount: 10500, deal_id: dealId('Forma Furniture') }),
+    T(-20, { type: 'income', category: 'platform_revenue', description: 'Channel management + ad share', amount: 4000 }),
+    T(-3,  { type: 'expense', category: 'contractors', description: 'Freelance colourist — Atlas grade', amount: 2400 }),
+    T(-7,  { type: 'expense', category: 'contractors', description: 'Second shooter + gaffer — Forma shoot', amount: 3200 }),
+    T(-15, { type: 'expense', category: 'equipment', description: 'Sony FX6 — second body (deposit)', amount: 3200 }),
+    T(-18, { type: 'expense', category: 'travel', description: 'Location + crew travel — Forma', amount: 1650 }),
+    T(-22, { type: 'expense', category: 'marketing', description: 'Paid social — showreel boost', amount: 980 }),
+    // Prior month — for the analytics trend line
+    T(-38, { type: 'income', category: 'services', description: 'Northbound Apparel — SS campaign', amount: 14000 }),
+    T(-44, { type: 'income', category: 'sponsorship', description: 'Retainer + brand films (May)', amount: 21000 }),
   ];
 
   const clients = seedClients();
@@ -168,12 +170,12 @@ function seedPrefs() {
   const trialEnds = new Date();
   trialEnds.setDate(trialEnds.getDate() + 14);
   return {
-    business_name: 'Demo Creator Studio',
-    business_type: 'Video production',
-    invoice_details: 'Studio 7, 100 Example Street\nLondon, United Kingdom\nPayments: Starling •• 1234 · sort 00-00-00\nTerms: Net 14',
-    invoice_seq: 6,
-    goal_monthly_revenue: 4000,
-    goal_monthly_posts: 6,
+    business_name: 'Northlight Studio',
+    business_type: 'Media production agency',
+    invoice_details: 'Northlight Studio\n7 Garrick Yard, London EC1\nPayments: Starling •• 1234 · sort 00-00-00\nTerms: Net 14',
+    invoice_seq: 42,
+    goal_monthly_revenue: 55000,
+    goal_monthly_posts: 12,
     follower_history: seedFollowerHistory(),
     plan: 'studio', billing_cycle: 'monthly', plan_status: 'trial',
     trial_ends_at: trialEnds.toISOString(),
@@ -188,11 +190,11 @@ function seedTeam() {
   const at = (d) => new Date(Date.now() - d * 86400000).toISOString();
   const M = (name, role, email, d) => ({ id: uuid(), user_id: 'demo-user', name, role, email, created_at: at(d) });
   return [
-    M('Demo Creator', 'owner',    'you@svnstudio.co',   120),
-    M('Mara Voss',    'producer', 'mara@svnstudio.co',   90),
-    M('Theo Lane',    'editor',   'theo@svnstudio.co',   62),
-    M('Priya Raman',  'reviewer', 'priya@svnstudio.co',  41),
-    M('Sam Okafor',   'finance',  'sam@svnstudio.co',    18),
+    M('Jordan Cole',  'owner',     'jordan@northlight.studio', 140),
+    M('Marcus Vale',  'producer',  'marcus@northlight.studio',  95),
+    M('Sarah Quinn',  'editor',    'sarah@northlight.studio',   68),
+    M('Theo Lane',    'colourist', 'theo@northlight.studio',    50),
+    M('Nadia Okafor', 'finance',   'nadia@northlight.studio',   24),
   ];
 }
 
@@ -222,31 +224,31 @@ function seedStudio(clients) {
   const S = (client_id, kind, label, qty, rate, d) =>
     ({ id: uuid(), user_id: 'demo-user', client_id, kind, label, qty, rate, created_at: at(d) });
   const sow_items = [
-    S(cid(0), 'scope',  'Pre-production & creative direction', 1, 1200, 30),
-    S(cid(0), 'scope',  'Principal photography (day rate)',    2, 1800, 30),
-    S(cid(0), 'scope',  'Edit, grade & sound — 2 review rounds', 1, 2400, 30),
-    S(cid(0), 'change', 'Added 30s cut-down for paid social',  1, 450, 8),
-    S(cid(1), 'scope',  'Brand photo set — 20 finished images', 1, 1600, 22),
-    S(cid(1), 'scope',  'Studio hire & lighting package',      1, 600, 22),
+    S(cid(0), 'scope',  'Creative direction & pre-production',    1, 3500, 30),
+    S(cid(0), 'scope',  'Principal photography (2-day shoot)',    2, 4500, 30),
+    S(cid(0), 'scope',  'Edit, grade & sound — 3 review rounds',  1, 6500, 30),
+    S(cid(0), 'change', 'Added 3× 30s cut-downs for paid social', 1, 2200, 8),
+    S(cid(1), 'scope',  'Brand film + 20 finished stills',        1, 12000, 22),
+    S(cid(1), 'scope',  'Studio hire & lighting package',         1, 3000, 22),
   ];
 
   const M = (client_id, label, amount, d, status) =>
     ({ id: uuid(), user_id: 'demo-user', client_id, label, amount, due: due(d), status, created_at: at(40) });
   const milestones = [
-    M(cid(0), '50% production deposit',     3000, -12, 'paid'),
-    M(cid(0), 'Rough-cut delivery',         1500, 3,   'invoiced'),
-    M(cid(0), 'Final delivery & handover',  1500, 14,  'pending'),
-    M(cid(1), 'Shoot deposit',              1100, -4,  'paid'),
-    M(cid(1), 'Final gallery delivery',     1100, 9,   'pending'),
+    M(cid(0), '40% production deposit',     8500, -12, 'paid'),
+    M(cid(0), 'Rough-cut delivery',         6500, 3,   'invoiced'),
+    M(cid(0), 'Final delivery & handover',  6200, 14,  'pending'),
+    M(cid(1), 'Shoot deposit',              7500, -4,  'paid'),
+    M(cid(1), 'Final gallery delivery',     7500, 9,   'pending'),
   ];
 
   const RC = (t, author, body, d, resolved = false) =>
-    ({ id: uuid(), user_id: 'demo-user', asset: 'Aurora Audio — brand film', duration_sec: 78, t_sec: t, author, body, resolved, created_at: at(d) });
+    ({ id: uuid(), user_id: 'demo-user', asset: 'Aurora Audio — flagship brand film', duration_sec: 78, t_sec: t, author, body, resolved, created_at: at(d) });
   const reviews = [
-    RC(4,  'Mara Voss',   'Logo hold runs a beat long — trim ~10 frames.', 2),
-    RC(22, 'Priya Raman', 'Lower-third reads “Aurura” — should be “Aurora”.', 2),
+    RC(4,  'Marcus Vale', 'Logo hold runs a beat long — trim ~10 frames.', 2),
+    RC(22, 'Sarah Quinn', 'Lower-third reads “Aurura” — should be “Aurora”.', 2),
     RC(48, 'Theo Lane',   'Land the music swell on the hero shot here.', 1, true),
-    RC(70, 'Mara Voss',   'CTA card needs the new web address.', 1),
+    RC(70, 'Marcus Vale', 'CTA card needs the new web address.', 1),
   ];
 
   return { sow_items, milestones, reviews };
@@ -259,7 +261,7 @@ function seedGear() {
   return [
     G('Sony FX6',           'camera',   6200, 'out',         true,  'Theo Lane', 120),
     G('Sigma 24-70 f2.8',   'lens',      949, 'available',   true,  null, 110),
-    G('Aputure 600d Pro',   'lighting', 1100, 'out',         true,  'Mara Voss', 90),
+    G('Aputure 600d Pro',   'lighting', 1100, 'out',         true,  'Marcus Vale', 90),
     G('Sennheiser MKH-416', 'audio',     820, 'available',   true,  null, 70),
     G('DJI RS 4 gimbal',    'grip',      480, 'maintenance', false, null, 40),
     G('MacBook Pro M3 Max', 'computer', 3500, 'available',   true,  null, 30),

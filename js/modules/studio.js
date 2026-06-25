@@ -281,6 +281,7 @@ function renderReview(panel) {
         </div>
         <div class="st-scrub-meta"><span>0:00</span><span>${tc(duration)}</span></div>
       </div>
+      <p class="st-note-empty">Timecoded notes on a sample cut — real video upload &amp; playback unlock with live accounts.</p>
       <ul class="st-notes">${list.map(comment).join('') || '<li class="st-note-empty">No notes yet — click the timeline to leave one.</li>'}</ul>
     </div>`;
   applyVars(panel);
