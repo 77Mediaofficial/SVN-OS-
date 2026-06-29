@@ -26,8 +26,11 @@ let activeTab = 'deals';
 let editingDealId = null;
 let editingTxnId = null;
 let statusFilter = 'all';
+let dealsCounted = false;   // U1: stat count-up fires once per mount, not on every mutation
+let ledgerCounted = false;
 
 export async function init() {
+  dealsCounted = false; ledgerCounted = false;   // U1: re-arm the count-up for this mount
   document.getElementById('df-status').innerHTML = optionsHtml(DEAL_STATUSES, 'lead');
   document.getElementById('tf-category').innerHTML = optionsHtml(TXN_CATEGORIES, 'sponsorship');
   document.getElementById('tf-recurrence').innerHTML = optionsHtml(RECURRENCE, 'none');
@@ -128,7 +131,7 @@ function renderDeals() {
     statHtml('In conversation', statMoney(sum(open)), `${open.length} lead${open.length === 1 ? '' : 's'} & negotiations`) +
     statHtml('Committed', statMoney(sum(working)), `${working.length} signed or delivered`) +
     statHtml('Paid this year', statMoney(sum(paidThisYear)), `${paidThisYear.length} deal${paidThisYear.length === 1 ? '' : 's'} closed`);
-  runCountUps(dealStatsEl);
+  if (!dealsCounted) { runCountUps(dealStatsEl); dealsCounted = true; }  // U1: once per mount
 
   renderDealFilters();
 
@@ -329,6 +332,7 @@ async function onDealSubmit(e) {
     }
     document.getElementById('deal-modal').close();
     renderDeals();
+    renderLedger(); // W1: keep the ledger's linked-deal names in sync after a rename
     if (saved.status === 'paid' && prevStatus !== 'paid') await offerPaymentLog(saved);
   } catch (err) {
     console.error(err);
@@ -403,7 +407,7 @@ function renderLedger() {
        <div class="stat-num ${net >= 0 ? 'is-pos' : 'is-neg'}">${statMoney(net)}</div>
        <div class="stat-foot">${net >= 0 ? 'in the black' : 'spending exceeds income'}</div>
      </div>`;
-  runCountUps(ledgerStatsEl);
+  if (!ledgerCounted) { runCountUps(ledgerStatsEl); ledgerCounted = true; }  // U1: once per mount
 
   const dealName = (id) => dealRows.find((d) => d.id === id)?.brand_name;
 

@@ -77,7 +77,10 @@ function showApp(user) {
     maybeOnboard(); // first-run welcome (shows once)
     expandRecurring()
       .then((created) => {
-        if (created.length) toast(`${created.length} recurring transaction${created.length > 1 ? 's' : ''} added to the ledger.`);
+        if (created.length) {
+          toast(`${created.length} recurring transaction${created.length > 1 ? 's' : ''} added to the ledger.`);
+          render(); // W2: repaint the current view so just-expanded recurring rows aren't missed
+        }
       })
       .catch((err) => console.warn('recurring expansion failed', err));
   } else {
