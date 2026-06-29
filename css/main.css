@@ -2860,3 +2860,40 @@ body.pt-active { overflow: hidden; }
 .svg-defs { position: absolute; }
 .nowrap { white-space: nowrap; }
 .ledger-empty-cell { text-align: center; padding: 28px; }
+
+/* ============================================================
+   Studio — editorial NOIR pass (kill the rounded-card stack).
+   Naked hairline rows · hero grand-total numeral · terminal micro-labels.
+   Scoped to .st-* so nothing else in the app moves. 2026-06-28.
+   ============================================================ */
+
+/* 1 — Milestones: stop being a stack of identical rounded cards.
+        Strip the box → flush rows split by a single hairline. */
+.st-ms-list { gap: 0; margin-top: 2px; }
+.st-ms {
+  border: none; border-radius: 0; background: none;
+  padding: 18px 2px;
+  border-bottom: 1px solid var(--hairline);
+}
+.st-ms-list .st-ms:last-child { border-bottom: none; }
+.st-ms:hover { box-shadow: inset 2px 0 0 0 var(--brass); }   /* editorial edge-tick, not a card lift */
+.st-ms-amt { font-size: 1.06rem; letter-spacing: -0.01em; }
+
+/* 2 — Grand total: a big, tight mono numeral on its own ruled line —
+        the data point the eye should land on. */
+.st-grand {
+  flex: 1 0 100%;
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-top: 14px; padding-top: 14px;
+  border-top: 1px solid var(--hairline);
+}
+.st-grand b {
+  font-family: var(--font-mono);
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  letter-spacing: -0.025em; line-height: 1; margin-left: 0;
+}
+
+/* 3 — Micro-labels: tinier, tracked further out — command-center voice. */
+.st-eyebrow  { font-size: 0.56rem; letter-spacing: 0.30em; }
+.st-table th { font-size: 0.58rem; letter-spacing: 0.18em; }
+.st-totals   { gap: 26px; }
