@@ -1448,6 +1448,10 @@ body.is-dragging .kcard, body.is-dragging .cal-chip { cursor: grabbing; }
 }
 .people-empty { padding: 14px 2px; font-size: 0.8rem; color: var(--muted); }
 
+/* People rows are interactive — click a row to edit; delete lives in the drawer. */
+button.person { width: 100%; text-align: left; }
+button.person:hover { background: var(--surface-2); box-shadow: inset 2px 0 0 0 var(--brass); }
+
 /* ── Invoice modal ────────────────────────────────────────── */
 
 .inv-line {

@@ -72,7 +72,11 @@ function renderTab() {
   const needsClient = state.tab === 'scope' || state.tab === 'milestones';
   document.getElementById('st-client-wrap').hidden = !needsClient;
   if (needsClient && !state.clientId) {
-    panel.innerHTML = emptyPanel('No clients yet', 'Add a client in Settings to scope and bill their work.');
+    panel.innerHTML = `<div class="panel"><div class="empty">`
+      + `<p class="empty-title">No clients yet</p>`
+      + `<p class="empty-sub">Add your first client to start scoping and billing their work.</p>`
+      + `<a href="/settings" data-link class="btn btn-primary">Add a client</a>`
+      + `</div></div>`;
     return;
   }
   if (state.tab === 'scope') renderScope(panel);
