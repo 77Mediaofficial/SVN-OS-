@@ -28,15 +28,26 @@ persists after sign-in.
 
 ## Connecting Supabase
 
+**Already wired.** This app runs against a dedicated **London / eu-west-2** Supabase
+project (ref `daqeghxsuvufqubsbmnv`); credentials live in [`js/supabase.js`](js/supabase.js)
+and `DEMO_MODE` is off. The anon key there is public-safe — RLS is the gate. To stand up a
+fresh project from scratch, repeat these steps:
+
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor**, run [`sql/schema.sql`](sql/schema.sql) then
-   [`sql/002_studio_tables.sql`](sql/002_studio_tables.sql), in that order.
+2. Open **SQL Editor** and run, **in order**,
+   [`sql/schema.sql`](sql/schema.sql) → [`sql/002_studio_tables.sql`](sql/002_studio_tables.sql)
+   → [`sql/003_harden_rls.sql`](sql/003_harden_rls.sql).
    (schema.sql: `profiles`, `content_projects`, `brand_deals`, `transactions`, enums, RLS,
    `updated_at` triggers, auto-profile-on-signup. 002: `team_members`, `clients`, `sow_items`,
-   `milestones`, `gear`, `review_comments` — the Studio/workspace tables, owner-scoped by RLS.)
+   `milestones`, `gear`, `review_comments` — the Studio/workspace tables, owner-scoped by RLS.
+   003: advisor hardening — locks down the trigger fn, optimizes the RLS init-plan, indexes FKs.)
 3. Copy your **Project URL** and **anon public key** (Settings → API) into
    [`js/supabase.js`](js/supabase.js).
-4. Reload. Demo mode switches off automatically and the auth gate appears.
+4. In **Authentication → URL Configuration**, set the **Site URL** + redirect allowlist to your
+   deployed origin (e.g. `https://svn-os.vercel.app`) so confirmation / reset emails resolve.
+5. Reload. Demo mode switches off; signed-out visitors land **guest-first** (the showcase on
+   local demo data, no login wall) and reveal the sign-in gate on demand. Real persistence
+   begins only after sign-in.
 
 ## Deploying to Vercel
 
@@ -53,11 +64,12 @@ non-localhost hosts, so local development never fights a stale cache.
 
 | # | Step | Status |
 |---|------|--------|
-| 1 | Run `sql/schema.sql` then `sql/002_studio_tables.sql` in Supabase SQL Editor | ☐ |
-| 2 | Paste Supabase credentials into `js/supabase.js` | ☐ |
-| 3 | `vercel --prod` | ☐ |
-| 4 | Create a GitHub repo and push (source control) | ☐ |
-| 5 | Sign up in the deployed app, confirm RLS by checking another account sees nothing | ☐ |
+| 1 | Run `schema.sql` → `002_studio_tables.sql` → `003_harden_rls.sql` on the London project | ✅ |
+| 2 | Credentials wired into `js/supabase.js` (`DEMO_MODE` off) | ✅ |
+| 3 | Advisors clean (security 0 findings, perf 0 warnings) + cross-user RLS proven by test | ✅ |
+| 4 | Guest + live e2e verified (sign-in → write persists → reload → sign-out → guest) | ✅ |
+| 5 | Dashboard → **Auth → URL Configuration**: set Site URL + redirect allowlist to prod origin | ☐ (owner) |
+| 6 | Merge `keystone-live-supabase` → `main` → Vercel auto-deploys the live cred-flip | ☐ (sign-off) |
 
 ## Security & privacy
 
