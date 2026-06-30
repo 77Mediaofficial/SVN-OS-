@@ -82,6 +82,7 @@ function renderTab() {
   if (state.tab === 'scope') renderScope(panel);
   else if (state.tab === 'milestones') renderMilestones(panel);
   else if (state.tab === 'review') renderReview(panel);
+  else if (state.tab === 'connectors') renderConnectors(panel);
   else renderGear(panel);
 }
 
@@ -422,6 +423,66 @@ function addGearDrawer() {
       closeDrawer(); toast('Gear added.', 'success'); reload('gear');
     },
   });
+}
+
+/* ── Connectors (preview) ────────────────────────────────────
+   UI-only. There is NO backend yet: token storage, encryption, and
+   server-side execution land with the live database. Buttons honestly
+   register interest (local) and read "Request beta" → "✓ Requested" —
+   never a fabricated "Connected" state, and the security copy is
+   future-framed (no claim about infrastructure that isn't built). */
+const CONNECTORS = [
+  { key: 'meta',   name: 'Meta · Instagram', desc: 'Publishing, insights & ad spend',     glyph: 'IG' },
+  { key: 'google', name: 'Google Workspace', desc: 'Calendar sync & Drive asset linking', glyph: 'G' },
+  { key: 'stripe', name: 'Stripe',           desc: 'Invoicing & ledger sync',             glyph: 'S' },
+];
+const CN_KEY = 'svnos-connector-interest';
+const cnRequested = () => { try { return JSON.parse(localStorage.getItem(CN_KEY) || '[]'); } catch { return []; } };
+
+function renderConnectors(panel) {
+  const req = cnRequested();
+  const row = (c) => {
+    const on = req.includes(c.key);
+    return `
+      <div class="cn-row">
+        <span class="cn-glyph" aria-hidden="true">${c.glyph}</span>
+        <span class="cn-id">
+          <span class="cn-name">${esc(c.name)}</span>
+          <span class="cn-desc">${esc(c.desc)}</span>
+        </span>
+        <button type="button" class="cn-btn${on ? ' is-req' : ''}" data-cn="${c.key}"${on ? ' disabled' : ''}>${on ? '✓ Requested' : 'Request beta'}</button>
+      </div>`;
+  };
+
+  panel.innerHTML = `
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <p class="st-eyebrow">Integrations · connectors</p>
+          <h2 class="st-title">Connect your stack</h2>
+        </div>
+        <span class="pill tone-amber">Preview</span>
+      </div>
+
+      <div class="cn-sec">
+        <p class="cn-sec-eyebrow">Security &amp; data protection</p>
+        <p class="cn-sec-body">Architected for zero-trust. Connector tokens will be <strong>encrypted at rest in Supabase Vault</strong> (XChaCha20-Poly1305) and used only through <strong>server-side edge functions</strong> — your raw credentials never reach the browser. Connectors go live with the database backend.</p>
+      </div>
+
+      <div class="cn-list">${CONNECTORS.map(row).join('')}</div>
+
+      <p class="cn-foot">Not live yet — requesting beta flags your studio for early access the moment connectors ship.</p>
+    </div>`;
+
+  panel.querySelectorAll('[data-cn]').forEach((b) => b.addEventListener('click', () => {
+    const list = cnRequested();
+    if (!list.includes(b.dataset.cn)) {
+      list.push(b.dataset.cn);
+      try { localStorage.setItem(CN_KEY, JSON.stringify(list)); } catch { /* private mode */ }
+    }
+    toast('Beta requested — we’ll reach out when this connector ships.', 'success');
+    renderConnectors(panel);
+  }));
 }
 
 /* ── White-label client portal (read-only preview) ───────── */
