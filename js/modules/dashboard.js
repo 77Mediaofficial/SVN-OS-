@@ -40,6 +40,7 @@ let gen = 0;
 let state = emptyState();
 let busy = new Set();
 let countedUp = false;  // 1A: the stat count-up fires once per mount, never on a mutation re-render
+let clockTimer = null;  // Command-State live clock — cleared on cleanup so it can't tick a torn-down view
 
 function emptyState() {
   return { projs: [], dls: [], txns: [], prefs: null, errors: {} };
@@ -62,6 +63,7 @@ export async function init() {
 
   const outlet = byId('outlet');
   renderSlate();
+  mountCmdState();                                 // Command-State hero: greeting + live clock
   mountSpotlight();                                // 2G: Today-only cinematic wash
   // Delegated click handling on the STABLE outlet node: survives panel
   // re-renders, and is removed on cleanup so it can't leak or fire on the next
@@ -76,6 +78,7 @@ export async function init() {
   return function cleanup() {
     gen++;
     outlet?.removeEventListener('click', onClick);
+    clearInterval(clockTimer); clockTimer = null;  // stop the Command-State clock
     unmountSpotlight();                            // 2G: tear the wash down with the view
   };
 }
@@ -133,6 +136,7 @@ async function reload() {
 /* ── render-from-state: pure, synchronous, fault-isolated ─────
    Each panel renders independently; one throwing never blocks the others. */
 function renderFromState() {
+  safe(renderCmdGreeting);   // fill "PERSON // STUDIO" once prefs land
   safe(renderStats);
   safe(renderActions);
   safe(renderPipeline);
@@ -153,6 +157,28 @@ function panelError(label) {
       <p class="empty-sub">Your data is safe — nothing was lost.</p>
       <button type="button" class="btn" data-dash-retry>Try again</button>
     </div>`;
+}
+
+/* ── Command-State hero: greeting + live clock + active pulse ──
+   The clock ticks via a single setInterval that writes ONLY the #cmd-clock
+   text node — no view re-render — and is cleared on cleanup. */
+const pad2 = (n) => String(n).padStart(2, '0');
+const fmtClock = (d = new Date()) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+
+function renderCmdGreeting() {
+  const el = byId('cmd-greeting');
+  if (!el) return;
+  const person = (byId('user-name')?.textContent || '').trim();
+  const studio = (state.prefs?.business_name || '').trim();
+  el.textContent = [person, studio].filter(Boolean).map((s) => s.toUpperCase()).join('  //  ') || '—';
+}
+
+function mountCmdState() {
+  renderCmdGreeting();
+  clearInterval(clockTimer);
+  const tick = () => { const el = byId('cmd-clock'); if (el) el.textContent = fmtClock(); };
+  tick();
+  clockTimer = setInterval(tick, 1000);
 }
 
 /* ── Slate line ──────────────────────────────────────────── */

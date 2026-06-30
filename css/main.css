@@ -2897,3 +2897,63 @@ body.pt-active { overflow: hidden; }
 .st-eyebrow  { font-size: 0.56rem; letter-spacing: 0.30em; }
 .st-table th { font-size: 0.58rem; letter-spacing: 0.18em; }
 .st-totals   { gap: 26px; }
+
+/* ============================================================
+   Command-State hero — Today dashboard. Live mono clock + greeting
+   + pulsing active dot, naked on the canvas. Restrained so the agency
+   metrics stay above the fold. 2026-06-30.
+   ============================================================ */
+.sr-only-h1 { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.cmd-state { padding: 4px 0 38px; }
+.cmd-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.cmd-pulse {
+  flex: none; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--brass); box-shadow: 0 0 8px -1px var(--brass);
+  animation: cmd-pulse 2.6s ease-in-out infinite;
+}
+@keyframes cmd-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.32; } }
+.cmd-greeting {
+  font-family: var(--font-mono); font-size: 0.6rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.3em; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.cmd-active {
+  margin-left: auto; flex: none;
+  font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.24em;
+  text-transform: uppercase; color: var(--dim);
+}
+.cmd-clock {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: clamp(2.6rem, 6.5vw, 4rem); line-height: 0.92;
+  letter-spacing: -0.02em; color: var(--text);
+}
+.cmd-slate { margin-top: 16px; margin-bottom: 0; }
+
+/* ============================================================
+   Connectors (preview) — Studio tab. Naked hairline rows (not cards),
+   a Vault-backed security note, honest "Request beta" buttons. 2026-06-30.
+   ============================================================ */
+.cn-sec { margin: 6px 0 20px; padding: 14px 16px; border: 1px solid var(--hairline); border-radius: var(--r-md); background: var(--brass-soft); }
+.cn-sec-eyebrow { font-family: var(--font-mono); font-size: 0.56rem; text-transform: uppercase; letter-spacing: 0.24em; color: var(--dim); margin-bottom: 7px; }
+.cn-sec-body { font-size: 0.8rem; line-height: 1.6; color: var(--dim); }
+.cn-sec-body strong { color: var(--text); font-weight: 600; }
+.cn-list { display: flex; flex-direction: column; }
+.cn-row { display: flex; align-items: center; gap: 14px; padding: 16px 2px; border-bottom: 1px solid var(--hairline); }
+.cn-row:last-child { border-bottom: none; }
+.cn-glyph {
+  flex: none; width: 32px; height: 32px; display: grid; place-items: center;
+  border: 1px solid var(--hairline-strong); border-radius: var(--r-sm);
+  font-family: var(--font-mono); font-size: 0.66rem; color: var(--dim);
+}
+.cn-id { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.cn-name { font-size: 0.9rem; font-weight: 500; }
+.cn-desc { font-size: 0.74rem; color: var(--muted); }
+.cn-btn {
+  flex: none; font-family: var(--font-mono); font-size: 0.64rem; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text);
+  border: 1px solid var(--control-border); border-radius: 99px; padding: 7px 14px;
+  transition: border-color 0.15s var(--ease), color 0.15s var(--ease), background 0.15s var(--ease);
+}
+.cn-btn:hover { border-color: var(--brass-faint); background: var(--surface-2); }
+.cn-btn.is-req { color: var(--tone-green); border-color: color-mix(in srgb, var(--tone-green) 35%, transparent); background: none; cursor: default; }
+.cn-foot { margin-top: 16px; font-size: 0.72rem; color: var(--muted); }
