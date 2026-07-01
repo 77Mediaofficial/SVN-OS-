@@ -40,6 +40,7 @@ let gen = 0;
 let state = emptyState();
 let busy = new Set();
 let countedUp = false;  // 1A: the stat count-up fires once per mount, never on a mutation re-render
+let heroCounted = false; // the hero revenue count-up fires once per mount too (own scope/token)
 let clockTimer = null;  // Command-State live clock — cleared on cleanup so it can't tick a torn-down view
 
 function emptyState() {
@@ -60,6 +61,7 @@ export async function init() {
   state = emptyState();
   busy = new Set();
   countedUp = false;                               // 1A: re-arm the once-per-mount count-up
+  heroCounted = false;                             // re-arm the hero count-up
 
   const outlet = byId('outlet');
   renderSlate();
@@ -137,6 +139,7 @@ async function reload() {
    Each panel renders independently; one throwing never blocks the others. */
 function renderFromState() {
   safe(renderCmdGreeting);   // fill "PERSON // STUDIO" once prefs land
+  safe(renderHero);          // the boot-sequence title card (headline + goal ring)
   safe(renderStats);
   safe(renderActions);
   safe(renderPipeline);
@@ -163,7 +166,7 @@ function panelError(label) {
    The clock ticks via a single setInterval that writes ONLY the #cmd-clock
    text node — no view re-render — and is cleared on cleanup. */
 const pad2 = (n) => String(n).padStart(2, '0');
-const fmtClock = (d = new Date()) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+const fmtClock = (d = new Date()) => `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
 
 function renderCmdGreeting() {
   const el = byId('cmd-greeting');
@@ -184,14 +187,18 @@ function mountCmdState() {
 /* ── Slate line ──────────────────────────────────────────── */
 
 function renderSlate() {
-  const el = byId('dash-slate');
-  if (!el) return;
   const now = new Date();
-  const parts = now
-    .toLocaleDateString('en-GB', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })
-    .toUpperCase()
-    .replace(/,/g, '');
-  el.textContent = `${parts} · WEEK ${String(isoWeek(now)).padStart(2, '0')}`;
+  const wk = String(isoWeek(now)).padStart(2, '0');
+  // Slate line (top-right of the hero): live system state + ISO week.
+  const slate = byId('dash-slate');
+  if (slate) slate.textContent = `System active · Wk ${wk}`;
+  // Timecode rail (under the ring): the calendar date, mono.
+  const dateEl = byId('deck-date');
+  if (dateEl) {
+    dateEl.textContent = now
+      .toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })
+      .replace(/,/g, '');
+  }
 }
 
 /* ── Stat band ───────────────────────────────────────────── */
@@ -269,6 +276,129 @@ function renderStats() {
     countedUp = true;
     const animGen = gen;
     runCountUps(statsEl, () => animGen !== gen);
+  }
+}
+
+/* ── Command-Deck hero: the boot-sequence title card ──────────
+   A monumental revenue headline that counts up, and a goal ring that
+   draws once on mount. A weak/empty account (no revenue, or a load
+   failure) degrades to a confident "Today" state — never a bleak £0.
+   The one dynamic value (the ring offset) flows through data-svar →
+   applyVars (CSP-safe: CSSOM, no inline style), and both the count-up
+   and the ring transition self-disable under prefers-reduced-motion. */
+const RING_C = 2 * Math.PI * 42;   // hero ring circumference (r=42)
+
+function setHeroFigure(html, isText = false) {
+  const el = byId('deck-figure');
+  if (!el) return;
+  el.classList.remove('skel', 'skel-num');
+  el.classList.toggle('is-text', isText);   // shrink type when the "figure" is a word, not a number
+  el.innerHTML = html;
+}
+
+/* Draw the goal ring to `pct` (null → neutral, unset-goal track). The empty
+   CSS fallback (--off:264) means the fill starts hidden, so the first paint
+   sweeps 0 → target; later re-renders set the same value and don't re-animate. */
+function drawHeroRing(pct) {
+  const pctEl = byId('deck-ring-pct');
+  if (pctEl) pctEl.textContent = pct == null ? '—' : `${pct}%`;
+  const fill = document.querySelector('#deck-ring .ring-fill');
+  if (!fill) return;
+  const clamped = pct == null ? 0 : Math.max(0, Math.min(100, pct));
+  const off = pct == null ? RING_C : RING_C * (1 - clamped / 100);
+  fill.classList.toggle('is-done', pct != null && pct >= 100);
+  fill.dataset.svar = `--dash:${RING_C.toFixed(1)};--off:${off.toFixed(1)}`;
+  applyVars(byId('deck-ring'));
+}
+
+function renderHero() {
+  if (!byId('deck-figure')) return;
+  const { txns, dls, prefs, errors } = state;
+  const kicker = byId('deck-kicker');
+  const verdict = byId('deck-verdict');
+
+  let income = 0, costs = 0;
+  if (!errors.txns) {
+    const month = todayKey().slice(0, 7);
+    const inMonth = txns.filter((t) => String(t.occurred_at).startsWith(month));
+    income = inMonth.filter((t) => t.type === 'income').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+    costs = inMonth.filter((t) => t.type === 'expense').reduce((s, t) => s + (Number(t.amount) || 0), 0);
+  }
+  const net = income - costs;
+  const goal = Number(prefs?.goal_monthly_revenue) || 0;
+  const goalPct = goal > 0 ? Math.round((income / goal) * 100) : null;
+
+  // Open pipeline is the fallback headline before this month's revenue lands
+  // (e.g. the 1st, or a new studio) — still a big, honest money number.
+  let pipelineValue = 0, openDeals = 0;
+  if (!errors.dls) {
+    const open = dls.filter((d) => OPEN_DEAL_STATUSES.has(d.status));
+    openDeals = open.length;
+    pipelineValue = open.reduce((s, d) => s + (Number(d.value) || 0), 0);
+  }
+
+  // The action load powers the verdict line and the count fallback.
+  const actionCount = (!errors.projs && !errors.dls) ? buildActionItems().length : null;
+  const fires = actionCount == null ? ''
+    : actionCount === 0 ? ' · nothing on fire'
+    : ` · ${actionCount} to action`;
+
+  let revenueState = false;
+  if (!errors.txns && income > 0) {
+    // Strong: revenue headlines the studio's morning.
+    revenueState = true;
+    if (kicker) kicker.textContent = 'Revenue this month';
+    setHeroFigure(statMoney(income));
+    let pace;
+    if (goal > 0) {
+      const remaining = goal - income;
+      pace = remaining > 0
+        ? `On pace — ${money(remaining)} to target`
+        : `${money(-remaining)} ahead of target`;
+    } else {
+      pace = `Net ${money(net)} after ${money(costs)} costs`;
+    }
+    if (verdict) verdict.textContent = pace + fires;
+  } else if (pipelineValue > 0) {
+    // Pre-revenue: lead with the open pipeline — never a hollow £0 cover.
+    if (kicker) kicker.textContent = 'Open pipeline';
+    setHeroFigure(statMoney(pipelineValue));
+    const deals = `${openDeals} open deal${openDeals === 1 ? '' : 's'}`;
+    if (verdict) verdict.textContent = deals + fires;
+  } else if (actionCount && actionCount > 0) {
+    // No money to show, but there is work — a confident "Today".
+    if (kicker) kicker.textContent = 'Today';
+    setHeroFigure(statInt(actionCount));
+    if (verdict) verdict.textContent = actionCount === 1
+      ? 'one thing needs you today'
+      : `${actionCount} things need you today`;
+  } else {
+    // Genuinely empty — a calm all-clear, not a bleak zero.
+    if (kicker) kicker.textContent = 'Today';
+    setHeroFigure('All clear', true);
+    if (verdict) verdict.textContent = 'Nothing on fire. Go make something.';
+  }
+
+  // The goal ring is the revenue instrument: it draws to revenue-vs-goal when
+  // there's revenue to show, and steps aside (the timecode takes the rail) in the
+  // pipeline/empty states, so the hero never leads with a hollow 0% ring.
+  const ring = byId('deck-ring');
+  const rail = document.querySelector('.deck-rail');
+  if (revenueState) {
+    drawHeroRing(goalPct);
+    if (ring) ring.classList.remove('is-hidden');
+  } else if (ring) {
+    ring.classList.add('is-hidden');
+  }
+  if (rail) rail.classList.toggle('solo', !revenueState);
+
+  // Count-up fires once per mount, and only once REAL numerals are painted
+  // (the "All clear" text state has no [data-count-to], so the token stays armed).
+  const figureEl = byId('deck-figure');
+  if (!heroCounted && figureEl.querySelector('[data-count-to]')) {
+    heroCounted = true;
+    const animGen = gen;
+    runCountUps(figureEl, () => animGen !== gen);
   }
 }
 

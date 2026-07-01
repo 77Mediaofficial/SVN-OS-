@@ -203,11 +203,18 @@ img, svg { display: block; }
   height: 72vh;
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(ellipse 50% 50% at 30% 0%,
-    rgba(255, 255, 255, 0.08),
-    rgba(255, 255, 255, 0.02) 42%,
-    transparent 72%);
-  filter: blur(20px);
+  /* Two-tone projector cone: a broad soft wash + a tighter warm-white core.
+     White stops read as a cinematic glow on the warm-black canvas and fall away
+     to nothing on the white canvas (glow reserved for dark, per NOIR). */
+  background:
+    radial-gradient(ellipse 40% 42% at 26% 2%,
+      rgba(255, 255, 255, 0.11),
+      transparent 62%),
+    radial-gradient(ellipse 62% 58% at 32% 0%,
+      rgba(255, 255, 255, 0.05),
+      rgba(255, 255, 255, 0.015) 42%,
+      transparent 74%);
+  filter: blur(22px);
   opacity: 0;
   transform: translateX(-26px) scale(0.96);
   transform-origin: top left;
@@ -2961,3 +2968,128 @@ body.pt-active { overflow: hidden; }
 .cn-btn:hover { border-color: var(--brass-faint); background: var(--surface-2); }
 .cn-btn.is-req { color: var(--tone-green); border-color: color-mix(in srgb, var(--tone-green) 35%, transparent); background: none; cursor: default; }
 .cn-foot { margin-top: 16px; font-size: 0.72rem; color: var(--muted); }
+
+/* ============================================================
+   Command Deck — Today hero (boot-sequence title card).
+   A monumental revenue headline + a goal ring that draws on mount,
+   an instrument "readout" band, and the operable bento reframed as
+   CH.01–04 channels. All colour via tokens; the one dynamic value
+   (the ring offset) flows through data-svar → applyVars. 2026-07-01.
+   ============================================================ */
+.deck-hero { padding: 6px 0 30px; position: relative; }
+
+.deck-slate { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+.deck-greeting {
+  font-family: var(--font-mono); font-size: 0.62rem; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.28em; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0;
+}
+.deck-active {
+  margin-left: auto; flex: none;
+  font-family: var(--font-mono); font-size: 0.56rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--dim);
+}
+
+.deck-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(0, 1fr);
+  gap: 32px; align-items: center;
+}
+.deck-headline { position: relative; min-width: 0; }
+.deck-kicker {
+  font-family: var(--font-mono); font-size: 0.6rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.22em; color: var(--muted);
+  margin-bottom: 12px;
+}
+.deck-figure {
+  font-family: var(--font-display); font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(3rem, 8.5vw, 6rem); line-height: 0.9;
+  letter-spacing: -0.03em; color: var(--text);
+  white-space: nowrap;
+}
+.deck-figure.is-text { font-size: clamp(2rem, 5vw, 3.4rem); letter-spacing: -0.02em; }
+.deck-figure .cur { font-size: 0.5em; color: var(--dim); margin-right: 0.06em; vertical-align: 0.08em; }
+.deck-verdict { margin-top: 16px; font-size: 0.95rem; color: var(--dim); max-width: 46ch; }
+
+/* One-shot hairline sweep beneath the headline on entrance. */
+.deck-scanline {
+  position: absolute; left: 0; right: 0; bottom: -4px; height: 1px;
+  background: var(--brass); opacity: 0; transform-origin: left center;
+  animation: deck-scan 1.15s var(--ease) 0.3s both;
+}
+@keyframes deck-scan {
+  0%   { opacity: 0; transform: scaleX(0); }
+  28%  { opacity: 0.6; }
+  100% { opacity: 0; transform: scaleX(1); }
+}
+
+.deck-rail {
+  display: flex; flex-direction: column; align-items: center; gap: 18px;
+  justify-self: end;
+}
+.deck-ring { width: 132px; height: 132px; }
+.deck-ring .ring-bg { stroke: var(--hairline-strong); stroke-width: 5; }
+/* Empty fallback (--off:264) so the fill starts hidden and sweeps in on mount;
+   later re-renders set the same offset and don't re-animate. */
+.deck-ring .ring-fill {
+  stroke-width: 5;
+  stroke-dasharray: var(--dash, 264);
+  stroke-dashoffset: var(--off, 264);
+  transition: stroke-dashoffset 1.1s var(--ease);
+}
+.deck-ring .ring-pct { font-family: var(--font-display); font-weight: 600; font-size: 1.75rem; }
+.deck-ring .ring-cap {
+  font-size: 0.54rem; text-transform: uppercase; letter-spacing: 0.18em;
+  color: var(--muted); margin-top: 3px;
+}
+.deck-timecode { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.deck-clock {
+  font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+  font-size: 1.55rem; letter-spacing: 0.02em; color: var(--text); line-height: 1;
+}
+.deck-date {
+  font-family: var(--font-mono); font-size: 0.58rem; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--muted);
+}
+.deck-ring.is-hidden { display: none; }
+/* When the ring steps aside (pipeline/empty states), the timecode owns the rail. */
+.deck-rail.solo { justify-content: center; }
+.deck-rail.solo .deck-clock { font-size: 2.6rem; }
+.deck-rail.solo .deck-date { font-size: 0.62rem; }
+
+/* Readout: the 4-stat band, reseated under the hero as an instrument panel. */
+.deck-readout {
+  border-top: 1px solid var(--hairline);
+  padding-top: 18px; margin-top: 2px;
+}
+
+/* Channel-ID eyebrow on each bento panel head (CH.01 … CH.04). */
+.head-lead { display: inline-flex; align-items: baseline; gap: 9px; min-width: 0; }
+.chan-id {
+  flex: none;
+  font-family: var(--font-mono); font-size: 0.56rem; font-weight: 500;
+  letter-spacing: 0.14em; color: var(--muted);
+}
+
+/* Tactile depth: a hair of hover polish on the deck cards (dark leans deep,
+   light stays flat per NOIR). Transform-free so it never fights a row click. */
+.dash-bento > .panel {
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.dash-bento > .panel:hover { border-color: var(--hairline-strong); }
+html.theme-dark .dash-bento > .panel:hover {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.09), var(--shadow-pop);
+}
+
+@media (max-width: 720px) {
+  .deck-hero-grid { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+  .deck-rail { flex-direction: row; justify-content: flex-start; gap: 26px; justify-self: start; }
+  .deck-figure { font-size: clamp(2.6rem, 13vw, 4rem); white-space: normal; }
+  .deck-verdict { max-width: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-ring .ring-fill { transition: none; }   /* paint at final offset, no sweep */
+  .deck-scanline { display: none; }             /* never run the entrance sweep */
+}

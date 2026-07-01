@@ -1,15 +1,37 @@
-<section class="cmd-state" aria-label="Today">
+<section class="deck-hero" aria-label="Today">
   <h1 class="sr-only-h1">Today</h1>
-  <div class="cmd-top">
+  <div class="deck-slate">
     <span class="cmd-pulse" aria-hidden="true"></span>
-    <span class="cmd-greeting" id="cmd-greeting">—</span>
-    <span class="cmd-active">System active</span>
+    <span class="deck-greeting" id="cmd-greeting">—</span>
+    <span class="deck-active" id="dash-slate">—</span>
   </div>
-  <div class="cmd-clock" id="cmd-clock">--:--:--</div>
-  <p class="kicker cmd-slate" id="dash-slate">—</p>
+  <div class="deck-hero-grid">
+    <div class="deck-headline">
+      <p class="deck-kicker" id="deck-kicker">Revenue this month</p>
+      <div class="deck-figure skel skel-num" id="deck-figure">—</div>
+      <p class="deck-verdict" id="deck-verdict">&nbsp;</p>
+      <span class="deck-scanline" aria-hidden="true"></span>
+    </div>
+    <aside class="deck-rail">
+      <div class="ring deck-ring" id="deck-ring" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <circle class="ring-bg" cx="50" cy="50" r="42"></circle>
+          <circle class="ring-fill" cx="50" cy="50" r="42" data-svar="--dash:263.9;--off:263.9"></circle>
+        </svg>
+        <div class="ring-center">
+          <span class="ring-pct" id="deck-ring-pct">—</span>
+          <span class="ring-cap">of target</span>
+        </div>
+      </div>
+      <div class="deck-timecode">
+        <span class="deck-clock" id="cmd-clock">--:--</span>
+        <span class="deck-date" id="deck-date">—</span>
+      </div>
+    </aside>
+  </div>
 </section>
 
-<section class="stat-band" id="dash-stats" aria-label="Key numbers">
+<section class="stat-band deck-readout" id="dash-stats" aria-label="Key numbers">
   <div class="stat"><div class="stat-label">Revenue this month</div><div class="stat-num skel skel-num">—</div><div class="stat-foot">&nbsp;</div></div>
   <div class="stat"><div class="stat-label">Pipeline value</div><div class="stat-num skel skel-num">—</div><div class="stat-foot">&nbsp;</div></div>
   <div class="stat"><div class="stat-label">Active projects</div><div class="stat-num skel skel-num">—</div><div class="stat-foot">&nbsp;</div></div>
@@ -19,7 +41,7 @@
 <div class="dash-bento">
   <section class="panel b-actions" aria-labelledby="actions-label">
     <div class="panel-head">
-      <h2 class="section-label" id="actions-label">Action items</h2>
+      <div class="head-lead"><span class="chan-id" aria-hidden="true">CH.01</span><h2 class="section-label" id="actions-label">Actions</h2></div>
       <span class="count" id="actions-count"></span>
     </div>
     <div id="actions-list" class="rows">
@@ -31,7 +53,7 @@
 
   <section class="panel b-pipeline" aria-labelledby="pipeline-label">
     <div class="panel-head">
-      <h2 class="section-label" id="pipeline-label">Pipeline</h2>
+      <div class="head-lead"><span class="chan-id" aria-hidden="true">CH.02</span><h2 class="section-label" id="pipeline-label">Pipeline</h2></div>
       <a class="linklike" data-link href="/content">Open board</a>
     </div>
     <div id="pipeline-bars">
@@ -42,7 +64,7 @@
 
   <section class="panel b-month" aria-labelledby="month-label">
     <div class="panel-head">
-      <h2 class="section-label" id="month-label">This month</h2>
+      <div class="head-lead"><span class="chan-id" aria-hidden="true">CH.03</span><h2 class="section-label" id="month-label">This month</h2></div>
       <a class="linklike" data-link href="/deals">Open ledger</a>
     </div>
     <div id="ledger-mini">
@@ -53,7 +75,7 @@
 
   <section class="panel b-upnext" aria-labelledby="upnext-label">
     <div class="panel-head">
-      <h2 class="section-label" id="upnext-label">Up next on the calendar</h2>
+      <div class="head-lead"><span class="chan-id" aria-hidden="true">CH.04</span><h2 class="section-label" id="upnext-label">Up next on the calendar</h2></div>
       <a class="linklike" data-link href="/calendar">Open calendar</a>
     </div>
     <div id="upnext-list" class="rows">
