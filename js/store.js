@@ -7,11 +7,19 @@
 import { supabase, DEMO_MODE } from './supabase.js';
 import { dayKey, todayKey } from './ui.js';
 import { toast } from './toast.js';
+import { enqueue, isOnline, setReplayHandler } from './outbox.js';
 
 const LS_KEY = 'svnos-demo-v2';
 
 let userId = null;
-export function setUserId(id) { userId = id; }
+// `live` gates the data layer: true ONLY when real credentials are wired AND a real user
+// is signed in. Guest ('guest') and no-creds demo both stay false → localStorage. This is
+// what keeps the public site a frictionless showcase after credentials are pasted in.
+let live = false;
+export function setUserId(id) {
+  userId = id;
+  live = !DEMO_MODE && !!id && id !== 'guest';
+}
 
 /* ── Demo database ───────────────────────────────────────── */
 
@@ -277,7 +285,7 @@ function seedFollowerHistory() {
 function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } = {}) {
   return {
     async list() {
-      if (DEMO_MODE) return [...demo()[demoKey]];
+      if (!live) return [...demo()[demoKey]];
       const { data, error } = await supabase
         .from(table).select('*')
         .order(orderBy, { ascending });
@@ -286,11 +294,19 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
     },
 
     async create(values) {
-      if (DEMO_MODE) {
+      if (!live) {
         const now = new Date().toISOString();
         const row = { id: uuid(), user_id: 'demo-user', created_at: now, updated_at: now, ...values };
         demo()[demoKey].unshift(row);
         persistDemoSafe();
+        return row;
+      }
+      // Offline → queue the write with a stable client id and return optimistically;
+      // online errors (RLS, constraints) still surface by throwing.
+      if (!isOnline()) {
+        const now = new Date().toISOString();
+        const row = { id: uuid(), user_id: userId, created_at: now, updated_at: now, ...values };
+        enqueue({ table, kind: 'create', values: { ...values, id: row.id, user_id: userId } });
         return row;
       }
       const { data, error } = await supabase
@@ -302,7 +318,7 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
 
     async createMany(list) {
       if (!list.length) return [];
-      if (DEMO_MODE) {
+      if (!live) {
         const now = new Date().toISOString();
         const rows = list.map((values) => ({ id: uuid(), user_id: 'demo-user', created_at: now, updated_at: now, ...values }));
         demo()[demoKey].unshift(...rows);
@@ -317,7 +333,7 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
     },
 
     async update(id, patch) {
-      if (DEMO_MODE) {
+      if (!live) {
         const row = demo()[demoKey].find((r) => r.id === id);
         if (!row) throw new Error('Row not found');
         const prev = { ...row };                        // snapshot for rollback
@@ -330,6 +346,10 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
         }
         return row;
       }
+      if (!isOnline()) {
+        enqueue({ table, kind: 'update', id, patch });
+        return { id, ...patch, updated_at: new Date().toISOString() };
+      }
       const { data, error } = await supabase
         .from(table).update(patch).eq('id', id)
         .select().single();
@@ -338,13 +358,14 @@ function makeRepo(table, demoKey, { orderBy = 'created_at', ascending = false } 
     },
 
     async remove(id) {
-      if (DEMO_MODE) {
+      if (!live) {
         const rows = demo()[demoKey];
         const idx = rows.findIndex((r) => r.id === id);
         if (idx >= 0) rows.splice(idx, 1);
         persistDemoSafe();
         return;
       }
+      if (!isOnline()) { enqueue({ table, kind: 'remove', id }); return; }
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) throw error;
     },
@@ -361,8 +382,24 @@ export const milestones = makeRepo('milestones', 'milestones', { orderBy: 'creat
 export const gear = makeRepo('gear', 'gear', { orderBy: 'created_at', ascending: true });
 export const reviews = makeRepo('review_comments', 'reviews', { orderBy: 'created_at', ascending: true });
 
+// Offline outbox: when connectivity returns, replay queued live-mode writes with RAW
+// Supabase calls (NOT the repo wrappers) so a replay can never re-enqueue itself.
+setReplayHandler(async (op) => {
+  if (!supabase) return;
+  if (op.kind === 'create') {
+    const { error } = await supabase.from(op.table).insert(op.values);
+    if (error) throw error;
+  } else if (op.kind === 'update') {
+    const { error } = await supabase.from(op.table).update(op.patch).eq('id', op.id);
+    if (error) throw error;
+  } else if (op.kind === 'remove') {
+    const { error } = await supabase.from(op.table).delete().eq('id', op.id);
+    if (error) throw error;
+  }
+});
+
 export async function getProfile() {
-  if (DEMO_MODE) return { ...demo().profile };
+  if (!live) return { ...demo().profile };
   const { data, error } = await supabase
     .from('profiles').select('*').eq('id', userId).single();
   if (error) throw error;
@@ -370,7 +407,7 @@ export async function getProfile() {
 }
 
 export async function updateProfile(patch) {
-  if (DEMO_MODE) {
+  if (!live) {
     Object.assign(demo().profile, patch);
     persistDemoSafe();
     return { ...demo().profile };
@@ -395,7 +432,7 @@ const DEFAULT_PREFS = {
 };
 
 export async function getPrefs() {
-  if (DEMO_MODE) {
+  if (!live) {
     const db = demo();
     if (!db.prefs) { db.prefs = seedPrefs(); persistDemoSafe(); } // older demo datasets
     // Backfill audience history for datasets seeded before it existed.
@@ -412,7 +449,7 @@ export async function getPrefs() {
 }
 
 export async function savePrefs(patch) {
-  if (DEMO_MODE) {
+  if (!live) {
     const db = demo();
     db.prefs = { ...(db.prefs || seedPrefs()), ...patch };
     persistDemoSafe();

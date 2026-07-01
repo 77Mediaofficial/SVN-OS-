@@ -12,8 +12,18 @@ const DEMO_USER = {
   user_metadata: { full_name: 'Jordan Cole' },
 };
 
+// When credentials ARE wired but no one is signed in, the app runs in GUEST mode: the
+// full UI on local demo data, so the public site stays a frictionless showcase. Real
+// persistence begins only after sign-in; guest never touches Supabase.
+const GUEST_USER = {
+  id: 'guest',
+  email: null,
+  user_metadata: { full_name: 'Guest' },
+};
+
 let currentUser = null;
 export const getUser = () => currentUser;
+export const isGuest = () => currentUser?.id === 'guest';
 
 export async function initAuth(onChange) {
   if (DEMO_MODE) {
@@ -24,14 +34,14 @@ export async function initAuth(onChange) {
   }
 
   const { data: { session } } = await supabase.auth.getSession();
-  currentUser = session?.user ?? null;
-  setUserId(currentUser?.id ?? null);
+  currentUser = session?.user ?? GUEST_USER;          // no session → guest, never a forced login wall
+  setUserId(currentUser.id);                          // 'guest' keeps the store in local mode
 
   supabase.auth.onAuthStateChange((_event, nextSession) => {
-    const next = nextSession?.user ?? null;
-    const changed = next?.id !== currentUser?.id;
+    const next = nextSession?.user ?? GUEST_USER;     // sign-out → back to guest
+    const changed = next.id !== currentUser?.id;
     currentUser = next;
-    setUserId(next?.id ?? null);
+    setUserId(next.id);
     if (changed) onChange(currentUser);
   });
 

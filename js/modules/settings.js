@@ -8,9 +8,10 @@ import { getAppearance, setAppearance } from '../appearance.js';
 import { openPrivacySheet } from '../applock.js';
 import { signOut } from '../auth.js';
 import { DEMO_MODE } from '../supabase.js';
-import { formData, initials, esc, money, fmtDate } from '../ui.js';
+import { formData, initials, esc, money, fmtDate, confirmAction } from '../ui.js';
+import { openDrawer, closeDrawer } from '../drawer.js';
 import { toast } from '../toast.js';
-import { PLANS, PLAN_BY_ID, ROLE_BY_KEY, ROLES, CLIENT_STATUS_BY_KEY, DEAL_STATUS_BY_KEY } from '../domain.js';
+import { PLANS, PLAN_BY_ID, ROLE_BY_KEY, ROLES, CLIENT_STATUSES, CLIENT_STATUS_BY_KEY, DEAL_STATUS_BY_KEY, optionsHtml } from '../domain.js';
 
 export async function init() {
   const form = document.getElementById('profile-form');
@@ -199,50 +200,159 @@ function cardHtml(plan, current, cycle) {
 }
 
 /* ── Workspace: team & clients ───────────────────────────────
-   Read-only roster for now; invite / add are dormant until the
-   workspace backend (Supabase) is wired, mirroring billing. */
+   Live CRUD: a brand-new account can populate its roster + client book
+   the moment it signs in. Runs through the team/clients repos —
+   localStorage in demo/guest, Supabase once a real session is live (one
+   code path). Rows are buttons: click to edit, delete from the drawer. */
+let teamCache = [];
+let clientCache = [];
+
 async function initWorkspace() {
   const teamWrap = document.getElementById('team-list');
   const clientWrap = document.getElementById('client-list');
 
-  if (teamWrap) {
-    const members = await team.list().catch(() => []);
-    teamWrap.innerHTML = members.map(personRow).join('') || emptyRow('No teammates yet.');
+  async function renderTeam() {
+    teamCache = await team.list().catch(() => []);
+    teamWrap.innerHTML = teamCache.map(personRow).join('')
+      || emptyRow('No teammates yet — add the people you work with so you can delegate.');
   }
-  if (clientWrap) {
-    const list = await clients.list().catch(() => []);
-    clientWrap.innerHTML = list.map(clientRow).join('') || emptyRow('No clients yet.');
+  async function renderClients() {
+    clientCache = await clients.list().catch(() => []);
+    clientWrap.innerHTML = clientCache.map(clientRow).join('')
+      || emptyRow('No clients yet — add your first to start scoping and billing work.');
   }
 
-  document.getElementById('team-invite')?.addEventListener('click', () => {
-    toast(DEMO_MODE ? 'Invites go out once the workspace backend is connected.' : 'Invitation sent.', 'success');
+  if (teamWrap) {
+    await renderTeam();
+    teamWrap.addEventListener('click', (e) => {
+      const row = e.target.closest('[data-member]');
+      if (row) openMemberDrawer(teamCache.find((m) => m.id === row.dataset.member), renderTeam);
+    });
+    document.getElementById('team-invite')?.addEventListener('click', () => openMemberDrawer(null, renderTeam));
+  }
+  if (clientWrap) {
+    await renderClients();
+    clientWrap.addEventListener('click', (e) => {
+      const row = e.target.closest('[data-client]');
+      if (row) openClientDrawer(clientCache.find((c) => c.id === row.dataset.client), renderClients);
+    });
+    document.getElementById('client-add')?.addEventListener('click', () => openClientDrawer(null, renderClients));
+  }
+}
+
+// Add / edit a teammate. `member` null = create. `refresh` re-renders the list.
+function openMemberDrawer(member, refresh) {
+  const editing = !!member;
+  openDrawer({
+    eyebrow: 'Team',
+    title: editing ? 'Edit teammate' : 'Add teammate',
+    body:
+      `<div class="field"><label for="md-name">Name</label>` +
+        `<input id="md-name" maxlength="120" autocomplete="off" placeholder="Jordan Cole" value="${editing ? esc(member.name) : ''}" /></div>` +
+      `<div class="field"><label for="md-role">Role</label>` +
+        `<select id="md-role">${optionsHtml(ROLES, member?.role || 'producer')}</select></div>` +
+      `<div class="field"><label for="md-email">Email <span class="lbl-note">(optional)</span></label>` +
+        `<input id="md-email" type="email" maxlength="254" autocomplete="off" spellcheck="false" placeholder="name@studio.com" value="${editing ? esc(member.email || '') : ''}" /></div>` +
+      `<p class="auth-error" id="md-error" hidden></p>`,
+    actions: editing
+      ? [{ key: 'delete', label: 'Remove', variant: 'danger' }, { key: 'save', label: 'Save', variant: 'primary' }]
+      : [{ key: 'save', label: 'Add teammate', variant: 'primary' }],
+    onAction: async (key) => {
+      const err = document.getElementById('md-error');
+      if (key === 'save') {
+        const name = document.getElementById('md-name').value.trim();
+        if (!name) { err.textContent = 'A name is required.'; err.hidden = false; return; }
+        const patch = {
+          name,
+          role: document.getElementById('md-role').value,
+          email: document.getElementById('md-email').value.trim() || null,
+        };
+        try {
+          if (editing) await team.update(member.id, patch); else await team.create(patch);
+        } catch { err.textContent = 'Could not save — try again.'; err.hidden = false; return; }
+        closeDrawer();
+        toast(editing ? 'Teammate updated.' : 'Teammate added.', 'success');
+        await refresh();
+        window.dispatchEvent(new CustomEvent('svnos:workspace'));
+      } else if (key === 'delete') {
+        if (!(await confirmAction(`Remove ${member.name} from the team?`, { confirmLabel: 'Remove' }))) return;
+        await team.remove(member.id);
+        closeDrawer();
+        toast('Teammate removed.');
+        await refresh();
+        window.dispatchEvent(new CustomEvent('svnos:workspace'));
+      }
+    },
   });
-  document.getElementById('client-add')?.addEventListener('click', () => {
-    toast(DEMO_MODE ? 'Client management lands with the workspace backend.' : 'Client added.', 'success');
+}
+
+// Add / edit a client. Delete cascades the client's scope + milestones (FK).
+function openClientDrawer(client, refresh) {
+  const editing = !!client;
+  openDrawer({
+    eyebrow: 'Clients',
+    title: editing ? 'Edit client' : 'Add client',
+    body:
+      `<div class="field"><label for="cd-name">Client name</label>` +
+        `<input id="cd-name" maxlength="120" autocomplete="off" placeholder="Aurora Studios" value="${editing ? esc(client.name) : ''}" /></div>` +
+      `<div class="field"><label for="cd-status">Status</label>` +
+        `<select id="cd-status">${optionsHtml(CLIENT_STATUSES, client?.status || 'active')}</select></div>` +
+      `<div class="field"><label for="cd-contact">Main contact <span class="lbl-note">(optional)</span></label>` +
+        `<input id="cd-contact" maxlength="160" autocomplete="off" placeholder="Sam Rivera · sam@aurora.com" value="${editing ? esc(client.contact || '') : ''}" /></div>` +
+      `<p class="auth-error" id="cd-error" hidden></p>`,
+    actions: editing
+      ? [{ key: 'delete', label: 'Delete', variant: 'danger' }, { key: 'save', label: 'Save', variant: 'primary' }]
+      : [{ key: 'save', label: 'Add client', variant: 'primary' }],
+    onAction: async (key) => {
+      const err = document.getElementById('cd-error');
+      if (key === 'save') {
+        const name = document.getElementById('cd-name').value.trim();
+        if (!name) { err.textContent = 'A client name is required.'; err.hidden = false; return; }
+        const patch = {
+          name,
+          status: document.getElementById('cd-status').value,
+          contact: document.getElementById('cd-contact').value.trim() || null,
+        };
+        try {
+          if (editing) await clients.update(client.id, patch); else await clients.create(patch);
+        } catch { err.textContent = 'Could not save — try again.'; err.hidden = false; return; }
+        closeDrawer();
+        toast(editing ? 'Client updated.' : 'Client added.', 'success');
+        await refresh();
+        window.dispatchEvent(new CustomEvent('svnos:workspace'));
+      } else if (key === 'delete') {
+        if (!(await confirmAction(`Delete ${client.name}? Their scope and milestones are removed too.`, { confirmLabel: 'Delete' }))) return;
+        await clients.remove(client.id);
+        closeDrawer();
+        toast('Client deleted.');
+        await refresh();
+        window.dispatchEvent(new CustomEvent('svnos:workspace'));
+      }
+    },
   });
 }
 
 function personRow(m) {
   const role = ROLE_BY_KEY[m.role];
   return (
-    '<div class="person">' +
+    `<button type="button" class="person" data-member="${m.id}">` +
       `<span class="person-av">${esc(initials(m.name))}</span>` +
       `<span class="person-id"><span class="person-name">${esc(m.name)}</span>` +
-      `<span class="person-sub">${esc(m.email || '')}</span></span>` +
+      `<span class="person-sub">${esc(m.email || 'No email yet')}</span></span>` +
       `<span class="pill tone-${role?.tone || 'dim'}">${esc(role?.label || m.role)}</span>` +
-    '</div>'
+    `</button>`
   );
 }
 
 function clientRow(c) {
   const st = CLIENT_STATUS_BY_KEY[c.status];
   return (
-    '<div class="person">' +
+    `<button type="button" class="person" data-client="${c.id}">` +
       `<span class="person-av person-av-sq">${esc(initials(c.name))}</span>` +
       `<span class="person-id"><span class="person-name">${esc(c.name)}</span>` +
       `<span class="person-sub">${esc(c.contact || 'No contact yet')}</span></span>` +
       `<span class="pill tone-${st?.tone || 'dim'}">${esc(st?.label || c.status)}</span>` +
-    '</div>'
+    `</button>`
   );
 }
 

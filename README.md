@@ -17,18 +17,37 @@ clean-URLs redirect breaks the router's page-fragment fetches.)
 
 Out of the box the app runs in **demo mode** — a seeded sample business stored in
 `localStorage` — so every screen is explorable before any backend exists.
-A brass pill in the sidebar reminds you it's demo data. Reset it from the
+A pill in the sidebar reminds you it's demo data. Reset it from the
 console with `svnos.resetDemo()`.
+
+Once Supabase credentials are wired the app runs in three states: **demo** (no creds),
+**guest** (creds set but signed out — the public site still explores the seeded sample on
+`localStorage`, never touching the database), and **live** (signed in — every read/write hits
+Supabase under RLS). Guests reveal the sign-in gate on demand via the sidebar pill; data only
+persists after sign-in.
 
 ## Connecting Supabase
 
+**Already wired.** This app runs against a dedicated **London / eu-west-2** Supabase
+project (ref `daqeghxsuvufqubsbmnv`); credentials live in [`js/supabase.js`](js/supabase.js)
+and `DEMO_MODE` is off. The anon key there is public-safe — RLS is the gate. To stand up a
+fresh project from scratch, repeat these steps:
+
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor**, paste the whole of [`sql/schema.sql`](sql/schema.sql), run it.
-   (Creates `profiles`, `content_projects`, `brand_deals`, `transactions`,
-   enums, RLS policies, `updated_at` triggers, and the auto-profile-on-signup trigger.)
+2. Open **SQL Editor** and run, **in order**,
+   [`sql/schema.sql`](sql/schema.sql) → [`sql/002_studio_tables.sql`](sql/002_studio_tables.sql)
+   → [`sql/003_harden_rls.sql`](sql/003_harden_rls.sql).
+   (schema.sql: `profiles`, `content_projects`, `brand_deals`, `transactions`, enums, RLS,
+   `updated_at` triggers, auto-profile-on-signup. 002: `team_members`, `clients`, `sow_items`,
+   `milestones`, `gear`, `review_comments` — the Studio/workspace tables, owner-scoped by RLS.
+   003: advisor hardening — locks down the trigger fn, optimizes the RLS init-plan, indexes FKs.)
 3. Copy your **Project URL** and **anon public key** (Settings → API) into
    [`js/supabase.js`](js/supabase.js).
-4. Reload. Demo mode switches off automatically and the auth gate appears.
+4. In **Authentication → URL Configuration**, set the **Site URL** + redirect allowlist to your
+   deployed origin (e.g. `https://svn-os.vercel.app`) so confirmation / reset emails resolve.
+5. Reload. Demo mode switches off; signed-out visitors land **guest-first** (the showcase on
+   local demo data, no login wall) and reveal the sign-in gate on demand. Real persistence
+   begins only after sign-in.
 
 ## Deploying to Vercel
 
@@ -45,18 +64,19 @@ non-localhost hosts, so local development never fights a stale cache.
 
 | # | Step | Status |
 |---|------|--------|
-| 1 | Run `sql/schema.sql` in Supabase SQL Editor | ☐ |
-| 2 | Paste Supabase credentials into `js/supabase.js` | ☐ |
-| 3 | `vercel --prod` | ☐ |
-| 4 | Create a GitHub repo and push (source control) | ☐ |
-| 5 | Sign up in the deployed app, confirm RLS by checking another account sees nothing | ☐ |
+| 1 | Run `schema.sql` → `002_studio_tables.sql` → `003_harden_rls.sql` on the London project | ✅ |
+| 2 | Credentials wired into `js/supabase.js` (`DEMO_MODE` off) | ✅ |
+| 3 | Advisors clean (security 0 findings, perf 0 warnings) + cross-user RLS proven by test | ✅ |
+| 4 | Guest + live e2e verified (sign-in → write persists → reload → sign-out → guest) | ✅ |
+| 5 | Dashboard → **Auth → URL Configuration**: set Site URL + redirect allowlist to prod origin | ☐ (owner) |
+| 6 | Merge `keystone-live-supabase` → `main` → Vercel auto-deploys the live cred-flip | ☐ (sign-off) |
 
 ## Security & privacy
 
 The data boundary is **Supabase auth + Postgres row-level security**: every
 table enforces `auth.uid() = user_id` for read and write, length-checked
-columns resist junk-data abuse, and the only public surface is profiles that
-have explicitly set a username. On top of that:
+columns resist junk-data abuse, and there is no public read surface — even
+`profiles` is owner-only. On top of that:
 
 - **App Lock** — gate the UI behind the device's screen lock (Face ID /
   fingerprint / Windows Hello via WebAuthn platform authenticators) or a PIN
